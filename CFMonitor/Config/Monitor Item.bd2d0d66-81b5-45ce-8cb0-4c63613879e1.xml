@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MonitorItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:type="MonitorPing" ID="Monitor Item.bd2d0d66-81b5-45ce-8cb0-4c63613879e1" Name="Ping Google" Enabled="true" Server="www.google.co.uk">
+  <MonitorItemSchedule TimeLastChecked="0001-01-01T00:00:00" ScheduleType="FixedInterval" Times="60sec" />
+  <EventItems>
+    <EventItem>
+      <EventCondition Source="Reply.Status" Operator="NotEquals">
+        <Values>
+          <Value xsi:type="xsd:int">0</Value>
+        </Values>
+      </EventCondition>
+      <ActionItems>
+        <ActionItem xsi:type="ActionEmail" Subject="Ping failed" Server="MyEmailServer">
+          <RecipientList>
+            <Recipient>chrismfellows@hotmail.co.uk</Recipient>
+          </RecipientList>
+          <CCList />
+          <Body>Ping www.google.co.uk failed</Body>
+        </ActionItem>
+      </ActionItems>
+    </EventItem>
+  </EventItems>
+</MonitorItem>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MonitorItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:type="MonitorFile" ID="Monitor Item.413bf205-f93e-4d05-9db3-58aa7687a2ee" Name="Check Process" Enabled="true" FileName="C:\My Data\SomeProcess.exe">
+  <MonitorItemSchedule TimeLastChecked="0001-01-01T00:00:00" ScheduleType="FixedInterval" Times="60sec" />
+  <EventItems>
+    <EventItem>
+      <EventCondition Source="OnFileNotExists" Operator="Equals">
+        <Values />
+      </EventCondition>
+      <ActionItems>
+        <ActionItem xsi:type="ActionEmail" Subject="File not found" Server="MyEmailServer">
+          <RecipientList>
+            <Recipient>chrismfellows@hotmail.co.uk</Recipient>
+          </RecipientList>
+          <CCList />
+          <Body>The file C:\My Data\SomeProcess.exe was not found</Body>
+        </ActionItem>
+      </ActionItems>
+    </EventItem>
+  </EventItems>
+</MonitorItem>

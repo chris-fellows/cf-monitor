@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MonitorItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:type="MonitorURL" ID="Monitor Item.65d5c547-6b7a-4dc4-b325-768b54fd25d7" Name="Check Google" Enabled="true" URL="https://www.google.co.uk" Method="GET" ProxyName="" ProxyPort="0" Password="" UserName="">
+  <MonitorItemSchedule TimeLastChecked="0001-01-01T00:00:00" ScheduleType="FixedInterval" Times="60sec" />
+  <EventItems>
+    <EventItem>
+      <EventCondition Source="Response.StatusCode" Operator="NotEquals">
+        <Values>
+          <Value xsi:type="xsd:int">200</Value>
+        </Values>
+      </EventCondition>
+      <ActionItems>
+        <ActionItem xsi:type="ActionEmail" Subject="Web connection failed" Server="MyEmailServer">
+          <RecipientList>
+            <Recipient>chrismfellows@hotmail.co.uk</Recipient>
+          </RecipientList>
+          <CCList />
+          <Body>Error opening URL https://www.google.co.uk</Body>
+        </ActionItem>
+      </ActionItems>
+    </EventItem>
+  </EventItems>
+  <Headers />
+</MonitorItem>

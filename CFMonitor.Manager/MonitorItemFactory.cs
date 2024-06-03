@@ -85,9 +85,9 @@ namespace CFMonitor
             return monitorProcess;
         }
 
-        private static MonitorFile CreateTestMonitorFile()
+        private static MonitorLocalFile CreateTestMonitorFile()
         {
-            MonitorFile monitorFile = new MonitorFile()
+            MonitorLocalFile monitorFile = new MonitorLocalFile()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,

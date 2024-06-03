@@ -8,6 +8,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorSOAP")]
     public class MonitorSOAP : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.SOAP;
+
         [XmlAttribute("URL")]
         public string URL { get; set; }
         [XmlElement("XML")]

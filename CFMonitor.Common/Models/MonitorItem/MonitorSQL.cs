@@ -10,6 +10,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorSQL")]
     public class MonitorSQL : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.SQL;
+
         [XmlAttribute("ConnectionString")]
         public string ConnectionString { get; set; }
         [XmlAttribute("QueryFile")]

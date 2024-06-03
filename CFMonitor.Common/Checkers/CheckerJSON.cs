@@ -5,12 +5,20 @@ using CFMonitor.Models.ActionItems;
 using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
+    /// <summary>
+    /// Checks JSON file
+    /// </summary>
     public class CheckerJSON : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "JSON";
+
+        public CheckerTypes CheckerType => CheckerTypes.JSON;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorJSON monitorJSON = (MonitorJSON)monitorItem;
             Exception exception = null;
@@ -33,6 +41,8 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -81,9 +91,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }

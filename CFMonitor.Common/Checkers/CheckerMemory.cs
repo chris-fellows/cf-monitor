@@ -5,15 +5,20 @@ using CFMonitor.Models.ActionItems;
 using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
     /// Checks memory
     /// </summary>
     public class CheckerMemory : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "Memory";
+
+        public CheckerTypes CheckerType => CheckerTypes.Memory;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorMemory monitorMemory = (MonitorMemory)monitorItem;
             Exception exception = null;       
@@ -37,11 +42,13 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorFile;
+            return monitorItem is MonitorLocalFile;
         }
 
         private void CheckEvents(List<IActioner> actionerList, MonitorMemory monitorMemory, ActionParameters actionParameters, Exception exception)
@@ -85,9 +92,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }          

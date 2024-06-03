@@ -8,6 +8,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorDiskSpace")]
     public class MonitorDiskSpace : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.DiskSpace;
+
         [XmlAttribute("Drive")]
         public string Drive { get; set; }
 

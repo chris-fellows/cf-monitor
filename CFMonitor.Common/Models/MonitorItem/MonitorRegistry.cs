@@ -8,6 +8,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorRegistry")]
     public class MonitorRegistry : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.Registry;
+
         [XmlAttribute("Key")]
         public string Key { get; set; }
         [XmlAttribute("Value")]

@@ -6,15 +6,20 @@ using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
     /// Checks DNS
     /// </summary>
     public class CheckerDNS : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "DNS";
+
+        public CheckerTypes CheckerType => CheckerTypes.DNS;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorDNS monitorDNS = (MonitorDNS)monitorItem;
             Exception exception = null;
@@ -38,6 +43,8 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -100,9 +107,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }

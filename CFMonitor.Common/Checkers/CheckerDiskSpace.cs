@@ -6,15 +6,20 @@ using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
     /// Checks disk space
     /// </summary>
     public class CheckerDiskSpace : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "Disk space";
+
+        public CheckerTypes CheckerType => CheckerTypes.DiskSpace;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorDiskSpace monitorDiskSpace = (MonitorDiskSpace)monitorItem;
             Exception exception = null;
@@ -38,6 +43,8 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -93,9 +100,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }

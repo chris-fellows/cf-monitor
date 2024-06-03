@@ -8,6 +8,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorLDAP")]
     public class MonitorLDAP : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.LDAP;
+
         public override List<EventConditionSource> GetEventConditionSources()
         {
             return new List<EventConditionSource>()

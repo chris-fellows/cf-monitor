@@ -6,15 +6,20 @@ using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
-    /// Checks process
+    /// Checks running process
     /// </summary>
     public class CheckerProcess : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "Process";
+
+        public CheckerTypes CheckerType => CheckerTypes.Process;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorProcess monitorProcess = (MonitorProcess)monitorItem;
             Exception exception = null;          
@@ -23,7 +28,8 @@ namespace CFMonitor
 
             try
             {
-                Process[] processes = String.IsNullOrEmpty(monitorProcess.MachineName) ? Process.GetProcesses() : Process.GetProcesses(monitorProcess.MachineName);
+                Process[] processes = String.IsNullOrEmpty(monitorProcess.MachineName) ? 
+                        Process.GetProcesses() : Process.GetProcesses(monitorProcess.MachineName);
                 foreach (Process process in processes)
                 {
                     string filePath = process.MainModule.FileName;
@@ -48,6 +54,8 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }
 
         private void CheckEvents(List<IActioner> actionerList, MonitorProcess monitorProcess, ActionParameters actionParameters, Exception exception, List<Process> processesFound)
@@ -110,9 +118,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }

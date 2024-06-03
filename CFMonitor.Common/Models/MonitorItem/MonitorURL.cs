@@ -11,6 +11,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorURL")]
     public class MonitorURL : MonitorItem         
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.URL;
+
         [XmlAttribute("URL")]
         public string URL { get; set; }
         [XmlAttribute("Method")]

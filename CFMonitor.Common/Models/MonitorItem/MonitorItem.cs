@@ -9,7 +9,7 @@ namespace CFMonitor.Models.MonitorItems
     [XmlInclude(typeof(MonitorDHCP))]
     [XmlInclude(typeof(MonitorDiskSpace))]
     [XmlInclude(typeof(MonitorDNS))]
-    [XmlInclude(typeof(MonitorFile))]
+    [XmlInclude(typeof(MonitorLocalFile))]
     [XmlInclude(typeof(MonitorJSON))]
     [XmlInclude(typeof(MonitorLDAP))]
     [XmlInclude(typeof(MonitorMemory))]
@@ -40,5 +40,11 @@ namespace CFMonitor.Models.MonitorItems
         {
             return new List<EventConditionSource>();
         }
+
+        /// <summary>
+        /// Monitor item type. It links to the MonitorItemType instance so that we can get other details such
+        /// as which IChecker to use
+        /// </summary>
+        public virtual MonitorItemTypes MonitorItemType { get; }
     }
 }

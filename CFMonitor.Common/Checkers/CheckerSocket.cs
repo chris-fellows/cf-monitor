@@ -6,15 +6,20 @@ using CFMonitor.Models.MonitorItems;
 using CFUtilities.Networking.Socket;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
     /// Checks socket (TCP/UDP)
     /// </summary>
     public class CheckerSocket : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "TCP or UDP socket";
+
+        public CheckerTypes CheckerType => CheckerTypes.Socket;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorSocket monitorSocket = (MonitorSocket)monitorItem;
             Exception exception = null;
@@ -50,6 +55,8 @@ namespace CFMonitor
             {
                 
             }
+
+            return Task.CompletedTask;
         }
 
         private void CheckEvents(List<IActioner> actionerList, MonitorSocket monitorSocket, ActionParameters actionParameters, Exception exception, bool connected)
@@ -112,9 +119,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }          

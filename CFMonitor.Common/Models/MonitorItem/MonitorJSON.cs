@@ -8,6 +8,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorJSON")]
     public class MonitorJSON : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.JSON;
+
         public override List<EventConditionSource> GetEventConditionSources()
         {
             return new List<EventConditionSource>()

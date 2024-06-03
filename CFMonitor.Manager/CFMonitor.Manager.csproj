@@ -60,6 +60,12 @@
     <Compile Include="Controls\MonitorURLControl.Designer.cs">
       <DependentUpon>MonitorURLControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\SelectListItemForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\SelectListItemForm.Designer.cs">
+      <DependentUpon>SelectListItemForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="MonitorItemFactory.cs" />
     <Compile Include="Globals.cs" />
     <Compile Include="MainForm.cs">
@@ -75,6 +81,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\MonitorURLControl.resx">
       <DependentUpon>MonitorURLControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\SelectListItemForm.resx">
+      <DependentUpon>SelectListItemForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

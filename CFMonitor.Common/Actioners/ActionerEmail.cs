@@ -1,7 +1,9 @@
-﻿using CFMonitor.Interfaces;
+﻿using CFMonitor.Enums;
+using CFMonitor.Interfaces;
 using CFMonitor.Models.ActionItems;
 using CFMonitor.Models.MonitorItems;
 using System.Net.Mail;
+using System.Threading.Tasks;
 
 namespace CFMonitor.Actioners
 {
@@ -10,7 +12,11 @@ namespace CFMonitor.Actioners
     /// </summary>
     public class ActionerEmail : IActioner
     {
-        public void DoAction(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        public string Name => "Send an email";
+
+        public ActionerTypes ActionerType => ActionerTypes.Email;
+
+        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
         {
             ActionEmail actionEmail = (ActionEmail)actionItem;
             MailMessage message = new MailMessage()
@@ -32,9 +38,11 @@ namespace CFMonitor.Actioners
 
             SmtpClient client = new SmtpClient(actionEmail.Server);
             client.Send(message);
+
+            return Task.CompletedTask;
         }
 
-        public bool CanAction(ActionItem actionItem)
+        public bool CanExecute(ActionItem actionItem)
         {
             return actionItem is ActionEmail;
         }

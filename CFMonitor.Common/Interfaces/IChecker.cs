@@ -1,5 +1,7 @@
-﻿using CFMonitor.Models.MonitorItems;
+﻿using CFMonitor.Enums;
+using CFMonitor.Models.MonitorItems;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CFMonitor.Interfaces
 {
@@ -9,7 +11,28 @@ namespace CFMonitor.Interfaces
     /// </summary>
     public interface IChecker
     {
-        void Check(MonitorItem monitorItem, List<IActioner> actionerList);
+        /// <summary>
+        /// Name
+        /// </summary>
+        string Name { get; }
+
+        /// <summary>
+        /// Internal name
+        /// </summary>
+        CheckerTypes CheckerType { get; }
+
+        /// <summary>
+        /// Checks monitor item
+        /// </summary>
+        /// <param name="monitorItem"></param>
+        /// <param name="actionerList"></param>
+        Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList);
+
+        /// <summary>
+        /// Determines if this instance can check
+        /// </summary>
+        /// <param name="monitorItem"></param>
+        /// <returns></returns>
         bool CanCheck(MonitorItem monitorItem);
     }
 }

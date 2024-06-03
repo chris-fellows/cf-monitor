@@ -28,10 +28,13 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.tvwMonitorItem = new System.Windows.Forms.TreeView();
+            this.tsbNewMonitorItem = new System.Windows.Forms.ToolStripButton();
+            this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.SuspendLayout();
@@ -47,6 +50,8 @@
             // 
             // toolStrip1
             // 
+            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsbNewMonitorItem});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1161, 25);
@@ -75,6 +80,15 @@
             this.tvwMonitorItem.TabIndex = 0;
             this.tvwMonitorItem.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.tvwMonitorItem_AfterSelect);
             // 
+            // tsbNewMonitorItem
+            // 
+            this.tsbNewMonitorItem.Image = ((System.Drawing.Image)(resources.GetObject("tsbNewMonitorItem.Image")));
+            this.tsbNewMonitorItem.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbNewMonitorItem.Name = "tsbNewMonitorItem";
+            this.tsbNewMonitorItem.Size = new System.Drawing.Size(78, 22);
+            this.tsbNewMonitorItem.Text = "New item";
+            this.tsbNewMonitorItem.Click += new System.EventHandler(this.tsbNewMonitorItem_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -84,7 +98,9 @@
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.statusStrip1);
             this.Name = "MainForm";
-            this.Text = "Form1";
+            this.Text = "Monitor Manager";
+            this.toolStrip1.ResumeLayout(false);
+            this.toolStrip1.PerformLayout();
             this.splitContainer1.Panel1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
@@ -99,6 +115,7 @@
         private System.Windows.Forms.ToolStrip toolStrip1;
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.TreeView tvwMonitorItem;
+        private System.Windows.Forms.ToolStripButton tsbNewMonitorItem;
     }
 }
 

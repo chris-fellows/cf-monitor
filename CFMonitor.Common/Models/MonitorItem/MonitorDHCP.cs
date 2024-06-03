@@ -8,8 +8,10 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorDHCP")]
     public class MonitorDHCP : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.DHCP;
+
         [XmlAttribute("Server")]
-        public string Server { get; set; }
+        public string Server { get; set; }        
 
         public override List<EventConditionSource> GetEventConditionSources()
         {

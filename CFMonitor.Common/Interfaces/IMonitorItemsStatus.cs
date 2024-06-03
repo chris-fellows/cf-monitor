@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CFMonitor.Common.Interfaces
+namespace CFMonitor.Interfaces
 {
     /// <summary>
     /// Interface for component to store the status of the monitor items.

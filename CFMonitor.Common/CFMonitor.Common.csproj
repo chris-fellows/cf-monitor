@@ -42,15 +42,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actioners\ActionerDatadogWarning.cs" />
     <Compile Include="Actioners\ActionerEmail.cs" />
     <Compile Include="Actioners\ActionerLog.cs" />
     <Compile Include="Actioners\ActionerProcess.cs" />
+    <Compile Include="Actioners\ActionerSMS.cs" />
     <Compile Include="Actioners\ActionerSQL.cs" />
     <Compile Include="Actioners\ActionerURL.cs" />
     <Compile Include="Checkers\CheckerDHCP.cs" />
     <Compile Include="Checkers\CheckerDiskSpace.cs" />
     <Compile Include="Checkers\CheckerDNS.cs" />
-    <Compile Include="Checkers\CheckerFile.cs" />
+    <Compile Include="Checkers\CheckerLocalFile.cs" />
     <Compile Include="Checkers\CheckerJSON.cs" />
     <Compile Include="Checkers\CheckerLDAP.cs" />
     <Compile Include="Checkers\CheckerMemory.cs" />
@@ -64,19 +66,29 @@
     <Compile Include="Checkers\CheckerSocket.cs" />
     <Compile Include="Checkers\CheckerSQL.cs" />
     <Compile Include="Checkers\CheckerURL.cs" />
+    <Compile Include="Constants\MonitorItemTypeInternalNames.cs" />
+    <Compile Include="Enums\ActionerTypes.cs" />
+    <Compile Include="Enums\CheckerTypes.cs" />
     <Compile Include="Enums\ConditionOperators.cs" />
     <Compile Include="Enums\EventConditionSource.cs" />
+    <Compile Include="Enums\MonitorItemTypes.cs" />
     <Compile Include="Enums\ScheduleTypes.cs" />
     <Compile Include="Factory.cs" />
     <Compile Include="Interfaces\IActioner.cs" />
+    <Compile Include="Interfaces\IActionersService.cs" />
     <Compile Include="Interfaces\IChecker.cs" />
+    <Compile Include="Interfaces\ICheckersService.cs" />
+    <Compile Include="Interfaces\IMonitorItemControl.cs" />
     <Compile Include="Interfaces\IMonitorItemService.cs" />
     <Compile Include="Interfaces\IMonitorItemsStatus.cs" />
+    <Compile Include="Interfaces\IMonitorItemTypeService.cs" />
+    <Compile Include="Models\ActionItem\ActionDatadogWarning.cs" />
     <Compile Include="Models\ActionItem\ActionEmail.cs" />
     <Compile Include="Models\ActionItem\ActionItem.cs" />
     <Compile Include="Models\ActionItem\ActionLog.cs" />
     <Compile Include="Models\ActionItem\ActionParameters.cs" />
     <Compile Include="Models\ActionItem\ActionProcess.cs" />
+    <Compile Include="Models\ActionItem\ActionSMS.cs" />
     <Compile Include="Models\ActionItem\ActionSQL.cs" />
     <Compile Include="Models\ActionItem\ActionURL.cs" />
     <Compile Include="Models\EventCondition.cs" />
@@ -85,10 +97,11 @@
     <Compile Include="Models\EventItem.cs" />
     <Compile Include="Models\HTTPHeader.cs" />
     <Compile Include="Models\MonitorItemSchedule.cs" />
+    <Compile Include="Models\MonitorItemType.cs" />
     <Compile Include="Models\MonitorItem\MonitorDHCP.cs" />
     <Compile Include="Models\MonitorItem\MonitorDiskSpace.cs" />
     <Compile Include="Models\MonitorItem\MonitorDNS.cs" />
-    <Compile Include="Models\MonitorItem\MonitorFile.cs" />
+    <Compile Include="Models\MonitorItem\MonitorLocalFile.cs" />
     <Compile Include="Models\MonitorItem\MonitorItem.cs" />
     <Compile Include="Models\MonitorItem\MonitorJSON.cs" />
     <Compile Include="Models\MonitorItem\MonitorLDAP.cs" />
@@ -104,7 +117,10 @@
     <Compile Include="Models\MonitorItem\MonitorSQL.cs" />
     <Compile Include="Models\MonitorItem\MonitorURL.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\ActionersService.cs" />
+    <Compile Include="Services\CheckersService.cs" />
     <Compile Include="Services\MonitorItemService.cs" />
+    <Compile Include="Services\MonitorItemTypeService.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

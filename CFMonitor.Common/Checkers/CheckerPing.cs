@@ -7,15 +7,20 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Net.NetworkInformation;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
     /// Checks ping to server
     /// </summary>
     public class CheckerPing : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "Ping";
+
+        public CheckerTypes CheckerType => CheckerTypes.Ping;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorPing monitorPing = (MonitorPing)monitorItem;
             Exception exception = null;
@@ -59,6 +64,8 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }        
 
         private void CheckEvents(List<IActioner> actionerList, MonitorPing monitorPing, ActionParameters actionParameters, Exception exception, PingReply pingReply)
@@ -114,9 +121,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }

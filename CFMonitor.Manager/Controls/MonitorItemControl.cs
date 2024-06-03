@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CFMonitor.Models.MonitorItems;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -10,6 +11,9 @@ using System.Windows.Forms;
 
 namespace CFMonitor.Controls
 {
+    /// <summary>
+    /// Base control for monitor item. Displays common properties (Names, event list etc)
+    /// </summary>
     public partial class MonitorItemControl : UserControl
     {
         public MonitorItemControl()

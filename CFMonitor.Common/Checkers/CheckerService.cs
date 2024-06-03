@@ -6,15 +6,20 @@ using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.ServiceProcess;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
     /// Checks Windows service
     /// </summary>
     public class CheckerService : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "Service";
+
+        public CheckerTypes CheckerType => CheckerTypes.Service;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorService monitorService = (MonitorService)monitorItem;
             ServiceController serviceController = null;
@@ -51,6 +56,8 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }
 
         private void CheckEvents(List<IActioner> actionerList, MonitorService monitorService, ActionParameters actionParameters, Exception exception, ServiceController serviceController)
@@ -106,9 +113,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }

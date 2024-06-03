@@ -8,6 +8,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorSMTP")]
     public class MonitorSMTP : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.SMTP;
+
         [XmlAttribute("Server")]
         public string Server { get; set; }
         [XmlAttribute("Port")]

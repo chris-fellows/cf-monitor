@@ -1,8 +1,10 @@
-﻿using CFMonitor.Interfaces;
+﻿using CFMonitor.Enums;
+using CFMonitor.Interfaces;
 using CFMonitor.Models.ActionItems;
 using CFMonitor.Models.MonitorItems;
 using System;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace CFMonitor.Actioners
 {
@@ -11,7 +13,11 @@ namespace CFMonitor.Actioners
     /// </summary>
     public class ActionerURL : IActioner
     {
-        public void DoAction(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        public string Name => "Opens URL";
+
+        public ActionerTypes ActionerType => ActionerTypes.URL;
+
+        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
         {
             ActionURL actionURL = (ActionURL)actionItem;
             HttpWebRequest request = null;
@@ -30,14 +36,16 @@ namespace CFMonitor.Actioners
             {
                 exception = ex;
             }
+
+            return Task.CompletedTask;
         }
 
-        public bool CanAction(ActionItem actionItem)
+        public bool CanExecute(ActionItem actionItem)
         {
             return actionItem is ActionURL;
         }
 
-        private HttpWebRequest CreateWebRequest(ActionURL actionURL)
+        private static HttpWebRequest CreateWebRequest(ActionURL actionURL)
         {
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(actionURL.URL);
             request.Method = actionURL.Method;

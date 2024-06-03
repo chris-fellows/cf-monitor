@@ -11,6 +11,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorProcess")]
     public class MonitorProcess : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.Process;
+
         [XmlAttribute("MachineName")]
         public string MachineName { get; set; }
         [XmlAttribute("FileName")]

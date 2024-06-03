@@ -8,12 +8,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Net.Security;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
+    /// <summary>
+    /// Checks SMTP server
+    /// </summary>
     public class CheckerSMTP : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "SMTP";
+
+        public CheckerTypes CheckerType => CheckerTypes.SMTP;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorSMTP monitorSMTP = (MonitorSMTP)monitorItem;
             Exception exception = null;
@@ -58,6 +66,8 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -106,9 +116,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }

@@ -7,7 +7,9 @@ namespace CFMonitor.Models.MonitorItems
 {
     [XmlType("MonitorDNS")]
     public class MonitorDNS : MonitorItem
-    {    
+    {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.DNS;
+
         [XmlAttribute("Host")]
         public string Host { get; set; }
 

@@ -8,6 +8,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorREST")]
     public class MonitorREST : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.REST;
+
         [XmlAttribute("URL")]
         public string URL { get; set; }
 

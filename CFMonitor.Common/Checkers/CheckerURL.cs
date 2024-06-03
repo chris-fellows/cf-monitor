@@ -6,15 +6,20 @@ using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
-    /// Checks opening URL
+    /// Checks opening URL (HTTP/HTTPS)
     /// </summary>
     public class CheckerURL : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "URL";
+
+        public CheckerTypes CheckerType => CheckerTypes.URL;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorURL monitorURL = (MonitorURL)monitorItem;
             HttpWebRequest request = null;
@@ -45,6 +50,8 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }
 
         private HttpWebRequest CreateWebRequest(MonitorURL monitorURL)
@@ -132,9 +139,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }

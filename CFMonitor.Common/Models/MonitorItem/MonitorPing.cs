@@ -11,6 +11,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorPing")]
     public class MonitorPing : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.Ping;
+
         [XmlAttribute("Server")]
         public string Server { get; set; }
 

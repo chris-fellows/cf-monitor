@@ -8,6 +8,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorMemory")]
     public class MonitorMemory : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.Memory;
+
         public override List<EventConditionSource> GetEventConditionSources()
         {
             return new List<EventConditionSource>()

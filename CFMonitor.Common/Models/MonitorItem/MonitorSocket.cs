@@ -8,6 +8,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorSocket")]
     public class MonitorSocket : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.Socket;
+
         [XmlAttribute("Port")]
         public int Port { get; set; }
         [XmlAttribute("Host")]

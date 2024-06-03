@@ -11,6 +11,8 @@ namespace CFMonitor.Models.MonitorItems
     [XmlType("MonitorService")]
     public class MonitorService : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.Service;
+
         [XmlAttribute("MachineName")]
         public string MachineName { get; set; }
         [XmlAttribute("ServiceName")]

@@ -7,15 +7,23 @@ using CFUtilities.Databases;
 using System;
 using System.Collections.Generic;
 using System.Data.OleDb;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
     /// Checks running SQL
+    /// 
+    /// Examples of use:
+    /// - Check SQL query that returns a list of issues from the data.
     /// </summary>
     public class CheckerSQL : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "SQL query";
+
+        public CheckerTypes CheckerType => CheckerTypes.SQL;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
             MonitorSQL monitorSQL = (MonitorSQL)monitorItem;
             Exception exception = null;
@@ -56,6 +64,8 @@ namespace CFMonitor
                     database.Close();
                 }
             }
+
+            return Task.CompletedTask;
         }
 
         private void CheckEvents(List<IActioner> actionerList, MonitorSQL monitorSQL, ActionParameters actionParameters, Exception exception, OleDbDataReader reader)
@@ -120,9 +130,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }

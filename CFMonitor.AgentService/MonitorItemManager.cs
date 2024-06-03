@@ -4,6 +4,7 @@ using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace CFMonitor.AgentService
@@ -17,15 +18,20 @@ namespace CFMonitor.AgentService
         private System.Timers.Timer _timer;
         private List<MonitorItemTaskInfo> _taskInfos = new List<MonitorItemTaskInfo>();
         private const int _maxActiveTasks = 10;
-        private List<IChecker> _checkerList = null;
-        private List<IActioner> _actionerList = null;
-        private IMonitorItemService _monitorItemService = null;
+        private readonly IActionersService _actionersService;
+        private readonly ICheckersService _checkersService;
+        private readonly IMonitorItemService _monitorItemService;
+        private readonly IMonitorItemTypeService _monitorItemTypeService;
 
-        public MonitorItemManager(List<IChecker> checkerList, List<IActioner> actionerList, IMonitorItemService monitorItemService)
+        public MonitorItemManager(IActionersService actionersService, 
+                                ICheckersService checkersService,
+                                IMonitorItemService monitorItemService,
+                                IMonitorItemTypeService monitorItemTypeService)
         {
-            _checkerList = checkerList;
-            _actionerList = actionerList;
+            _actionersService = actionersService;
+            _checkersService = checkersService;
             _monitorItemService = monitorItemService;
+            _monitorItemTypeService = monitorItemTypeService;
         }
 
         public void Start()
@@ -156,16 +162,17 @@ namespace CFMonitor.AgentService
         /// <param name="monitorItem"></param>
         /// <returns></returns>
         private Task CheckMonitorItemAsync(MonitorItem monitorItem)
-        {            
-            Task task = null;
-            IChecker checker = _checkerList.Find(currentChecker => (currentChecker.CanCheck(monitorItem)));
-            if (checker != null)
-            {            
-                task = Task.Factory.StartNew(() =>
-                {
-                    checker.Check(monitorItem, _actionerList);
-                });                
-            }
+        {                        
+            var monitorItemType = _monitorItemTypeService.GetAll().First(mit => mit.ItemType == monitorItem.MonitorItemType);
+
+            var actioners = _actionersService.GetAll();            
+
+            // Check checker
+            IChecker checker = _checkersService.GetAll().First(c => c.CheckerType == monitorItemType.CheckerType);
+                            
+            // Check
+            var task = checker.CheckAsync(monitorItem, actioners);                
+            
             return task;
         }    
     }

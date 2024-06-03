@@ -6,17 +6,26 @@ using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
     /// Checks file
+    /// 
+    /// Examples of use:
+    /// - Checking that a scheduled task ran and created a log for today and it contained the text 
+    ///   "PROCESSING COMPLETED SUCCESSFULLY".
     /// </summary>
-    public class CheckerFile : IChecker
+    public class CheckerLocalFile : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
+        public string Name => "Local file";
+
+        public CheckerTypes CheckerType => CheckerTypes.LocalFile;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
-            MonitorFile monitorFile = (MonitorFile)monitorItem;
+            MonitorLocalFile monitorFile = (MonitorLocalFile)monitorItem;
             Exception exception = null;       
             ActionParameters actionParameters = new ActionParameters();
             FileInfo fileInfo = null;
@@ -43,14 +52,16 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorFile;
+            return monitorItem is MonitorLocalFile;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorFile monitorFile, ActionParameters actionParameters, Exception exception, FileInfo fileInfo, bool textFound)
+        private void CheckEvents(List<IActioner> actionerList, MonitorLocalFile monitorFile, ActionParameters actionParameters, Exception exception, FileInfo fileInfo, bool textFound)
         {           
             foreach (EventItem eventItem in monitorFile.EventItems)
             {
@@ -119,9 +130,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }          

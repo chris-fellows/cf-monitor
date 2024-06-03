@@ -4,7 +4,7 @@ using CFMonitor.Interfaces;
 using CFMonitor.Models.MonitorItems;
 using CFUtilities.XML;
 
-namespace CFMonitor
+namespace CFMonitor.Services
 {
     /// <summary>
     /// MonitorItem repository using XML serialization to file system

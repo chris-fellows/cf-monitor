@@ -5,16 +5,21 @@ using CFMonitor.Models.ActionItems;
 using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Checkers
 {
     /// <summary>
     /// Checks DHCP server
     /// </summary>
     public class CheckerDHCP : IChecker
     {
-        public void Check(MonitorItem monitorItem, List<IActioner> actionerList)
-        {
+        public string Name => "DHCP";
+
+        public CheckerTypes CheckerType => CheckerTypes.DHCP;
+
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
+        {            
             MonitorDHCP monitorDHCP = (MonitorDHCP)monitorItem;
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
@@ -36,6 +41,8 @@ namespace CFMonitor
             {
 
             }
+
+            return Task.CompletedTask;
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -83,9 +90,9 @@ namespace CFMonitor
         {
             foreach (IActioner actioner in actionerList)
             {
-                if (actioner.CanAction(actionItem))
+                if (actioner.CanExecute(actionItem))
                 {
-                    actioner.DoAction(monitorItem, actionItem, actionParameters);
+                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
                     break;
                 }
             }

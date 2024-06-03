@@ -6,11 +6,13 @@ using System.Xml.Serialization;
 namespace CFMonitor.Models.MonitorItems
 {
     /// <summary>
-    /// Settings for monitoring a file
+    /// Settings for monitoring a local file
     /// </summary>
     [XmlType("MonitorFile")]
-    public class MonitorFile : MonitorItem
+    public class MonitorLocalFile : MonitorItem
     {
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.LocalFile;
+
         [XmlAttribute("FileName")]
         public string FileName { get; set; }
         [XmlAttribute("FindText")]

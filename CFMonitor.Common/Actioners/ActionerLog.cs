@@ -1,6 +1,9 @@
-﻿using CFMonitor.Interfaces;
+﻿using CFMonitor.Enums;
+using CFMonitor.Interfaces;
 using CFMonitor.Models.ActionItems;
 using CFMonitor.Models.MonitorItems;
+using System;
+using System.Threading.Tasks;
 
 namespace CFMonitor.Actioners
 {
@@ -9,13 +12,18 @@ namespace CFMonitor.Actioners
     /// </summary>
     public class ActionerLog : IActioner
     {
-        public void DoAction(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        public string Name => "Write a log";
+
+        public ActionerTypes ActionerType => ActionerTypes.Log;
+
+        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
         {
+            throw new NotImplementedException();
 
-
+            return Task.CompletedTask;
         }
 
-        public bool CanAction(ActionItem actionItem)
+        public bool CanExecute(ActionItem actionItem)
         {
             return actionItem is ActionLog;
         }

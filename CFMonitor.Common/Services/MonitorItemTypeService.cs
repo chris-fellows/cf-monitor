@@ -14,6 +14,14 @@ namespace CFMonitor.Services
             var list = new List<MonitorItemType>();
             list.Add(new MonitorItemType()
             {
+                Name = "Active Process",
+                ItemType = MonitorItemTypes.ActiveProcess,
+                CheckerType = CheckerTypes.ActiveProcess,
+
+                CreateMonitorItem = () => new MonitorActiveProcess() { ID = Guid.NewGuid().ToString(), Name = "New", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
+            });
+            list.Add(new MonitorItemType()
+            {
                 Name = "DCHP",
                 ItemType = MonitorItemTypes.DHCP,
                 CheckerType = CheckerTypes.DHCP,
@@ -67,15 +75,7 @@ namespace CFMonitor.Services
                 ItemType = MonitorItemTypes.Ping,
                 CheckerType = CheckerTypes.Ping,
                 CreateMonitorItem = () => new MonitorPing() { ID = Guid.NewGuid().ToString(), Name = "New", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
-            });
-            list.Add(new MonitorItemType()
-            {
-                Name = "Process running",
-                ItemType = MonitorItemTypes.Process,
-                CheckerType = CheckerTypes.Process,
-
-                CreateMonitorItem = () => new MonitorProcess() { ID = Guid.NewGuid().ToString(), Name = "New", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
-            });
+            });            
             list.Add(new MonitorItemType()
             {
                 Name = "Registry",
@@ -89,6 +89,14 @@ namespace CFMonitor.Services
                 ItemType = MonitorItemTypes.REST,
                 CheckerType = CheckerTypes.REST,
                 CreateMonitorItem = () => new MonitorREST() { ID = Guid.NewGuid().ToString(), Name = "New", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
+            });
+            list.Add(new MonitorItemType()
+            {
+                Name = "Run Process",
+                ItemType = MonitorItemTypes.RunProcess,
+                CheckerType = CheckerTypes.RunProcess,
+
+                CreateMonitorItem = () => new MonitorRunProcess() { ID = Guid.NewGuid().ToString(), Name = "New", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
             list.Add(new MonitorItemType()
             {

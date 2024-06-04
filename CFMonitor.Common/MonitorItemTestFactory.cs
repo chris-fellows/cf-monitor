@@ -56,9 +56,9 @@ namespace CFMonitor
             return monitorSQL;
         }
 
-        private static MonitorProcess CreateTestMonitorProcess()
+        private static MonitorActiveProcess CreateTestMonitorProcess()
         {
-            MonitorProcess monitorProcess = new MonitorProcess()
+            MonitorActiveProcess monitorProcess = new MonitorActiveProcess()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
@@ -76,7 +76,7 @@ namespace CFMonitor
             //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
 
             EventItem eventItem2 = new EventItem();
-            eventItem2.EventCondition.Source = EventConditionSource.ProcessNotRunning;
+            eventItem2.EventCondition.Source = EventConditionSource.ActiveProcessNotRunning;
             monitorProcess.EventItems.Add(eventItem2);
             eventItem2.ActionItems.Add(CreateDefaultActionEmail("Process not running",
                         string.Format("The process {0} is not running", monitorProcess.FileName)));

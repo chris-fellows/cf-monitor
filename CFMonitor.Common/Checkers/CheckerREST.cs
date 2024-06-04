@@ -99,27 +99,7 @@ namespace CFMonitor.Checkers
                         meetsCondition = eventItem.EventCondition.Evaluate(webExceptionStatus);
                         break;
                 }
-
-                /*
-                if (eventItem.EventCondition.Source.Equals("OnException"))
-                {
-                    meetsCondition = (exception != null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnNoException"))
-                {
-                    meetsCondition = (exception == null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("Response.StatusCode"))
-                {
-                    // Check HTTP Status
-                    meetsCondition = eventItem.EventCondition.Evaluate(response.StatusCode);
-                }
-                else if (eventItem.EventCondition.Source.Equals("WebException.Status"))
-                {
-                    meetsCondition = eventItem.EventCondition.Evaluate(webExceptionStatus);
-                }
-                */
-
+              
                 if (meetsCondition)
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)

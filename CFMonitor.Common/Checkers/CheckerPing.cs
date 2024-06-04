@@ -86,22 +86,7 @@ namespace CFMonitor.Checkers
                         meetsCondition = (pingReply != null && eventItem.EventCondition.Evaluate(pingReply.Status));
                         break;
                 }
-
-                /*
-                if (eventItem.EventCondition.Source.Equals("OnException"))
-                {
-                    meetsCondition = (exception != null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnNoException"))
-                {
-                    meetsCondition = (exception == null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("Reply.Status"))
-                {
-                    meetsCondition = (pingReply != null && eventItem.EventCondition.Evaluate(pingReply.Status));
-                }
-                */
-
+               
                 if (meetsCondition)
                 {
                     foreach(ActionItem actionItem in eventItem.ActionItems)

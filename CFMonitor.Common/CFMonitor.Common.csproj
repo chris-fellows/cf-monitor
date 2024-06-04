@@ -57,9 +57,10 @@
     <Compile Include="Checkers\CheckerLDAP.cs" />
     <Compile Include="Checkers\CheckerMemory.cs" />
     <Compile Include="Checkers\CheckerPing.cs" />
-    <Compile Include="Checkers\CheckerProcess.cs" />
+    <Compile Include="Checkers\CheckerActiveProcess.cs" />
     <Compile Include="Checkers\CheckerRegistry.cs" />
     <Compile Include="Checkers\CheckerREST.cs" />
+    <Compile Include="Checkers\CheckerRunProcess.cs" />
     <Compile Include="Checkers\CheckerService.cs" />
     <Compile Include="Checkers\CheckerSMTP.cs" />
     <Compile Include="Checkers\CheckerSOAP.cs" />
@@ -100,13 +101,14 @@
     <Compile Include="Models\MonitorItem\MonitorDHCP.cs" />
     <Compile Include="Models\MonitorItem\MonitorDiskSpace.cs" />
     <Compile Include="Models\MonitorItem\MonitorDNS.cs" />
+    <Compile Include="Models\MonitorItem\MonitorRunProcess.cs" />
     <Compile Include="Models\MonitorItem\MonitorLocalFile.cs" />
     <Compile Include="Models\MonitorItem\MonitorItem.cs" />
     <Compile Include="Models\MonitorItem\MonitorJSON.cs" />
     <Compile Include="Models\MonitorItem\MonitorLDAP.cs" />
     <Compile Include="Models\MonitorItem\MonitorMemory.cs" />
     <Compile Include="Models\MonitorItem\MonitorPing.cs" />
-    <Compile Include="Models\MonitorItem\MonitorProcess.cs" />
+    <Compile Include="Models\MonitorItem\MonitorActiveProcess.cs" />
     <Compile Include="Models\MonitorItem\MonitorRegistry.cs" />
     <Compile Include="Models\MonitorItem\MonitorREST.cs" />
     <Compile Include="Models\MonitorItem\MonitorService.cs" />

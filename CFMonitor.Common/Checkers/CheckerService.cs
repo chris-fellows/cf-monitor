@@ -79,21 +79,6 @@ namespace CFMonitor.Checkers
                         break;                    
                 }
 
-                /*
-                if (eventItem.EventCondition.Source.Equals("OnException"))
-                {
-                    meetsCondition = (exception != null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnNoException"))
-                {
-                    meetsCondition = (exception == null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("ServiceController.Status"))
-                {
-                    meetsCondition = (serviceController != null && eventItem.EventCondition.Evaluate(serviceController.Status));
-                } 
-                */
-
                 if (meetsCondition)
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)

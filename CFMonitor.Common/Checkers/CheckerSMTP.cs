@@ -91,17 +91,6 @@ namespace CFMonitor.Checkers
                         break;                    
                 }
 
-                /*
-                if (eventItem.EventCondition.Source.Equals("OnException"))
-                {
-                    meetsCondition = (exception != null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnNoException"))
-                {
-                    meetsCondition = (exception == null);
-                }
-                */
-
                 if (meetsCondition)
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)

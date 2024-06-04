@@ -6,15 +6,13 @@ using System.Xml.Serialization;
 namespace CFMonitor.Models.MonitorItems
 {
     /// <summary>
-    /// Settings for monitoring a process
+    /// Settings for monitoring a process by starting it and waiting for it to complete. E.g. PowerShell script.
     /// </summary>
-    [XmlType("MonitorProcess")]
-    public class MonitorProcess : MonitorItem
+    [XmlType("MonitorRunProcess")]
+    public class MonitorRunProcess : MonitorItem
     {
-        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.Process;
+        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.RunProcess;
 
-        [XmlAttribute("MachineName")]
-        public string MachineName { get; set; }
         [XmlAttribute("FileName")]
         public string FileName { get; set; }
 
@@ -24,8 +22,7 @@ namespace CFMonitor.Models.MonitorItems
             {
                 EventConditionSource.Exception,
                 EventConditionSource.NoException,
-                EventConditionSource.ProcessRunning,
-                EventConditionSource.ProcessNotRunning
+                EventConditionSource.RunProcessExitCodeReturned                
             };
         }
     }

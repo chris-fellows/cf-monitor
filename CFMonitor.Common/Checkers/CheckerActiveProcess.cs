@@ -11,17 +11,17 @@ using System.Threading.Tasks;
 namespace CFMonitor.Checkers
 {
     /// <summary>
-    /// Checks running process
+    /// Checks active process
     /// </summary>
-    public class CheckerProcess : IChecker
+    public class CheckerActiveProcess : IChecker
     {
-        public string Name => "Process";
+        public string Name => "Active Process";
 
-        public CheckerTypes CheckerType => CheckerTypes.Process;
+        public CheckerTypes CheckerType => CheckerTypes.ActiveProcess;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
         {
-            MonitorProcess monitorProcess = (MonitorProcess)monitorItem;
+            MonitorActiveProcess monitorProcess = (MonitorActiveProcess)monitorItem;
             Exception exception = null;          
             ActionParameters actionParameters = new ActionParameters();
             List<Process> processesFound = new List<Process>();
@@ -58,7 +58,7 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorProcess monitorProcess, ActionParameters actionParameters, Exception exception, List<Process> processesFound)
+        private void CheckEvents(List<IActioner> actionerList, MonitorActiveProcess monitorProcess, ActionParameters actionParameters, Exception exception, List<Process> processesFound)
         {
             foreach (EventItem eventItem in monitorProcess.EventItems)
             {
@@ -72,32 +72,13 @@ namespace CFMonitor.Checkers
                     case EventConditionSource.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.ProcessRunning:
+                    case EventConditionSource.ActiveProcessRunning:
                         meetsCondition = (processesFound.Count > 0);
                         break;
-                    case EventConditionSource.ProcessNotRunning:
+                    case EventConditionSource.ActiveProcessNotRunning:
                         meetsCondition = (processesFound.Count == 0);
                         break;
-                }
-
-                /*
-                if (eventItem.EventCondition.Source.Equals("OnException"))
-                {
-                    meetsCondition = (exception != null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnNoException"))
-                {
-                    meetsCondition = (exception == null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnProcessRunning"))
-                {
-                    meetsCondition = (processesFound.Count > 0);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnProcessNotRunning"))
-                {
-                    meetsCondition = (processesFound.Count == 0);
-                }
-                */
+                }          
 
                 if (meetsCondition)
                 {
@@ -111,7 +92,7 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorProcess;
+            return monitorItem is MonitorActiveProcess;
         }
 
         private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

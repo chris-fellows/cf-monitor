@@ -79,26 +79,7 @@ namespace CFMonitor.Checkers
                     case EventConditionSource.SocketNotConnected:
                         meetsCondition = !connected;
                         break;
-                }
-
-                /*
-                if (eventItem.EventCondition.Source.Equals("OnException"))
-                {
-                    meetsCondition = (exception != null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnNoException"))
-                {
-                    meetsCondition = (exception == null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnConnected"))
-                {
-                    meetsCondition = connected;
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnNotConnected"))
-                {
-                    meetsCondition = !connected;
-                }
-                */
+                }          
 
                 if (meetsCondition)
                 {

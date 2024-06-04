@@ -11,8 +11,8 @@
         FileNotExists = 6,
         TextFoundInFile = 7,
         TextNotFoundInFile = 8,
-        ProcessRunning = 9,
-        ProcessNotRunning = 10,
+        ActiveProcessRunning = 9,
+        ActiveProcessNotRunning = 10,
         HttpResponseStatusCode = 11,
         SocketConnected = 12,
         SocketNotConnected = 13,
@@ -20,6 +20,7 @@
         PingReplyStatus = 15,
         SQLReturnsRows = 16,
         SQLReturnsNoRows = 17,
-        WebExceptionStatus = 18
+        WebExceptionStatus = 18,
+        RunProcessExitCodeReturned = 19
     }
 }

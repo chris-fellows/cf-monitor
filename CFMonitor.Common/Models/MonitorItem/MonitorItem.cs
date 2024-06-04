@@ -14,7 +14,7 @@ namespace CFMonitor.Models.MonitorItems
     [XmlInclude(typeof(MonitorLDAP))]
     [XmlInclude(typeof(MonitorMemory))]
     [XmlInclude(typeof(MonitorPing))]
-    [XmlInclude(typeof(MonitorProcess))]
+    [XmlInclude(typeof(MonitorActiveProcess))]
     [XmlInclude(typeof(MonitorRegistry))]
     [XmlInclude(typeof(MonitorREST))]
     [XmlInclude(typeof(MonitorService))]

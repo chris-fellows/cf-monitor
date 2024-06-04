@@ -65,18 +65,7 @@ namespace CFMonitor.Checkers
                     case EventConditionSource.NoException:
                         meetsCondition = (exception == null);
                         break;                    
-                }
-
-                /*
-                if (eventItem.EventCondition.Source.Equals("OnException"))
-                {
-                    meetsCondition = (exception != null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnNoException"))
-                {
-                    meetsCondition = (exception == null);
-                } 
-                */
+                }           
 
                 if (meetsCondition)
                 {

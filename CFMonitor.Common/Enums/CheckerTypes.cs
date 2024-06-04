@@ -2,6 +2,7 @@
 {
     public enum CheckerTypes : byte
     {
+        ActiveProcess,
         DHCP,
         DiskSpace,
         DNS,
@@ -9,10 +10,10 @@
         JSON,
         LDAP,
         Memory,
-        Ping,
-        Process,
+        Ping,        
         Registry,
         REST,
+        RunProcess,
         Service,
         SMTP,
         SOAP,

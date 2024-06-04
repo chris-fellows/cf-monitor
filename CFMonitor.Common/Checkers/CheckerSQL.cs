@@ -92,25 +92,6 @@ namespace CFMonitor.Checkers
                         break;
                 }
 
-                /*
-                if (eventItem.EventCondition.Source.Equals("OnException"))
-                {
-                    meetsCondition = (exception != null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnNoException"))
-                {
-                    meetsCondition = (exception == null);
-                }                
-                else if (eventItem.EventCondition.Source.Equals("OnRows"))
-                {
-                    meetsCondition = (reader != null && readerHasRows == true);
-                }
-                else if (eventItem.EventCondition.Source.EndsWith("OnNoRows"))
-                {
-                    meetsCondition = (reader != null && readerHasRows == false);
-                }
-                */
-
                 if (meetsCondition)
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)

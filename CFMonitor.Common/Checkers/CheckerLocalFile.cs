@@ -88,34 +88,7 @@ namespace CFMonitor.Checkers
                         meetsCondition = !textFound;
                         break;
                 }
-
-                /*
-                if (eventItem.EventCondition.Source.Equals("OnException"))
-                {
-                    meetsCondition = (exception != null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnNoException"))
-                {
-                    meetsCondition = (exception == null);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnFileExists"))
-                {
-                    meetsCondition = fileInfo != null && fileInfo.Exists;
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnFileNotExists"))
-                {
-                    meetsCondition = (fileInfo == null) || (fileInfo != null && !fileInfo.Exists);
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnTextFound"))
-                {
-                    meetsCondition = textFound;
-                }
-                else if (eventItem.EventCondition.Source.Equals("OnTextNotFound"))
-                {
-                    meetsCondition = !textFound;
-                }
-                */
-
+             
                 if (meetsCondition)
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)

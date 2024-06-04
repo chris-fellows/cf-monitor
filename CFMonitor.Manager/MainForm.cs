@@ -17,6 +17,9 @@ using System.Windows.Forms;
 
 namespace CFMonitor
 {
+    /// <summary>
+    /// Main form. Displays list of monitor items which can be modified
+    /// </summary>
     public partial class MainForm : Form
     {
         private IMonitorItemService _monitorItemService;
@@ -28,23 +31,16 @@ namespace CFMonitor
             MonitorItem = 1
         }
 
-        public MainForm()
+        public MainForm(IMonitorItemService monitorItemService, IMonitorItemTypeService monitorItemTypeService)
         {
             InitializeComponent();
 
-            // TODO: Pick up from DI
-            _monitorItemService = new MonitorItemService(@"D:\\Test\\Monitor\\Data");
-            _monitorItemTypeService = new MonitorItemTypeService();               
+            _monitorItemService = monitorItemService;
+            _monitorItemTypeService = monitorItemTypeService;
 
             //CreateTestMonitorItems();
             this.Visible = true;
             DisplayMonitorItems();
-
-            /*
-            this.Visible = false;
-            _manager = new Manager(Factory.GetCheckerList(), Factory.GetActionerList(), Factory.GetDefaultMonitorItemRepository());
-            _manager.Start();
-            */
         }
 
         private static MyTreeNodeType GetMyTreeNodeType(TreeNode treeNode)
@@ -62,10 +58,7 @@ namespace CFMonitor
         //}
 
         private void DisplayMonitorItems()
-        {
-            //IMonitorItemService monitorItemService = Factory.GetDefaultMonitorItemRepository();
-            //MonitorItemFactory.Create(monitorItemRepository);
-
+        {          
             tvwMonitorItem.Nodes.Clear();
 
             // Get monitor items
@@ -120,6 +113,19 @@ namespace CFMonitor
                 // Create empty monitor item
                 var monitorItem = monitorItemType.CreateMonitorItem();                
                 _monitorItemService.Add(monitorItem);
+
+                // Refresh
+                DisplayMonitorItems();
+            }
+        }
+
+        private void createTestItemsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show("Do you want to create test items?", "Test Items", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                // Create
+                var monitorItems = MonitorItemTestFactory.Create();
+                monitorItems.ForEach(monitorItem => _monitorItemService.Add(monitorItem));
 
                 // Refresh
                 DisplayMonitorItems();

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace CFMonitor.AgentService
@@ -14,7 +15,7 @@ namespace CFMonitor.AgentService
     /// </summary>
     internal class MonitorItemManager
     {
-        private List<MonitorItem> _monitorItems = null;
+        private List<MonitorItem> _monitorItems = new List<MonitorItem>();
         private System.Timers.Timer _timer;
         private List<MonitorItemTaskInfo> _taskInfos = new List<MonitorItemTaskInfo>();
         private const int _maxActiveTasks = 10;
@@ -22,6 +23,7 @@ namespace CFMonitor.AgentService
         private readonly ICheckersService _checkersService;
         private readonly IMonitorItemService _monitorItemService;
         private readonly IMonitorItemTypeService _monitorItemTypeService;
+        private DateTimeOffset _lastRefreshMonitorItems = DateTimeOffset.MinValue;
 
         public MonitorItemManager(IActionersService actionersService, 
                                 ICheckersService checkersService,
@@ -36,18 +38,8 @@ namespace CFMonitor.AgentService
 
         public void Start()
         {
-            // Get all monitor items
-            _monitorItems = _monitorItemService.GetAll();
+            RefreshMonitorItems(true);
 
-            // Reset all items to start from now
-            foreach (MonitorItem monitorItem in _monitorItems)
-            {
-                if (monitorItem.MonitorItemSchedule.ScheduleType == ScheduleTypes.FixedInterval)        // Every N units
-                {
-                    monitorItem.MonitorItemSchedule.TimeLastChecked = DateTime.Now;
-                }
-            }
-           
             if (_timer == null)
             {
                 _timer = new System.Timers.Timer();
@@ -57,16 +49,53 @@ namespace CFMonitor.AgentService
             _timer.Start();                       
         }
 
-        //private static bool IsTaskComplete(Task task)
-        //{
-        //    return (task.Status == TaskStatus.RanToCompletion || task.Status == TaskStatus.Faulted);
-        //}
+        /// <summary>
+        /// Refreshes monitor item list if forced or overdue.
+        /// 
+        /// Consider executing a 'Refresh' command on each service when updated by CFMonitor.Manager
+        /// </summary>
+        /// <param name="force"></param>
+        private void RefreshMonitorItems(bool force)
+        {
+            if (force || _lastRefreshMonitorItems.AddMinutes(5) < DateTimeOffset.UtcNow)
+            {
+                _lastRefreshMonitorItems = DateTimeOffset.UtcNow;
+
+                // Store old items
+                var oldMonitorItems = new List<MonitorItem>();
+                oldMonitorItems.AddRange(_monitorItems);
+                _monitorItems.Clear();
+
+                _monitorItems = _monitorItemService.GetAll();
+                foreach (var monitorItem in _monitorItems)
+                {
+                    // Check if previously loaded
+                    var oldMonitorItem = oldMonitorItems.FirstOrDefault(mi => mi.ID == monitorItem.ID);
+
+                    // Set schedule last checked
+                    if (oldMonitorItem == null)   // Not already initialised
+                    {
+                        if (monitorItem.MonitorItemSchedule.ScheduleType == ScheduleTypes.FixedInterval)        // Every N units
+                        {
+                            // TODO: Consider ensuring that this is always at offsets from 00:00 so that item is checked at predicatable
+                            // intervals. E.g. If interval is every 10 mins then set minutes to be 0, 10, 20, 30 etc.
+                            monitorItem.MonitorItemSchedule.TimeLastChecked = DateTime.Now;
+                        }
+                    }
+                }
+            }
+        }
 
         private void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             try
             {
                 _timer.Enabled = false;
+
+                // Periodic refresh of monitor items
+                RefreshMonitorItems(false);
+
+                // Start monitor items
                 CheckMonitorItems();
             }
             catch

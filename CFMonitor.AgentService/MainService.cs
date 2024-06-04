@@ -1,19 +1,12 @@
-﻿using CFMonitor.Interfaces;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.ServiceProcess;
-using System.Threading.Tasks;
+﻿using System.ServiceProcess;
 
 namespace CFMonitor.AgentService
 {
-    public partial class Service1 : ServiceBase
+    public partial class MainService : ServiceBase
     {
         private MonitorItemManager _monitorItemManager;
 
-        public Service1()
+        public MainService()
         {
             InitializeComponent();           
         }

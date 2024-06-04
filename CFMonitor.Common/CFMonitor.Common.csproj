@@ -73,7 +73,6 @@
     <Compile Include="Enums\EventConditionSource.cs" />
     <Compile Include="Enums\MonitorItemTypes.cs" />
     <Compile Include="Enums\ScheduleTypes.cs" />
-    <Compile Include="Factory.cs" />
     <Compile Include="Interfaces\IActioner.cs" />
     <Compile Include="Interfaces\IActionersService.cs" />
     <Compile Include="Interfaces\IChecker.cs" />
@@ -116,6 +115,7 @@
     <Compile Include="Models\MonitorItem\MonitorSocket.cs" />
     <Compile Include="Models\MonitorItem\MonitorSQL.cs" />
     <Compile Include="Models\MonitorItem\MonitorURL.cs" />
+    <Compile Include="MonitorItemTestFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\ActionersService.cs" />
     <Compile Include="Services\CheckersService.cs" />

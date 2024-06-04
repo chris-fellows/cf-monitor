@@ -1,38 +1,35 @@
 ﻿using CFMonitor.Enums;
-using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.Models.ActionItems;
 using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using CFUtilities.XML;
 
 namespace CFMonitor
 {
     /// <summary>
     /// Factory for creating monitor items for testing
     /// </summary>
-    internal class MonitorItemFactory
+    public class MonitorItemTestFactory
     {
         public static string DeveloperEmail = "chrismfellows@hotmail.co.uk";
 
-        public static void Create(IMonitorItemService monitorItemRepository)
+        public static List<MonitorItem> Create()
         {
-            monitorItemRepository.Add(CreateTestMonitorURL());
-            monitorItemRepository.Add(CreateSQLServiceMonitor());
-            monitorItemRepository.Add(CreateTestMonitorPing());
-            monitorItemRepository.Add(CreateTestMonitorSQL());
-            monitorItemRepository.Add(CreateTestMonitorFile());
-            monitorItemRepository.Add(CreateTestMonitorProcess());
+            var items = new List<MonitorItem>();
+            items.Add(CreateTestMonitorURL());
+            items.Add(CreateTestSQLServiceMonitor());
+            items.Add(CreateTestMonitorPing());
+            items.Add(CreateTestMonitorSQL());
+            items.Add(CreateTestMonitorFile());
+            items.Add(CreateTestMonitorProcess());
+            return items;
         }
 
         private static string GetNewMonitorItemID()
         {
-            return string.Format("Monitor Item.{0}", Guid.NewGuid().ToString());        
+            return Guid.NewGuid().ToString();
+            //return string.Format("Monitor Item.{0}", Guid.NewGuid().ToString());        
         }
 
         private static MonitorSQL CreateTestMonitorSQL()
@@ -79,9 +76,10 @@ namespace CFMonitor
             //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
 
             EventItem eventItem2 = new EventItem();
-            eventItem2.EventCondition.Source = EventConditionSource.ProcessNotRunning;  // "OnProcessNotRunning";
+            eventItem2.EventCondition.Source = EventConditionSource.ProcessNotRunning;
             monitorProcess.EventItems.Add(eventItem2);
-            eventItem2.ActionItems.Add(CreateDefaultActionEmail("Process not running",string.Format("The process {0} is not running", monitorProcess.FileName)));
+            eventItem2.ActionItems.Add(CreateDefaultActionEmail("Process not running",
+                        string.Format("The process {0} is not running", monitorProcess.FileName)));
             return monitorProcess;
         }
 
@@ -107,7 +105,8 @@ namespace CFMonitor
             EventItem eventItem2 = new EventItem();
             eventItem2.EventCondition.Source = EventConditionSource.FileNotExists; //  "OnFileNotExists";
             monitorFile.EventItems.Add(eventItem2);
-            eventItem2.ActionItems.Add(CreateDefaultActionEmail("File not found", string.Format("The file {0} was not found", monitorFile.FileName)));
+            eventItem2.ActionItems.Add(CreateDefaultActionEmail("File not found", 
+                    string.Format("The file {0} was not found", monitorFile.FileName)));
             return monitorFile;
         }
 
@@ -130,7 +129,8 @@ namespace CFMonitor
             eventItem.EventCondition.Operator = ConditionOperators.NotEquals;
             eventItem.EventCondition.Values.Add(System.Net.NetworkInformation.IPStatus.Success);
             monitorPing.EventItems.Add(eventItem);
-            eventItem.ActionItems.Add(CreateDefaultActionEmail("Ping failed", string.Format("Ping {0} failed", monitorPing.Server)));
+            eventItem.ActionItems.Add(CreateDefaultActionEmail("Ping failed", 
+                        string.Format("Ping {0} failed", monitorPing.Server)));
             return monitorPing;
         }
 
@@ -159,13 +159,13 @@ namespace CFMonitor
             eventItem.EventCondition.Operator = ConditionOperators.NotEquals;
             eventItem.EventCondition.Values.Add(System.Net.HttpStatusCode.OK);
             monitorURL.EventItems.Add(eventItem);
-            eventItem.ActionItems.Add(CreateDefaultActionEmail("Web connection failed", string.Format("Error opening URL {0}", monitorURL.URL)));                        
+            eventItem.ActionItems.Add(CreateDefaultActionEmail("Web connection failed", 
+                        string.Format("Error opening URL {0}", monitorURL.URL)));                        
             return monitorURL;
         }
 
-        private static MonitorService CreateSQLServiceMonitor()
+        private static MonitorService CreateTestSQLServiceMonitor()
         {
-
             MonitorService monitorService = new MonitorService()
             {
                 ID = GetNewMonitorItemID(),
@@ -183,7 +183,8 @@ namespace CFMonitor
             eventItem.EventCondition.Operator = ConditionOperators.NotEquals;
             eventItem.EventCondition.Values.Add(System.ServiceProcess.ServiceControllerStatus.Running);
             monitorService.EventItems.Add(eventItem);
-            eventItem.ActionItems.Add(CreateDefaultActionEmail("SQL Server service not running", string.Format("Service {0} is not running", monitorService.ServiceName)));            
+            eventItem.ActionItems.Add(CreateDefaultActionEmail("SQL Server service not running",
+                        string.Format("Service {0} is not running", monitorService.ServiceName)));            
             return monitorService;
         }
 
@@ -194,7 +195,7 @@ namespace CFMonitor
                 Subject = subject,
                 Body = body
             };
-            actionEmail.RecipientList.Add(MonitorItemFactory.DeveloperEmail);
+            actionEmail.RecipientList.Add(MonitorItemTestFactory.DeveloperEmail);
             actionEmail.Server = "MyEmailServer";
             return actionEmail;
         }

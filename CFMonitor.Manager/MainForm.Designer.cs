@@ -31,9 +31,11 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.tsbNewMonitorItem = new System.Windows.Forms.ToolStripButton();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.tvwMonitorItem = new System.Windows.Forms.TreeView();
-            this.tsbNewMonitorItem = new System.Windows.Forms.ToolStripButton();
+            this.toolStripDropDownButton1 = new System.Windows.Forms.ToolStripDropDownButton();
+            this.createTestItemsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -51,12 +53,22 @@
             // toolStrip1
             // 
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tsbNewMonitorItem});
+            this.tsbNewMonitorItem,
+            this.toolStripDropDownButton1});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1161, 25);
             this.toolStrip1.TabIndex = 1;
             this.toolStrip1.Text = "toolStrip1";
+            // 
+            // tsbNewMonitorItem
+            // 
+            this.tsbNewMonitorItem.Image = ((System.Drawing.Image)(resources.GetObject("tsbNewMonitorItem.Image")));
+            this.tsbNewMonitorItem.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbNewMonitorItem.Name = "tsbNewMonitorItem";
+            this.tsbNewMonitorItem.Size = new System.Drawing.Size(78, 22);
+            this.tsbNewMonitorItem.Text = "New item";
+            this.tsbNewMonitorItem.Click += new System.EventHandler(this.tsbNewMonitorItem_Click);
             // 
             // splitContainer1
             // 
@@ -80,14 +92,22 @@
             this.tvwMonitorItem.TabIndex = 0;
             this.tvwMonitorItem.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.tvwMonitorItem_AfterSelect);
             // 
-            // tsbNewMonitorItem
+            // toolStripDropDownButton1
             // 
-            this.tsbNewMonitorItem.Image = ((System.Drawing.Image)(resources.GetObject("tsbNewMonitorItem.Image")));
-            this.tsbNewMonitorItem.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.tsbNewMonitorItem.Name = "tsbNewMonitorItem";
-            this.tsbNewMonitorItem.Size = new System.Drawing.Size(78, 22);
-            this.tsbNewMonitorItem.Text = "New item";
-            this.tsbNewMonitorItem.Click += new System.EventHandler(this.tsbNewMonitorItem_Click);
+            this.toolStripDropDownButton1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.createTestItemsToolStripMenuItem});
+            this.toolStripDropDownButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripDropDownButton1.Image")));
+            this.toolStripDropDownButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripDropDownButton1.Name = "toolStripDropDownButton1";
+            this.toolStripDropDownButton1.Size = new System.Drawing.Size(73, 22);
+            this.toolStripDropDownButton1.Text = "Testing";
+            // 
+            // createTestItemsToolStripMenuItem
+            // 
+            this.createTestItemsToolStripMenuItem.Name = "createTestItemsToolStripMenuItem";
+            this.createTestItemsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.createTestItemsToolStripMenuItem.Text = "Create test items";
+            this.createTestItemsToolStripMenuItem.Click += new System.EventHandler(this.createTestItemsToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -116,6 +136,8 @@
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.TreeView tvwMonitorItem;
         private System.Windows.Forms.ToolStripButton tsbNewMonitorItem;
+        private System.Windows.Forms.ToolStripDropDownButton toolStripDropDownButton1;
+        private System.Windows.Forms.ToolStripMenuItem createTestItemsToolStripMenuItem;
     }
 }
 

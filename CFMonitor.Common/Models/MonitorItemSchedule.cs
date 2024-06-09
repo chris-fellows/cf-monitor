@@ -10,6 +10,7 @@ namespace CFMonitor.Models
     {
         [XmlAttribute("TimeLastChecked")]
         public DateTime TimeLastChecked { get; set; }
+
         [XmlAttribute("ScheduleType")]
         public ScheduleTypes ScheduleType { get; set; }
 

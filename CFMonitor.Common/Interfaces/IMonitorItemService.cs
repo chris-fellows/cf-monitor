@@ -1,16 +1,23 @@
 ﻿using CFMonitor.Models.MonitorItems;
-using System.Collections.Generic;
+using CFUtilities.Repository;
 
 namespace CFMonitor.Interfaces
 {
     /// <summary>
-    /// Interface for monitor item service
+    /// Interface for MonitorItem instances
     /// </summary>
-    public interface IMonitorItemService
+    public interface IMonitorItemService : IItemRepository<MonitorItem, string>
     {
-        List<MonitorItem> GetAll();
-        void Add(MonitorItem monitorItem);
-        void Update(MonitorItem monitorItem);
-        void Delete(MonitorItem monitorItem);
     }
+
+    ///// <summary>
+    ///// Interface for monitor item service
+    ///// </summary>
+    //public interface IMonitorItemService
+    //{
+    //    List<MonitorItem> GetAll();
+    //    void Add(MonitorItem monitorItem);
+    //    void Update(MonitorItem monitorItem);
+    //    void Delete(MonitorItem monitorItem);
+    //}
 }

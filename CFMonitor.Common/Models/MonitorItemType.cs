@@ -18,6 +18,11 @@ namespace CFMonitor.Models
         /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        /// Description
+        /// </summary>
+        public string Description { get; set; }
+
         public MonitorItemTypes ItemType { get; set; }
        
         /// <summary>

@@ -78,6 +78,7 @@
     <Compile Include="Interfaces\IActionersService.cs" />
     <Compile Include="Interfaces\IChecker.cs" />
     <Compile Include="Interfaces\ICheckersService.cs" />
+    <Compile Include="Interfaces\IMonitorAgentService.cs" />
     <Compile Include="Interfaces\IMonitorItemControl.cs" />
     <Compile Include="Interfaces\IMonitorItemService.cs" />
     <Compile Include="Interfaces\IMonitorItemsStatus.cs" />
@@ -96,6 +97,7 @@
     <Compile Include="Models\EventConditionValuesService.cs" />
     <Compile Include="Models\EventItem.cs" />
     <Compile Include="Models\HTTPHeader.cs" />
+    <Compile Include="Models\MonitorAgent.cs" />
     <Compile Include="Models\MonitorItemSchedule.cs" />
     <Compile Include="Models\MonitorItemType.cs" />
     <Compile Include="Models\MonitorItem\MonitorDHCP.cs" />
@@ -121,6 +123,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\ActionersService.cs" />
     <Compile Include="Services\CheckersService.cs" />
+    <Compile Include="Services\MonitorAgentService.cs" />
     <Compile Include="Services\MonitorItemService.cs" />
     <Compile Include="Services\MonitorItemTypeService.cs" />
   </ItemGroup>

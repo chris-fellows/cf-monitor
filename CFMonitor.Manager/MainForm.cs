@@ -22,6 +22,7 @@ namespace CFMonitor
     /// </summary>
     public partial class MainForm : Form
     {
+        private IMonitorItemControlService _monitorItemControlService;
         private IMonitorItemService _monitorItemService;
         private IMonitorItemTypeService _monitorItemTypeService;
 
@@ -31,10 +32,12 @@ namespace CFMonitor
             MonitorItem = 1
         }
 
-        public MainForm(IMonitorItemService monitorItemService, IMonitorItemTypeService monitorItemTypeService)
+        public MainForm(IMonitorItemControlService monitorItemControlService,
+                        IMonitorItemService monitorItemService, IMonitorItemTypeService monitorItemTypeService)
         {
             InitializeComponent();
 
+            _monitorItemControlService = monitorItemControlService;
             _monitorItemService = monitorItemService;
             _monitorItemTypeService = monitorItemTypeService;
 
@@ -76,11 +79,17 @@ namespace CFMonitor
         {
             // Clear existing controls
             splitContainer1.Panel2.Controls.Clear();
-            
-            if (monitorItem.GetType() == typeof(MonitorURL))
+
+            // Create control
+            var control = _monitorItemControlService.GetControl(monitorItem.MonitorItemType);
+            if (control == null)   // Not implemented yet
             {
-                var control = new MonitorURLControl();
-                control.ModelToView(monitorItem);
+                MessageBox.Show($"Control to display monitor item {monitorItem.Name} has not been implemented yet", "Error");
+            }
+            else
+            {
+                var controlInterface = (IMonitorItemControl)control;
+                controlInterface.ModelToView(monitorItem);
                 splitContainer1.Panel2.Controls.Add(control);
             }
         }
@@ -112,7 +121,7 @@ namespace CFMonitor
 
                 // Create empty monitor item
                 var monitorItem = monitorItemType.CreateMonitorItem();                
-                _monitorItemService.Add(monitorItem);
+                _monitorItemService.Insert(monitorItem);
 
                 // Refresh
                 DisplayMonitorItems();
@@ -125,7 +134,7 @@ namespace CFMonitor
             {
                 // Create
                 var monitorItems = MonitorItemTestFactory.Create();
-                monitorItems.ForEach(monitorItem => _monitorItemService.Add(monitorItem));
+                monitorItems.ForEach(monitorItem => _monitorItemService.Insert(monitorItem));
 
                 // Refresh
                 DisplayMonitorItems();

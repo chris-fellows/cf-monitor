@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\MonitorAgentConfig.cs" />
     <Compile Include="MonitorItemTaskInfo.cs" />
     <Compile Include="MonitorItemManager.cs" />
     <Compile Include="MainService.cs">

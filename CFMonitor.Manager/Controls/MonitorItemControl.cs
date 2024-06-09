@@ -23,7 +23,7 @@ namespace CFMonitor.Controls
 
         public void ModelToView(MonitorItem monitorItem)
         {
-            txtName.Text = monitorItem.Name;
+            txtName.Text = monitorItem.Name;            
             chkEnabled.Checked = monitorItem.Enabled;
 
             dgvEvents.Rows.Clear();

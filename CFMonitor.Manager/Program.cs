@@ -9,18 +9,7 @@ using System.Windows.Forms;
 namespace CFMonitor
 {
     static class Program
-    {
-        ///// <summary>
-        ///// The main entry point for the application.
-        ///// </summary>
-        //[STAThread]
-        //static void Main()
-        //{
-        //    Application.EnableVisualStyles();
-        //    Application.SetCompatibleTextRenderingDefault(false);            
-        //    Application.Run(new MainForm());
-        //}
-
+    {       
         /// <summary>
         ///  The main entry point for the application.
         /// </summary>
@@ -45,11 +34,16 @@ namespace CFMonitor
         {
             return Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) => {
-                    services.AddTransient<IMonitorItemTypeService, MonitorItemTypeService>();
+                    services.AddTransient<IMonitorItemControlService, MonitorItemControlService>();
+                    services.AddTransient<IMonitorItemTypeService, MonitorItemTypeService>();                    
+                    services.AddTransient<IMonitorAgentService>((scope) =>
+                    {
+                        return new MonitorAgentService(Path.Combine(Environment.CurrentDirectory, "Data", "MonitorAgents"));
+                    });
                     services.AddTransient<IMonitorItemService>((scope) =>
                     {
-                        return new MonitorItemService(Path.Combine(Environment.CommandLine, "Data", "MonitorItems"));
-                    });
+                        return new MonitorItemService(Path.Combine(Environment.CurrentDirectory, "Data", "MonitorItems"));
+                    });                    
                     services.AddTransient<MainForm>();
                 });
         }

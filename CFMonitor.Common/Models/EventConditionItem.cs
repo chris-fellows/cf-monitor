@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CFMonitor
+namespace CFMonitor.Models
 {
     public class EventConditionItem
     {

@@ -1,11 +1,11 @@
-﻿using CFMonitor.Enums;
+﻿using CFMonitor.AgentService.Models;
+using CFMonitor.Enums;
 using CFMonitor.Interfaces;
+using CFMonitor.Models;
 using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace CFMonitor.AgentService
@@ -17,23 +17,29 @@ namespace CFMonitor.AgentService
     {
         private List<MonitorItem> _monitorItems = new List<MonitorItem>();
         private System.Timers.Timer _timer;
-        private List<MonitorItemTaskInfo> _taskInfos = new List<MonitorItemTaskInfo>();
-        private const int _maxActiveTasks = 10;
+        private List<MonitorItemTaskInfo> _taskInfos = new List<MonitorItemTaskInfo>();        
+        private readonly MonitorAgentConfig _monitorAgentConfig;
         private readonly IActionersService _actionersService;
         private readonly ICheckersService _checkersService;
+        private readonly IMonitorAgentService _monitorAgentService;
         private readonly IMonitorItemService _monitorItemService;
         private readonly IMonitorItemTypeService _monitorItemTypeService;
         private DateTimeOffset _lastRefreshMonitorItems = DateTimeOffset.MinValue;
+        private DateTimeOffset _lastHeartbeat = DateTimeOffset.MinValue;
 
         public MonitorItemManager(IActionersService actionersService, 
                                 ICheckersService checkersService,
+                                IMonitorAgentService monitorAgentService,
                                 IMonitorItemService monitorItemService,
-                                IMonitorItemTypeService monitorItemTypeService)
+                                IMonitorItemTypeService monitorItemTypeService, 
+                                MonitorAgentConfig monitorAgentConfig)
         {
             _actionersService = actionersService;
             _checkersService = checkersService;
+            _monitorAgentService = monitorAgentService;
             _monitorItemService = monitorItemService;
             _monitorItemTypeService = monitorItemTypeService;
+            _monitorAgentConfig = monitorAgentConfig;
         }
 
         public void Start()
@@ -57,7 +63,7 @@ namespace CFMonitor.AgentService
         /// <param name="force"></param>
         private void RefreshMonitorItems(bool force)
         {
-            if (force || _lastRefreshMonitorItems.AddMinutes(5) < DateTimeOffset.UtcNow)
+            if (force || _lastRefreshMonitorItems.AddMinutes(5) <= DateTimeOffset.UtcNow)
             {
                 _lastRefreshMonitorItems = DateTimeOffset.UtcNow;
 
@@ -86,11 +92,49 @@ namespace CFMonitor.AgentService
             }
         }
 
+        /// <summary>
+        /// Updates monitor agent heartbeat
+        /// </summary>
+        /// <param name="force"></param>
+        private void UpdateHeartbeat(bool force)
+        {
+            if (force || _lastHeartbeat.Add(_monitorAgentConfig.HeartbeatInterval) <= DateTimeOffset.UtcNow)
+            {
+                _lastHeartbeat = DateTimeOffset.UtcNow;
+
+                // Get monitor agent instance
+                var monitorAgent = _monitorAgentService.GetByFilter((agent) =>
+                {
+                    return agent.MachineName == Environment.MachineName &&
+                                agent.UserName == Environment.UserName;
+                }).FirstOrDefault();
+
+                if (monitorAgent == null)     // New instance
+                {
+                    monitorAgent = new MonitorAgent()
+                    {
+                        ID = Guid.NewGuid().ToString(),
+                        MachineName = Environment.MachineName,
+                        UserName = Environment.UserName,
+                        HeartbeatDateTime= DateTime.UtcNow
+                    };
+                    _monitorAgentService.Insert(monitorAgent);
+                }
+                else    // Existing instance
+                {
+                    monitorAgent.HeartbeatDateTime = DateTime.UtcNow;
+                    _monitorAgentService.Update(monitorAgent);
+                }
+            }
+        }
+
         private void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             try
             {
                 _timer.Enabled = false;
+
+                UpdateHeartbeat(false);
 
                 // Periodic refresh of monitor items
                 RefreshMonitorItems(false);
@@ -140,7 +184,7 @@ namespace CFMonitor.AgentService
                 if (monitorItem.MonitorItemSchedule.IsTime(DateTime.Now) && 
                     !_taskInfos.Any(t => t.MonitorItem.ID ==  monitorItem.ID))
                 {
-                    if (ActiveTaskCount < _maxActiveTasks)
+                    if (ActiveTaskCount < _monitorAgentConfig.MaxConcurrentMonitorItems)
                     {
                         // Create tasks
                         var taskInfo = new MonitorItemTaskInfo()

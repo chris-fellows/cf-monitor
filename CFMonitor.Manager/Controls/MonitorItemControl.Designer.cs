@@ -46,7 +46,7 @@
             // 
             // txtName
             // 
-            this.txtName.Location = new System.Drawing.Point(49, 4);
+            this.txtName.Location = new System.Drawing.Point(73, 1);
             this.txtName.Name = "txtName";
             this.txtName.Size = new System.Drawing.Size(347, 20);
             this.txtName.TabIndex = 1;
@@ -54,7 +54,7 @@
             // chkEnabled
             // 
             this.chkEnabled.AutoSize = true;
-            this.chkEnabled.Location = new System.Drawing.Point(402, 6);
+            this.chkEnabled.Location = new System.Drawing.Point(426, 6);
             this.chkEnabled.Name = "chkEnabled";
             this.chkEnabled.Size = new System.Drawing.Size(65, 17);
             this.chkEnabled.TabIndex = 2;
@@ -64,9 +64,9 @@
             // dgvEvents
             // 
             this.dgvEvents.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvEvents.Location = new System.Drawing.Point(7, 50);
+            this.dgvEvents.Location = new System.Drawing.Point(7, 27);
             this.dgvEvents.Name = "dgvEvents";
-            this.dgvEvents.Size = new System.Drawing.Size(397, 150);
+            this.dgvEvents.Size = new System.Drawing.Size(413, 173);
             this.dgvEvents.TabIndex = 3;
             // 
             // MonitorItemControl

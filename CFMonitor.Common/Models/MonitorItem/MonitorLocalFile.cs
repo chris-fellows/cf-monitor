@@ -6,7 +6,7 @@ using System.Xml.Serialization;
 namespace CFMonitor.Models.MonitorItems
 {
     /// <summary>
-    /// Settings for monitoring a local file
+    /// Settings for monitoring a local file. Can optionally check file content for particular text.
     /// </summary>
     [XmlType("MonitorFile")]
     public class MonitorLocalFile : MonitorItem
@@ -15,8 +15,9 @@ namespace CFMonitor.Models.MonitorItems
 
         [XmlAttribute("FileName")]
         public string FileName { get; set; }
+
         [XmlAttribute("FindText")]
-        public string FindText { get; set; }       // Optional text to find
+        public string FindText { get; set; }       // Optional text to find                
 
         public override List<EventConditionSource> GetEventConditionSources()
         {

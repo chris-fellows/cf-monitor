@@ -23,6 +23,21 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Name = "CPU",
+                Description = "Checks CPU",
+                ItemType = MonitorItemTypes.CPU,
+                CheckerType = CheckerTypes.CPU,
+                CreateMonitorItem = () => new MonitorCPU()
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    Name = "CPU [New]",                   
+                    Enabled = true,
+                    EventItems = new List<EventItem>(),
+                    MonitorItemSchedule = new MonitorItemSchedule()
+                }
+            });
+            list.Add(new MonitorItemType()
+            {
                 Name = "DCHP",
                 Description = "Checks that DHCP is working",
                 ItemType = MonitorItemTypes.DHCP,
@@ -47,6 +62,51 @@ namespace CFMonitor.Services
                 CheckerType = CheckerTypes.DNS,
                 CreateMonitorItem = () => new MonitorDNS() { ID = Guid.NewGuid().ToString(), 
                             Name = "DNS [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
+            });
+            list.Add(new MonitorItemType()
+            {
+                Name = "File size",
+                Description = "Checks size of file",
+                ItemType = MonitorItemTypes.FileSize,
+                CheckerType = CheckerTypes.FileSize,
+                CreateMonitorItem = () => new MonitorFileSize()
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    Name = "File size [New]",
+                    Enabled = true,
+                    EventItems = new List<EventItem>(),
+                    MonitorItemSchedule = new MonitorItemSchedule()
+                }
+            });
+            list.Add(new MonitorItemType()
+            {
+                Name = "Folder size",
+                Description = "Checks size of folder",
+                ItemType = MonitorItemTypes.FolderSize,
+                CheckerType = CheckerTypes.FolderSize,
+                CreateMonitorItem = () => new MonitorFolderSize()
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    Name = "Folder size [New]",
+                    Enabled = true,
+                    EventItems = new List<EventItem>(),
+                    MonitorItemSchedule = new MonitorItemSchedule()
+                }
+            });
+            list.Add(new MonitorItemType()
+            {
+                Name = "IMAP",
+                Description = "Checks connection to IMAP server",
+                ItemType = MonitorItemTypes.IMAP,
+                CheckerType = CheckerTypes.IMAP,
+                CreateMonitorItem = () => new MonitorIMAP()
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    Name = "IMAP [New]",
+                    Enabled = true,
+                    EventItems = new List<EventItem>(),
+                    MonitorItemSchedule = new MonitorItemSchedule()
+                }
             });
             list.Add(new MonitorItemType()
             {
@@ -86,13 +146,43 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Name = "NTP time",
+                Description = "Checks time with NTP server",
+                ItemType = MonitorItemTypes.NTP,
+                CheckerType = CheckerTypes.NTP,
+                CreateMonitorItem = () => new MonitorNTP()
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    Name = "NTP [New]",
+                    Enabled = true,
+                    EventItems = new List<EventItem>(),
+                    MonitorItemSchedule = new MonitorItemSchedule()
+                }
+            });
+            list.Add(new MonitorItemType()
+            {
                 Name = "Ping",
                 Description = "Pings endpoint",
                 ItemType = MonitorItemTypes.Ping,
                 CheckerType = CheckerTypes.Ping,
                 CreateMonitorItem = () => new MonitorPing() { ID = Guid.NewGuid().ToString(), 
                             Name = "Ping [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
-            });            
+            });
+            list.Add(new MonitorItemType()
+            {
+                Name = "POP",
+                Description = "Checks connection to POP server",
+                ItemType = MonitorItemTypes.POP,
+                CheckerType = CheckerTypes.POP,
+                CreateMonitorItem = () => new MonitorPOP()
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    Name = "POP [New]",
+                    Enabled = true,
+                    EventItems = new List<EventItem>(),
+                    MonitorItemSchedule = new MonitorItemSchedule()
+                }
+            });
             list.Add(new MonitorItemType()
             {
                 Name = "Registry",

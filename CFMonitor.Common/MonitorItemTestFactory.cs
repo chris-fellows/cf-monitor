@@ -21,7 +21,7 @@ namespace CFMonitor
             items.Add(CreateTestSQLServiceMonitor());
             items.Add(CreateTestMonitorPing());
             items.Add(CreateTestMonitorSQL());
-            items.Add(CreateTestMonitorFile());
+            items.Add(CreateTestMonitorLocalFile());
             items.Add(CreateTestMonitorProcess());
             return items;
         }
@@ -83,7 +83,7 @@ namespace CFMonitor
             return monitorProcess;
         }
 
-        private static MonitorLocalFile CreateTestMonitorFile()
+        private static MonitorLocalFile CreateTestMonitorLocalFile()
         {
             MonitorLocalFile monitorFile = new MonitorLocalFile()
             {

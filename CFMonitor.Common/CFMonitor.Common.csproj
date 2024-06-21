@@ -49,15 +49,21 @@
     <Compile Include="Actioners\ActionerSMS.cs" />
     <Compile Include="Actioners\ActionerSQL.cs" />
     <Compile Include="Actioners\ActionerURL.cs" />
+    <Compile Include="Checkers\CheckerCPU.cs" />
     <Compile Include="Checkers\CheckerDHCP.cs" />
     <Compile Include="Checkers\CheckerDiskSpace.cs" />
     <Compile Include="Checkers\CheckerDNS.cs" />
+    <Compile Include="Checkers\CheckerFileSize.cs" />
+    <Compile Include="Checkers\CheckerFolderSize.cs" />
     <Compile Include="Checkers\CheckerLocalFile.cs" />
     <Compile Include="Checkers\CheckerJSON.cs" />
     <Compile Include="Checkers\CheckerLDAP.cs" />
     <Compile Include="Checkers\CheckerMemory.cs" />
+    <Compile Include="Checkers\CheckerNTP.cs" />
     <Compile Include="Checkers\CheckerPing.cs" />
     <Compile Include="Checkers\CheckerActiveProcess.cs" />
+    <Compile Include="Checkers\CheckerIMAP.cs" />
+    <Compile Include="Checkers\CheckerPOP.cs" />
     <Compile Include="Checkers\CheckerRegistry.cs" />
     <Compile Include="Checkers\CheckerREST.cs" />
     <Compile Include="Checkers\CheckerRunProcess.cs" />
@@ -67,7 +73,6 @@
     <Compile Include="Checkers\CheckerSocket.cs" />
     <Compile Include="Checkers\CheckerSQL.cs" />
     <Compile Include="Checkers\CheckerURL.cs" />
-    <Compile Include="Constants\MonitorItemTypeInternalNames.cs" />
     <Compile Include="Enums\ActionerTypes.cs" />
     <Compile Include="Enums\CheckerTypes.cs" />
     <Compile Include="Enums\ConditionOperators.cs" />
@@ -100,9 +105,15 @@
     <Compile Include="Models\MonitorAgent.cs" />
     <Compile Include="Models\MonitorItemSchedule.cs" />
     <Compile Include="Models\MonitorItemType.cs" />
+    <Compile Include="Models\MonitorItem\MonitorCPU.cs" />
     <Compile Include="Models\MonitorItem\MonitorDHCP.cs" />
     <Compile Include="Models\MonitorItem\MonitorDiskSpace.cs" />
     <Compile Include="Models\MonitorItem\MonitorDNS.cs" />
+    <Compile Include="Models\MonitorItem\MonitorFileSize.cs" />
+    <Compile Include="Models\MonitorItem\MonitorFolderSize.cs" />
+    <Compile Include="Models\MonitorItem\MonitorIMAP.cs" />
+    <Compile Include="Models\MonitorItem\MonitorNTP.cs" />
+    <Compile Include="Models\MonitorItem\MonitorPOP.cs" />
     <Compile Include="Models\MonitorItem\MonitorRunProcess.cs" />
     <Compile Include="Models\MonitorItem\MonitorLocalFile.cs" />
     <Compile Include="Models\MonitorItem\MonitorItem.cs" />
@@ -127,7 +138,9 @@
     <Compile Include="Services\MonitorItemService.cs" />
     <Compile Include="Services\MonitorItemTypeService.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Constants\" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\cf-utilities\CFUtilities\CFUtilities.csproj">
       <Project>{35d2f2d8-23f9-40c7-9905-0ebbc6bf61e5}</Project>

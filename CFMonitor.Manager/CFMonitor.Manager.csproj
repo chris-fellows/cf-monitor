@@ -13,6 +13,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -25,7 +26,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -186,6 +186,12 @@
     <Compile Include="Controls\MonitorActiveProcessControl.Designer.cs">
       <DependentUpon>MonitorActiveProcessControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\MonitorCPUControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MonitorCPUControl.Designer.cs">
+      <DependentUpon>MonitorCPUControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\MonitorDHCPControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -203,6 +209,24 @@
     </Compile>
     <Compile Include="Controls\MonitorDNSControl.Designer.cs">
       <DependentUpon>MonitorDNSControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MonitorFileSizeControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MonitorFileSizeControl.Designer.cs">
+      <DependentUpon>MonitorFileSizeControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MonitorFolderSizeControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MonitorFolderSizeControl.Designer.cs">
+      <DependentUpon>MonitorFolderSizeControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MonitorIMAPControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MonitorIMAPControl.Designer.cs">
+      <DependentUpon>MonitorIMAPControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Controls\MonitorItemControl.cs">
       <SubType>UserControl</SubType>
@@ -228,11 +252,23 @@
     <Compile Include="Controls\MonitorMemoryControl.Designer.cs">
       <DependentUpon>MonitorMemoryControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\MonitorNTPControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MonitorNTPControl.Designer.cs">
+      <DependentUpon>MonitorNTPControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\MonitorPingControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Controls\MonitorPingControl.Designer.cs">
       <DependentUpon>MonitorPingControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MonitorPOPControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\MonitorPOPControl.Designer.cs">
+      <DependentUpon>MonitorPOPControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Controls\MonitorRegistryControl.cs">
       <SubType>UserControl</SubType>
@@ -295,6 +331,9 @@
     <EmbeddedResource Include="Controls\MonitorActiveProcessControl.resx">
       <DependentUpon>MonitorActiveProcessControl.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MonitorCPUControl.resx">
+      <DependentUpon>MonitorCPUControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\MonitorDHCPControl.resx">
       <DependentUpon>MonitorDHCPControl.cs</DependentUpon>
     </EmbeddedResource>
@@ -303,6 +342,15 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\MonitorDNSControl.resx">
       <DependentUpon>MonitorDNSControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MonitorFileSizeControl.resx">
+      <DependentUpon>MonitorFileSizeControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MonitorFolderSizeControl.resx">
+      <DependentUpon>MonitorFolderSizeControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MonitorIMAPControl.resx">
+      <DependentUpon>MonitorIMAPControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\MonitorItemControl.resx">
       <DependentUpon>MonitorItemControl.cs</DependentUpon>
@@ -316,8 +364,14 @@
     <EmbeddedResource Include="Controls\MonitorMemoryControl.resx">
       <DependentUpon>MonitorMemoryControl.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MonitorNTPControl.resx">
+      <DependentUpon>MonitorNTPControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\MonitorPingControl.resx">
       <DependentUpon>MonitorPingControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MonitorPOPControl.resx">
+      <DependentUpon>MonitorPOPControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\MonitorRegistryControl.resx">
       <DependentUpon>MonitorRegistryControl.cs</DependentUpon>

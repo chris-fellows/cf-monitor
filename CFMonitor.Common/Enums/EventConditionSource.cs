@@ -21,6 +21,18 @@
         SQLReturnsRows = 16,
         SQLReturnsNoRows = 17,
         WebExceptionStatus = 18,
-        RunProcessExitCodeReturned = 19
+        RunProcessExitCodeReturned = 19,
+        NTPTimeInTolerance = 20,
+        NTPTimeOutsideTolerance = 21,
+        CPUInTolerance = 22,
+        CPUOutsideTolerance = 23,
+        FolderSizeInTolerance = 24,
+        FolderSizeOutsideTolerance = 25,
+        FileSizeInTolerance = 26,
+        FileSizeOutsideTolerance = 27,
+        POPConnected = 28,
+        POPConnectError = 29,
+        IMAPConnected = 30,
+        IMAPConnectError = 31
     }
 }

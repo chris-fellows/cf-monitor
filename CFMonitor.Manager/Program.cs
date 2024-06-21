@@ -15,7 +15,7 @@ namespace CFMonitor
         /// </summary>
         [STAThread]
         static void Main()
-        {            
+       {            
             var host = CreateHostBuilder().Build();
             ServiceProvider = host.Services;
 

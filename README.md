@@ -20,11 +20,15 @@ Monitor Items
 -------------
 The following items can be monitored:
 - Active process. E.g. Check that a particular process is running.
+- CPU.
 - DHCP.
 - Disk space.
 - DNS.
+- File size.
+- Folder size.
 - LDAP.
 - Local file. E.g. Check that overnight process has created a log file for current day and it contains "COMPLETED SUCCESSFULLY".
+- NTP time.
 - Memory.
 - Ping.
 - Process.

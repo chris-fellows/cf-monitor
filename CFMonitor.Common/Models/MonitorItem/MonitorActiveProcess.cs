@@ -14,6 +14,7 @@ namespace CFMonitor.Models.MonitorItems
 
         [XmlAttribute("MachineName")]
         public string MachineName { get; set; }
+
         [XmlAttribute("FileName")]
         public string FileName { get; set; }
 

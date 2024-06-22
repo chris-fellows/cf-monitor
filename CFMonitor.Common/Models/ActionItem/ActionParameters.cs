@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using CFMonitor.Common.Enums;
+using CFMonitor.Enums;
+using System.Collections.Generic;
 
 namespace CFMonitor.Models.ActionItems
 {
     public class ActionParameters
     {
-        public Dictionary<string, object> Values = new Dictionary<string, object>();
+        public Dictionary<ActionParameterTypes, object> Values = new Dictionary<ActionParameterTypes, object>();
     }
 }

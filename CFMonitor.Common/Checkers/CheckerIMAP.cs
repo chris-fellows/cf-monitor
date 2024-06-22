@@ -18,7 +18,7 @@ namespace CFMonitor.Checkers
 
         public CheckerTypes CheckerType => CheckerTypes.IMAP;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
             MonitorIMAP monitorIMAP = (MonitorIMAP)monitorItem;
             Exception exception = null;
@@ -36,7 +36,7 @@ namespace CFMonitor.Checkers
             try
             {
                 // Check events
-                actionParameters.Values.Add("Body", "Error checking IMAP server");
+                actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking IMAP server");
                 CheckEvents(actionerList, monitorIMAP, actionParameters, exception);
             }
             catch (System.Exception ex)

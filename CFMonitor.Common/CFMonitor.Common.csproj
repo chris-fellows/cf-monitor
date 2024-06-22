@@ -42,10 +42,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actioners\ActionerConsole.cs" />
     <Compile Include="Actioners\ActionerDatadogWarning.cs" />
     <Compile Include="Actioners\ActionerEmail.cs" />
+    <Compile Include="Actioners\ActionerEventLog.cs" />
     <Compile Include="Actioners\ActionerLog.cs" />
+    <Compile Include="Actioners\ActionerMachineRestart.cs" />
     <Compile Include="Actioners\ActionerProcess.cs" />
+    <Compile Include="Actioners\ActionerServiceRestart.cs" />
     <Compile Include="Actioners\ActionerSMS.cs" />
     <Compile Include="Actioners\ActionerSQL.cs" />
     <Compile Include="Actioners\ActionerURL.cs" />
@@ -74,6 +78,7 @@
     <Compile Include="Checkers\CheckerSQL.cs" />
     <Compile Include="Checkers\CheckerURL.cs" />
     <Compile Include="Enums\ActionerTypes.cs" />
+    <Compile Include="Enums\ActionParameterTypes.cs" />
     <Compile Include="Enums\CheckerTypes.cs" />
     <Compile Include="Enums\ConditionOperators.cs" />
     <Compile Include="Enums\EventConditionSource.cs" />
@@ -88,12 +93,16 @@
     <Compile Include="Interfaces\IMonitorItemService.cs" />
     <Compile Include="Interfaces\IMonitorItemsStatus.cs" />
     <Compile Include="Interfaces\IMonitorItemTypeService.cs" />
+    <Compile Include="Models\ActionItem\ActionConsole.cs" />
     <Compile Include="Models\ActionItem\ActionDatadogWarning.cs" />
     <Compile Include="Models\ActionItem\ActionEmail.cs" />
+    <Compile Include="Models\ActionItem\ActionEventLog.cs" />
     <Compile Include="Models\ActionItem\ActionItem.cs" />
     <Compile Include="Models\ActionItem\ActionLog.cs" />
+    <Compile Include="Models\ActionItem\ActionMachineRestart.cs" />
     <Compile Include="Models\ActionItem\ActionParameters.cs" />
     <Compile Include="Models\ActionItem\ActionProcess.cs" />
+    <Compile Include="Models\ActionItem\ActionServiceRestart.cs" />
     <Compile Include="Models\ActionItem\ActionSMS.cs" />
     <Compile Include="Models\ActionItem\ActionSQL.cs" />
     <Compile Include="Models\ActionItem\ActionURL.cs" />

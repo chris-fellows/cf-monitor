@@ -19,7 +19,7 @@ namespace CFMonitor.Checkers
 
         public CheckerTypes CheckerType => CheckerTypes.URL;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
             MonitorURL monitorURL = (MonitorURL)monitorItem;
             HttpWebRequest request = null;
@@ -43,7 +43,7 @@ namespace CFMonitor.Checkers
             try
             {
                 // Check events
-                actionParameters.Values.Add("Body", "Error checking URL");
+                actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking URL");
                 CheckEvents(actionerList, monitorURL, actionParameters, exception, request, response);
             }
             catch(System.Exception ex)

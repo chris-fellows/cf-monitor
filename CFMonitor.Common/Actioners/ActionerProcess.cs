@@ -21,8 +21,12 @@ namespace CFMonitor.Actioners
             ActionProcess actionProcess = (ActionProcess)actionItem;
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.FileName = actionProcess.FileName;                     
-            Process.Start(startInfo);
+            var process = Process.Start(startInfo);
 
+            // Wait for completion
+            process.WaitForExit();
+
+            
             return Task.CompletedTask;
         }
 

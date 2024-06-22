@@ -16,6 +16,9 @@ namespace CFMonitor.Models.MonitorItems
         [XmlAttribute("Server")]
         public string Server { get; set; }
 
+        [XmlAttribute("MaxToleranceSecs")]
+        public int MaxToleranceSecs { get; set; }
+
         public override List<EventConditionSource> GetEventConditionSources()
         {
             return new List<EventConditionSource>()

@@ -28,7 +28,7 @@ The following items can be monitored:
 - Folder size.
 - LDAP.
 - Local file. E.g. Check that overnight process has created a log file for current day and it contains "COMPLETED SUCCESSFULLY".
-- NTP time.
+- NTP time and machine time are within tolerance.
 - Memory.
 - Ping.
 - Process.
@@ -47,8 +47,11 @@ Actions
 The following actions can be taken if the conditions for the monitor item event is valid:
 - Datadog warning.
 - Email.
+- Event Log entry.
 - Log entry.
+- Machine restart.
 - Process launched.
+- Service restart.
 - SMS message.
 - SQL statement executed.
 - HTTP endpoint.

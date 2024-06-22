@@ -18,7 +18,7 @@ namespace CFMonitor.Checkers
 
         public CheckerTypes CheckerType => CheckerTypes.NTP;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
             MonitorNTP monitorNTP = (MonitorNTP)monitorItem;
             Exception exception = null;
@@ -36,7 +36,7 @@ namespace CFMonitor.Checkers
             try
             {
                 // Check events
-                actionParameters.Values.Add("Body", "Error checking NTP time");
+                actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking NTP time");
                 CheckEvents(actionerList, monitorNTP, actionParameters, exception);
             }
             catch (System.Exception ex)

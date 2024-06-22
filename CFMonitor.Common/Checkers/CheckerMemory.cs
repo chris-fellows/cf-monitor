@@ -18,7 +18,7 @@ namespace CFMonitor.Checkers
 
         public CheckerTypes CheckerType => CheckerTypes.Memory;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
             MonitorMemory monitorMemory = (MonitorMemory)monitorItem;
             Exception exception = null;       

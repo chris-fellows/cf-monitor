@@ -19,7 +19,7 @@ namespace CFMonitor.Checkers
 
         public CheckerTypes CheckerType => CheckerTypes.FileSize;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
             MonitorFileSize monitorFileSize = (MonitorFileSize)monitorItem;
             Exception exception = null;
@@ -28,8 +28,11 @@ namespace CFMonitor.Checkers
 
             try
             {
-                var fileInfo = new FileInfo(monitorFileSize.File);
-                fileSize = fileInfo.Length;
+                if (File.Exists(monitorFileSize.File))
+                {
+                    var fileInfo = new FileInfo(monitorFileSize.File);
+                    fileSize = fileInfo.Length;
+                }
             }
             catch (System.Exception ex)
             {
@@ -39,7 +42,7 @@ namespace CFMonitor.Checkers
             try
             {
                 // Check events
-                actionParameters.Values.Add("Body", "Error checking file size");
+                actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking file size");
                 CheckEvents(actionerList, monitorFileSize, actionParameters, exception, fileSize);
             }
             catch (System.Exception ex)

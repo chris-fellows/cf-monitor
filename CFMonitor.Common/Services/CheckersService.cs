@@ -8,6 +8,7 @@ namespace CFMonitor.Services
     {
         public List<IChecker> GetAll()
         {
+            // TODO: Use reflection / DI
             List<IChecker> checkerList = new List<IChecker>();
             checkerList.Add(new CheckerActiveProcess());
             checkerList.Add(new CheckerDHCP());

@@ -23,7 +23,7 @@ namespace CFMonitor.Checkers
 
         public CheckerTypes CheckerType => CheckerTypes.SQL;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
             MonitorSQL monitorSQL = (MonitorSQL)monitorItem;
             Exception exception = null;
@@ -46,7 +46,7 @@ namespace CFMonitor.Checkers
             try
             {
                 // Check events
-                actionParameters.Values.Add("Body", "Error checking SQL");
+                actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking SQL");
                 CheckEvents(actionerList, monitorSQL, actionParameters, exception, reader);
             }
             catch (System.Exception ex)

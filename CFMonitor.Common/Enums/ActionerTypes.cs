@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CFMonitor.Enums
+﻿namespace CFMonitor.Enums
 {
     public enum  ActionerTypes : byte
     {
+        Console,
         DatadogWarning,
         Email,
+        EventLog,
         Log,
         Process,
+        MachineRestart,
+        ServiceRestart,
         SMS,
         SQL,
         URL

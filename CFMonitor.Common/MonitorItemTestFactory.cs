@@ -17,12 +17,17 @@ namespace CFMonitor
         public static List<MonitorItem> Create()
         {
             var items = new List<MonitorItem>();
+            items.Add(CreateTestMonitorCPU());
+            items.Add(CreateTestMonitorFileSize());
+            items.Add(CreateTestMonitorFolderSize());
             items.Add(CreateTestMonitorURL());
+            items.Add(CreateTestMonitorMemory());
+            items.Add(CreateTestMonitorNTP());
             items.Add(CreateTestSQLServiceMonitor());
             items.Add(CreateTestMonitorPing());
             items.Add(CreateTestMonitorSQL());
             items.Add(CreateTestMonitorLocalFile());
-            items.Add(CreateTestMonitorProcess());
+            items.Add(CreateTestMonitorActiveProcess());
             return items;
         }
 
@@ -56,7 +61,7 @@ namespace CFMonitor
             return monitorSQL;
         }
 
-        private static MonitorActiveProcess CreateTestMonitorProcess()
+        private static MonitorActiveProcess CreateTestMonitorActiveProcess()
         {
             MonitorActiveProcess monitorProcess = new MonitorActiveProcess()
             {
@@ -117,7 +122,7 @@ namespace CFMonitor
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Ping Google",
-                Server = "www.google.co.uk"
+                Server = "google.co.uk"
             };
 
             // Set schedule
@@ -136,7 +141,6 @@ namespace CFMonitor
 
         private static MonitorURL CreateTestMonitorURL()
         {
-
             MonitorURL monitorURL = new MonitorURL()
             {
                 ID = GetNewMonitorItemID(),
@@ -190,14 +194,173 @@ namespace CFMonitor
 
         private static ActionEmail CreateDefaultActionEmail(string subject, string body)
         {
-            ActionEmail actionEmail = new ActionEmail()
+            ActionEmail action = new ActionEmail()
             {
                 Subject = subject,
                 Body = body
             };
-            actionEmail.RecipientList.Add(MonitorItemTestFactory.DeveloperEmail);
-            actionEmail.Server = "MyEmailServer";
-            return actionEmail;
+            action.RecipientList.Add(MonitorItemTestFactory.DeveloperEmail);
+            action.Server = "MyEmailServer";
+            return action;
+        }
+
+        private static ActionLog CreateDefaultActionLog(string body)
+        {
+            ActionLog action = new ActionLog()
+            {
+                LogFileName = "D:\\Temp\\Logs\\MyLog.txt"
+            };            
+            return action;
+        }
+
+        private static ActionConsole CreateDefaultActionConsole(string body)
+        {
+            ActionConsole action = new ActionConsole()
+            {
+                
+            };
+            return action;
+        }
+
+        private static MonitorFolderSize CreateTestMonitorFolderSize()
+        {
+            MonitorFolderSize monitorFolderSize = new MonitorFolderSize()
+            {
+                ID = GetNewMonitorItemID(),
+                Enabled = true,
+                Name = "Monitor folder size",
+                Folder = "D:\\Temp",
+                MaxFolderSizeBytes = 50000
+            };
+
+            // Set schedule
+            monitorFolderSize.MonitorItemSchedule.Times = "60sec";
+
+            // Add event for Status not success
+            //EventItem eventItem1 = new EventItem();
+            //eventItem1.EventCondition.Source = "OnProcessRunning";
+            //monitorProcess.EventItems.Add(eventItem1);
+            //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
+
+            EventItem eventItem2 = new EventItem();
+            eventItem2.EventCondition.Source = EventConditionSource.FolderSizeOutsideTolerance;
+            monitorFolderSize.EventItems.Add(eventItem2);
+            eventItem2.ActionItems.Add(CreateDefaultActionEmail("Folder size above threshold",
+                            "The folder size is above the threshold"));
+
+            return monitorFolderSize;
+        }
+
+        private static MonitorFileSize CreateTestMonitorFileSize()
+        {
+            MonitorFileSize monitorFileSize = new MonitorFileSize()
+            {
+                ID = GetNewMonitorItemID(),
+                Enabled = true,
+                Name = "Monitor test log file size",
+                File = "D:\\Temp\\Test.log",
+                MaxFileSizeBytes = 50000
+            };
+
+            // Set schedule
+            monitorFileSize.MonitorItemSchedule.Times = "60sec";
+
+            // Add event for Status not success
+            //EventItem eventItem1 = new EventItem();
+            //eventItem1.EventCondition.Source = "OnProcessRunning";
+            //monitorProcess.EventItems.Add(eventItem1);
+            //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
+
+            EventItem eventItem2 = new EventItem();
+            eventItem2.EventCondition.Source = EventConditionSource.FileSizeOutsideTolerance;
+            monitorFileSize.EventItems.Add(eventItem2);
+            eventItem2.ActionItems.Add(CreateDefaultActionEmail("File size above threshold",
+                            "The file size is above the threshold"));
+
+            return monitorFileSize;
+        }
+
+        private static MonitorCPU CreateTestMonitorCPU()
+        {
+            MonitorCPU monitorCPU = new MonitorCPU()
+            {
+                ID = GetNewMonitorItemID(),
+                Enabled = true,
+                Name = "Check CPU",
+                Server = Environment.MachineName               
+            };
+
+            // Set schedule
+            monitorCPU.MonitorItemSchedule.Times = "60sec";
+
+            // Add event for Status not success
+            //EventItem eventItem1 = new EventItem();
+            //eventItem1.EventCondition.Source = "OnProcessRunning";
+            //monitorProcess.EventItems.Add(eventItem1);
+            //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
+
+            EventItem eventItem2 = new EventItem();
+            eventItem2.EventCondition.Source = EventConditionSource.CPUOutsideTolerance;
+            monitorCPU.EventItems.Add(eventItem2);
+            eventItem2.ActionItems.Add(CreateDefaultActionEmail("CPU above threshold",
+                            "The CPU is above the threshold"));
+                        
+            return monitorCPU;
+        }
+
+        private static MonitorMemory CreateTestMonitorMemory()
+        {
+            MonitorMemory monitorMemory = new MonitorMemory()
+            {
+                ID = GetNewMonitorItemID(),
+                Enabled = true,
+                Name = "Check memory"                
+            };
+
+            // Set schedule
+            monitorMemory.MonitorItemSchedule.Times = "60sec";
+
+            // Add event for Status not success
+            //EventItem eventItem1 = new EventItem();
+            //eventItem1.EventCondition.Source = "OnProcessRunning";
+            //monitorProcess.EventItems.Add(eventItem1);
+            //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
+
+            EventItem eventItem2 = new EventItem();
+            eventItem2.EventCondition.Source = EventConditionSource.MemoryOutsideTolerance;
+            monitorMemory.EventItems.Add(eventItem2);
+            eventItem2.ActionItems.Add(CreateDefaultActionEmail("Memory use above threshold",
+                            "The memory use is above the threshold"));
+
+            return monitorMemory;
+        }
+
+        private static MonitorNTP CreateTestMonitorNTP()
+        {
+            MonitorNTP monitorNTP = new MonitorNTP()
+            {
+                ID = GetNewMonitorItemID(),
+                Enabled = true,
+                Name = "Check NTP time",
+                MaxToleranceSecs = 30
+            };
+
+            // Set schedule
+            monitorNTP.MonitorItemSchedule.Times = "60sec";
+
+            // Add event for Status not success
+            //EventItem eventItem1 = new EventItem();
+            //eventItem1.EventCondition.Source = "OnProcessRunning";
+            //monitorProcess.EventItems.Add(eventItem1);
+            //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
+
+            EventItem eventItem2 = new EventItem();
+            eventItem2.EventCondition.Source = EventConditionSource.NTPTimeOutsideTolerance;
+            monitorNTP.EventItems.Add(eventItem2);
+            eventItem2.ActionItems.Add(CreateDefaultActionEmail("Machine time incorrect",
+                            "The machine time is different from the NTP server and outside the threshold"));
+
+            return monitorNTP;
         }
     }
 }

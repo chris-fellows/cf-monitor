@@ -22,7 +22,7 @@ namespace CFMonitor.Actioners
             MailMessage message = new MailMessage()
             {
                 Subject = actionEmail.Subject,
-                Body = actionParameters.Values["Body"].ToString(),
+                Body = actionParameters.Values[ActionParameterTypes.Body].ToString(),
                 IsBodyHtml = true,               
             };
 

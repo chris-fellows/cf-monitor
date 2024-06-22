@@ -244,7 +244,7 @@ namespace CFMonitor.AgentService
             IChecker checker = _checkersService.GetAll().First(c => c.CheckerType == monitorItemType.CheckerType);
                             
             // Check
-            var task = checker.CheckAsync(monitorItem, actioners);                
+            var task = checker.CheckAsync(monitorItem, actioners, false);                
             
             return task;
         }    

@@ -19,7 +19,7 @@ namespace CFMonitor.Checkers
 
         public CheckerTypes CheckerType => CheckerTypes.Service;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
             MonitorService monitorService = (MonitorService)monitorItem;
             ServiceController serviceController = null;
@@ -49,7 +49,7 @@ namespace CFMonitor.Checkers
             try
             {
                 // Check events
-                actionParameters.Values.Add("Body", "Error checking service");
+                actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking service");
                 CheckEvents(actionerList, monitorService, actionParameters, exception, serviceController);
             }
             catch (System.Exception ex)

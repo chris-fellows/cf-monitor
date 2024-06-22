@@ -1,5 +1,8 @@
 ﻿namespace CFMonitor.Enums
 {
+    /// <summary>
+    /// What to check when determining if an event condition is true
+    /// </summary>
     public enum EventConditionSource
     {
         Exception = 0,
@@ -30,9 +33,11 @@
         FolderSizeOutsideTolerance = 25,
         FileSizeInTolerance = 26,
         FileSizeOutsideTolerance = 27,
-        POPConnected = 28,
-        POPConnectError = 29,
-        IMAPConnected = 30,
-        IMAPConnectError = 31
+        MemoryInTolerance = 28,
+        MemoryOutsideTolerance = 29,
+        POPConnected = 30,
+        POPConnectError = 31,
+        IMAPConnected = 32,
+        IMAPConnectError = 33
     }
 }

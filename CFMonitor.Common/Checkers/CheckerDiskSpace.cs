@@ -19,7 +19,7 @@ namespace CFMonitor.Checkers
 
         public CheckerTypes CheckerType => CheckerTypes.DiskSpace;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList)
+        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
             MonitorDiskSpace monitorDiskSpace = (MonitorDiskSpace)monitorItem;
             Exception exception = null;

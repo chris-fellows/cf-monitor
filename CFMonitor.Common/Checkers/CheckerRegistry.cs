@@ -20,7 +20,7 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorRegistry monitorRegistry = (MonitorRegistry)monitorItem;
+            //MonitorRegistry monitorRegistry = (MonitorRegistry)monitorItem;
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
 
@@ -35,7 +35,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                CheckEvents(actionerList, monitorRegistry, actionParameters, exception);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception);
             }
             catch (Exception ex)
             {
@@ -47,10 +47,10 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorRegistry;
+            return monitorItem.MonitorItemType == MonitorItemTypes.Registry;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorRegistry monitorRegistry, ActionParameters actionParameters, Exception exception)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorRegistry, ActionParameters actionParameters, Exception exception)
         {
             foreach (EventItem eventItem in monitorRegistry.EventItems)
             {

@@ -25,7 +25,11 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorLocalFile monitorFile = (MonitorLocalFile)monitorItem;
+            //MonitorLocalFile monitorFile = (MonitorLocalFile)monitorItem;
+
+            var fileNameParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_LocalFileFileName);
+            var findTextParam = monitorItem.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.MIP_LocalFileFindText);
+
             Exception exception = null;       
             ActionParameters actionParameters = new ActionParameters();
             FileInfo fileInfo = null;
@@ -33,10 +37,10 @@ namespace CFMonitor.Checkers
 
             try
             {                
-                fileInfo = new FileInfo(monitorFile.FileName);
-                if (fileInfo.Exists && !String.IsNullOrEmpty(monitorFile.FindText))
+                fileInfo = new FileInfo(fileNameParam.Value);
+                if (fileInfo.Exists && findTextParam != null && !String.IsNullOrEmpty(findTextParam.Value))
                 {
-                    textFound = File.ReadAllText(monitorFile.FileName).Contains(monitorFile.FindText);
+                    textFound = File.ReadAllText(fileNameParam.Value).Contains(findTextParam.Value);
                 }
             }
             catch (Exception ex)
@@ -46,7 +50,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                CheckEvents(actionerList, monitorFile, actionParameters, exception, fileInfo, textFound);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, fileInfo, textFound);
             }
             catch (Exception ex)
             {
@@ -58,10 +62,10 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorLocalFile;
+            return monitorItem.MonitorItemType == MonitorItemTypes.LocalFile;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorLocalFile monitorFile, ActionParameters actionParameters, Exception exception, FileInfo fileInfo, bool textFound)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorFile, ActionParameters actionParameters, Exception exception, FileInfo fileInfo, bool textFound)
         {           
             foreach (EventItem eventItem in monitorFile.EventItems)
             {

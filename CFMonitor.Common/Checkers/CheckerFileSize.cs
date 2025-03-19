@@ -21,16 +21,19 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorFileSize monitorFileSize = (MonitorFileSize)monitorItem;
+            //MonitorFileSize monitorFileSize = (MonitorFileSize)monitorItem;
+            var fileSizeParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_FileSizeFile);
+            //var fileSizeMaxFileSize = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.FileSizeMaxFileSizeBytes);
+
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
             double? fileSize = null;
 
             try
             {
-                if (File.Exists(monitorFileSize.File))
+                if (File.Exists(fileSizeParam.Value))
                 {
-                    var fileInfo = new FileInfo(monitorFileSize.File);
+                    var fileInfo = new FileInfo(fileSizeParam.Value);
                     fileSize = fileInfo.Length;
                 }
             }
@@ -43,7 +46,7 @@ namespace CFMonitor.Checkers
             {
                 // Check events
                 actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking file size");
-                CheckEvents(actionerList, monitorFileSize, actionParameters, exception, fileSize);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, fileSize);
             }
             catch (System.Exception ex)
             {
@@ -53,8 +56,11 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorFileSize monitorFileSize, ActionParameters actionParameters, Exception exception, double? fileSize)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorFileSize, ActionParameters actionParameters, Exception exception, double? fileSize)
         {
+            var fileSizeMaxFileSize = monitorFileSize.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_FileSizeMaxFileSizeBytes);
+            var maxFileSizeBytes = Convert.ToDouble(fileSizeMaxFileSize.Value);
+
             foreach (EventItem eventItem in monitorFileSize.EventItems)
             {
                 bool meetsCondition = false;
@@ -68,10 +74,10 @@ namespace CFMonitor.Checkers
                         meetsCondition = (exception == null);
                         break;
                     case EventConditionSource.FileSizeInTolerance:
-                        meetsCondition = fileSize != null && fileSize.Value <= monitorFileSize.MaxFileSizeBytes;
+                        meetsCondition = fileSize != null && fileSize.Value <= maxFileSizeBytes;
                         break;
                     case EventConditionSource.FileSizeOutsideTolerance:
-                        meetsCondition = fileSize != null && fileSize.Value > monitorFileSize.MaxFileSizeBytes;
+                        meetsCondition = fileSize != null && fileSize.Value > maxFileSizeBytes;
                         break;
                 }
 
@@ -87,7 +93,7 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorFolderSize;
+            return monitorItem.MonitorItemType == MonitorItemTypes.FileSize;
         }
 
         private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

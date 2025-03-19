@@ -21,14 +21,16 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorDiskSpace monitorDiskSpace = (MonitorDiskSpace)monitorItem;
+            //MonitorDiskSpace monitorDiskSpace = (MonitorDiskSpace)monitorItem;
+            var driveParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_DiskSpaceDrive);
+
             Exception exception = null;
             DriveInfo driveInfo = null;            
             ActionParameters actionParameters = new ActionParameters();
 
             try
             {
-                driveInfo = new DriveInfo(monitorDiskSpace.Name);                             
+                driveInfo = new DriveInfo(driveParam.Value);                             
             }
             catch (Exception ex)
             {
@@ -37,7 +39,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                CheckEvents(actionerList, monitorDiskSpace, actionParameters, exception, driveInfo);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, driveInfo);
             }
             catch (Exception ex)
             {
@@ -49,10 +51,10 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorDiskSpace;
+            return monitorItem.MonitorItemType == MonitorItemTypes.DiskSpace;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorDiskSpace monitorDiskSpace, ActionParameters actionParameters, Exception exception, DriveInfo driveInfo)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorDiskSpace, ActionParameters actionParameters, Exception exception, DriveInfo driveInfo)
         {
             foreach (EventItem eventItem in monitorDiskSpace.EventItems)
             {

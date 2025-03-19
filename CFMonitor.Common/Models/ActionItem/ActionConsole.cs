@@ -1,10 +1,10 @@
-﻿using System.Xml.Serialization;
+﻿//using System.Xml.Serialization;
 
-namespace CFMonitor.Models.ActionItems
-{
-    [XmlType("ActionConsole")]
-    public class ActionConsole : ActionItem
-    {
+//namespace CFMonitor.Models.ActionItems
+//{
+//    [XmlType("ActionConsole")]
+//    public class ActionConsole : ActionItem
+//    {
         
-    }
-}
+//    }
+//}

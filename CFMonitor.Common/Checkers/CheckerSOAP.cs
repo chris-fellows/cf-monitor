@@ -23,7 +23,7 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorSOAP monitorSOAP = (MonitorSOAP)monitorItem;
+            //MonitorSOAP monitorSOAP = (MonitorSOAP)monitorItem;
             Exception exception = null;
             string result = "";
             HttpWebRequest webRequest = null;
@@ -32,7 +32,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                webRequest = CreateWebRequest(monitorSOAP);          
+                webRequest = CreateWebRequest(monitorItem);          
                 webResponse = (HttpWebResponse)webRequest.GetResponse();
                
                 //using (WebResponse response = webRequest.GetResponse())
@@ -50,7 +50,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                CheckEvents(actionerList, monitorSOAP, actionParameters, exception, webRequest, webResponse);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, webRequest, webResponse);
             }
             catch (Exception ex)
             {
@@ -62,10 +62,10 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorSOAP;
+            return monitorItem.MonitorItemType == MonitorItemTypes.SOAP;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorSOAP monitorSOAP, ActionParameters actionParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorSOAP, ActionParameters actionParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
         {
             int webExceptionStatus = -1;
             if (exception is WebException)
@@ -104,9 +104,12 @@ namespace CFMonitor.Checkers
             }
         }
 
-        private HttpWebRequest CreateWebRequest(MonitorSOAP monitorSOAP)
+        private HttpWebRequest CreateWebRequest(MonitorItem monitorSOAP)
         {
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(monitorSOAP.URL);
+            var urlParam = monitorSOAP.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SOAPURL);
+            var xmlParam = monitorSOAP.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SOAPXML);
+
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(urlParam.Value);
             webRequest.Headers.Add(@"SOAP:Action");
             webRequest.ContentType = "text/xml;charset=\"utf-8\"";
             webRequest.Accept = "text/xml";
@@ -114,7 +117,7 @@ namespace CFMonitor.Checkers
 
             // Set SOAP envelope
             XmlDocument envelopeDocument = new XmlDocument();
-            envelopeDocument.LoadXml(monitorSOAP.XML);
+            envelopeDocument.LoadXml(xmlParam.Value);
             using (Stream stream = webRequest.GetRequestStream())
             {
                 envelopeDocument.Save(stream);

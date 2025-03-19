@@ -18,7 +18,7 @@ namespace CFMonitor.Actioners
 
         public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
         {
-            ActionDatadogWarning actionDatadogWarning = (ActionDatadogWarning)actionItem;
+            //ActionDatadogWarning actionDatadogWarning = (ActionDatadogWarning)actionItem;
 
             throw new NotImplementedException();
 
@@ -27,7 +27,7 @@ namespace CFMonitor.Actioners
          
         public bool CanExecute(ActionItem actionItem)
         {
-            return actionItem is ActionDatadogWarning;
+            return actionItem.ActionerType == ActionerTypes.DatadogWarning;
         }
     }
 }

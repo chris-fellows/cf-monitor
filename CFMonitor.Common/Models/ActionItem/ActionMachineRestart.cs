@@ -1,10 +1,10 @@
-﻿using System.Xml.Serialization;
+﻿//using System.Xml.Serialization;
 
-namespace CFMonitor.Models.ActionItems
-{
-    [XmlType("ActionMachineRestart")]
-    public class ActionMachineRestart : ActionItem
-    {
+//namespace CFMonitor.Models.ActionItems
+//{
+//    [XmlType("ActionMachineRestart")]
+//    public class ActionMachineRestart : ActionItem
+//    {
         
-    }
-}
+//    }
+//}

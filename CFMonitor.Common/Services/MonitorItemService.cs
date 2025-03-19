@@ -1,15 +1,18 @@
 ﻿using CFMonitor.Interfaces;
 using CFMonitor.Models.MonitorItems;
-using CFUtilities.XML;
+using CFWebServer.Services;
 
 namespace CFMonitor.Services
 {
     /// <summary>
     /// Service for storing MonitorItem instances in XML format
     /// </summary>
-    public class MonitorItemService : XmlItemRepository<MonitorItem, string>, IMonitorItemService
+    public class MonitorItemService : XmlEntityWithIdStoreService<MonitorItem, string>, IMonitorItemService
     {
-        public MonitorItemService(string folder) : base(folder, (MonitorItem monitorItem) => monitorItem.ID)
+        public MonitorItemService(string folder) : base(folder,
+                                                "MonitorItem.*.xml",
+                                              (monitorItem) => $"MonitorAgent.{monitorItem.ID}.xml",
+                                                (monitorItemId) => $"MonitorAgent.{monitorItemId}.xml")
         {
 
         }

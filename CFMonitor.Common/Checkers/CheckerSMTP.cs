@@ -23,7 +23,10 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorSMTP monitorSMTP = (MonitorSMTP)monitorItem;
+            //MonitorSMTP monitorSMTP = (MonitorSMTP)monitorItem;
+            var serverParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SMTPServer);
+            var portParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SMTPPort);
+
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
 
@@ -34,18 +37,18 @@ namespace CFMonitor.Checkers
                           
                     //var server = "smtp.gmail.com";
                     //var port = 465;
-                    client.Connect(monitorSMTP.Server, monitorSMTP.Port);
+                    client.Connect(serverParam.Value, Convert.ToInt32(portParam.Value));
                     // As GMail requires SSL we should use SslStream
                     // If your SMTP server doesn't support SSL you can
                     // work directly with the underlying stream
                     using (var stream = client.GetStream())
                     using (var sslStream = new SslStream(stream))
                     {
-                        sslStream.AuthenticateAsClient(monitorSMTP.Server);
+                        sslStream.AuthenticateAsClient(serverParam.Value);
                         using (var writer = new StreamWriter(sslStream))
                         using (var reader = new StreamReader(sslStream))
                         {
-                            writer.WriteLine("EHLO " + monitorSMTP.Server);
+                            writer.WriteLine("EHLO " + serverParam.Value);
                             writer.Flush();
                             Console.WriteLine(reader.ReadLine());
                             // GMail responds with: 220 mx.google.com ESMTP
@@ -60,7 +63,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                CheckEvents(actionerList, monitorSMTP, actionParameters, exception);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception);
             }
             catch (Exception ex)
             {
@@ -72,10 +75,10 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorSMTP;
+            return monitorItem.MonitorItemType == MonitorItemTypes.SMTP;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorSMTP monitorSMTP, ActionParameters actionParameters, Exception exception)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorSMTP, ActionParameters actionParameters, Exception exception)
         {
             foreach (EventItem eventItem in monitorSMTP.EventItems)
             {

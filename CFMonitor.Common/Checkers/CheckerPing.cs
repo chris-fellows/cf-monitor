@@ -22,7 +22,9 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorPing monitorPing = (MonitorPing)monitorItem;
+            //MonitorPing monitorPing = (MonitorPing)monitorItem;
+            var serverParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_PingServer);
+
             Exception exception = null;
             PingReply pingReply = null;
             ActionParameters actionParameters = new ActionParameters();
@@ -38,7 +40,7 @@ namespace CFMonitor.Checkers
                 string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
                 byte[] buffer = Encoding.ASCII.GetBytes(data);
                 int timeout = 120;
-                pingReply = ping.Send(monitorPing.Server, timeout, buffer, pingOptions);
+                pingReply = ping.Send(serverParam.Value, timeout, buffer, pingOptions);
                 /*
                 if (reply.Status == IPStatus.Success)
                 {                    
@@ -58,7 +60,7 @@ namespace CFMonitor.Checkers
             try
             {
                 // Check events
-                CheckEvents(actionerList, monitorPing, actionParameters, exception, pingReply);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, pingReply);
             }
             catch (System.Exception ex)
             {
@@ -68,7 +70,7 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }        
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorPing monitorPing, ActionParameters actionParameters, Exception exception, PingReply pingReply)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorPing, ActionParameters actionParameters, Exception exception, PingReply pingReply)
         {
             foreach (EventItem eventItem in monitorPing.EventItems)
             {
@@ -99,7 +101,7 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorPing;
+            return monitorItem.MonitorItemType == MonitorItemTypes.Ping;               
         }
 
         private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

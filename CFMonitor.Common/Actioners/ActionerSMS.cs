@@ -18,7 +18,7 @@ namespace CFMonitor.Actioners
 
         public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
         {
-            ActionSMS actionSMS = (ActionSMS)actionItem;
+            //ActionSMS actionSMS = (ActionSMS)actionItem;
 
             throw new NotImplementedException();
 
@@ -27,7 +27,7 @@ namespace CFMonitor.Actioners
 
         public bool CanExecute(ActionItem actionItem)
         {
-            return actionItem is ActionSMS;
+            return actionItem.ActionerType == ActionerTypes.SMS;
         }
     }
 }

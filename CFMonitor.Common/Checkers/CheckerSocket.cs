@@ -21,18 +21,22 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorSocket monitorSocket = (MonitorSocket)monitorItem;
+            //MonitorSocket monitorSocket = (MonitorSocket)monitorItem;
+            var protocolParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SocketProtocol);
+            var portParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SocketPort);
+            var hostParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SocketHost);
+
             Exception exception = null;
             bool connected = false;
             ActionParameters actionParameters = new ActionParameters();
 
             try
             {
-                switch (monitorSocket.Protocol)
+                switch (protocolParam.Value)
                 {
                     case "TCP":
                         TcpSocket tcpSocket = new TcpSocket();
-                        tcpSocket.Connect(monitorSocket.Host, monitorSocket.Port);
+                        tcpSocket.Connect(hostParam.Value, Convert.ToInt32(portParam.Value));
                         connected = tcpSocket.IsConnected;
                         tcpSocket.Disconnect();
                         break;
@@ -49,7 +53,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                CheckEvents(actionerList, monitorSocket, actionParameters, exception, connected);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, connected);
             }
             catch (Exception ex)
             {
@@ -59,7 +63,7 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorSocket monitorSocket, ActionParameters actionParameters, Exception exception, bool connected)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorSocket, ActionParameters actionParameters, Exception exception, bool connected)
         {
             foreach (EventItem eventItem in monitorSocket.EventItems)
             {
@@ -93,7 +97,7 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorSocket;
+            return monitorItem.MonitorItemType == MonitorItemTypes.Socket;
         }
 
         private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

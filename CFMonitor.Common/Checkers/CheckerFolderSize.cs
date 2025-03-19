@@ -22,14 +22,16 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorFolderSize monitorFolderSize = (MonitorFolderSize)monitorItem;
+            //MonitorFolderSize monitorFolderSize = (MonitorFolderSize)monitorItem;
+            var folderParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_FolderSizeFolder);
+
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
             long? folderSize = null;
 
             try
             {
-                if (Directory.Exists(monitorFolderSize.Folder))
+                if (Directory.Exists(folderParam.Value))
                 {
                     folderSize = IOUtilities.GetDirectorySize(monitorFolderSize.Folder);
                 }
@@ -43,7 +45,7 @@ namespace CFMonitor.Checkers
             {
                 // Check events
                 actionParameters.Values.Add("Body", "Error checking folder size");
-                CheckEvents(actionerList, monitorFolderSize, actionParameters, exception, folderSize);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, folderSize);
             }
             catch (System.Exception ex)
             {
@@ -53,8 +55,11 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorFolderSize monitorFolderSize, ActionParameters actionParameters, Exception exception, long? folderSize)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorFolderSize, ActionParameters actionParameters, Exception exception, long? folderSize)
         {
+            var folderSizeMaxFolderSize = monitorFolderSize.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes);
+            var maxFolderSizeBytes = Convert.ToDouble(folderSizeMaxFolderSize.Value);
+
             foreach (EventItem eventItem in monitorFolderSize.EventItems)
             {
                 bool meetsCondition = false;
@@ -68,10 +73,10 @@ namespace CFMonitor.Checkers
                         meetsCondition = (exception == null);
                         break;
                     case EventConditionSource.FolderSizeInTolerance:
-                        meetsCondition = folderSize != null && folderSize.Value <= monitorFolderSize.MaxFolderSizeBytes;
+                        meetsCondition = folderSize != null && folderSize.Value <= maxFolderSizeBytes;
                         break;
                     case EventConditionSource.FolderSizeOutsideTolerance:
-                        meetsCondition = folderSize != null && folderSize.Value > monitorFolderSize.MaxFolderSizeBytes;
+                        meetsCondition = folderSize != null && folderSize.Value > maxFolderSizeBytes;
                         break;
                 }
 
@@ -87,7 +92,7 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorFolderSize;
+            return monitorItem.MonitorItemType == MonitorItemTypes.FolderSize;
         }
 
         private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

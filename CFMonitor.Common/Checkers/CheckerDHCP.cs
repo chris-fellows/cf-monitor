@@ -20,7 +20,7 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {            
-            MonitorDHCP monitorDHCP = (MonitorDHCP)monitorItem;
+            //MonitorDHCP monitorDHCP = (MonitorDHCP)monitorItem;
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
 
@@ -35,7 +35,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                CheckEvents(actionerList, monitorDHCP, actionParameters, exception);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception);
             }
             catch (Exception ex)
             {
@@ -47,10 +47,10 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorDHCP;
+            return monitorItem.MonitorItemType == MonitorItemTypes.DHCP;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorDHCP monitorDHCP, ActionParameters actionParameters, Exception exception)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorDHCP, ActionParameters actionParameters, Exception exception)
         {
             foreach (EventItem eventItem in monitorDHCP.EventItems)
             {

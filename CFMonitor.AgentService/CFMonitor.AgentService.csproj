@@ -60,12 +60,8 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\cf-utilities\CFUtilities\CFUtilities.csproj">
-      <Project>{35d2f2d8-23f9-40c7-9905-0ebbc6bf61e5}</Project>
-      <Name>CFUtilities</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CFMonitor.Common\CFMonitor.Common.csproj">
-      <Project>{2b1b5d52-5734-433e-8e1e-cdc538ef6331}</Project>
+      <Project>{3dc12fe0-d0b4-4fc4-bfa2-9769e2fd3031}</Project>
       <Name>CFMonitor.Common</Name>
     </ProjectReference>
   </ItemGroup>

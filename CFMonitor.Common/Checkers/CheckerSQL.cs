@@ -25,7 +25,10 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorSQL monitorSQL = (MonitorSQL)monitorItem;
+            //MonitorSQL monitorSQL = (MonitorSQL)monitorItem;
+            var connectionStringParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLConnectionString);
+            var queryParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLQuery);
+
             Exception exception = null;
             OleDbDatabase database = null;
             OleDbDataReader reader = null;
@@ -33,9 +36,9 @@ namespace CFMonitor.Checkers
 
             try
             {
-                database = new OleDbDatabase(monitorSQL.ConnectionString);
+                database = new OleDbDatabase(connectionStringParam.Value);
                 database.Open();
-                string sql = System.IO.File.ReadAllText(monitorSQL.QueryFile);
+                string sql = System.IO.File.ReadAllText(queryParam.Value);
                 reader = database.ExecuteReader(System.Data.CommandType.Text, sql, System.Data.CommandBehavior.Default, null);                
             }
             catch (System.Exception ex)
@@ -47,7 +50,7 @@ namespace CFMonitor.Checkers
             {
                 // Check events
                 actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking SQL");
-                CheckEvents(actionerList, monitorSQL, actionParameters, exception, reader);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, reader);
             }
             catch (System.Exception ex)
             {
@@ -68,7 +71,7 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorSQL monitorSQL, ActionParameters actionParameters, Exception exception, OleDbDataReader reader)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorSQL, ActionParameters actionParameters, Exception exception, OleDbDataReader reader)
         {
             bool readerHasRows = (reader != null && reader.Read());
 
@@ -104,7 +107,7 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorSQL;
+            return monitorItem.MonitorItemType == MonitorItemTypes.SQL;
         }
 
         private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

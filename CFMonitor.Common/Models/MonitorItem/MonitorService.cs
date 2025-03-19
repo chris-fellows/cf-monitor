@@ -1,31 +1,31 @@
-﻿using CFMonitor.Enums;
-using System;
-using System.Collections.Generic;
-using System.Xml.Serialization;
+﻿//using CFMonitor.Enums;
+//using System;
+//using System.Collections.Generic;
+//using System.Xml.Serialization;
 
-namespace CFMonitor.Models.MonitorItems
-{
-    /// <summary>
-    /// Settings for monitoring a service
-    /// </summary>
-    [XmlType("MonitorService")]
-    public class MonitorService : MonitorItem
-    {
-        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.Service;
+//namespace CFMonitor.Models.MonitorItems
+//{
+//    /// <summary>
+//    /// Settings for monitoring a service
+//    /// </summary>
+//    [XmlType("MonitorService")]
+//    public class MonitorService : MonitorItem
+//    {
+//        public override MonitorItemTypes MonitorItemType => MonitorItemTypes.Service;
 
-        [XmlAttribute("MachineName")]
-        public string MachineName { get; set; }
-        [XmlAttribute("ServiceName")]
-        public string ServiceName { get; set; }
+//        [XmlAttribute("MachineName")]
+//        public string MachineName { get; set; }
+//        [XmlAttribute("ServiceName")]
+//        public string ServiceName { get; set; }
 
-        public override List<EventConditionSource> GetEventConditionSources()
-        {
-            return new List<EventConditionSource>()
-            {
-                EventConditionSource.Exception,
-                EventConditionSource.NoException,
-                EventConditionSource.ServiceControllerStatus                
-            };
-        }
-    }
-}
+//        public override List<EventConditionSource> GetEventConditionSources()
+//        {
+//            return new List<EventConditionSource>()
+//            {
+//                EventConditionSource.Exception,
+//                EventConditionSource.NoException,
+//                EventConditionSource.ServiceControllerStatus                
+//            };
+//        }
+//    }
+//}

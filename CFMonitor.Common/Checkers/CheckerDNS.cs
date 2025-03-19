@@ -21,14 +21,16 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorDNS monitorDNS = (MonitorDNS)monitorItem;
+            //MonitorDNS monitorDNS = (MonitorDNS)monitorItem;
+            var hostParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_DNSHost);
+
             Exception exception = null;
             IPHostEntry hostEntry = null;
             ActionParameters actionParameters = new ActionParameters();
 
             try
             {
-                hostEntry = Dns.GetHostEntry(monitorDNS.Host);
+                hostEntry = Dns.GetHostEntry(hostParam.Value);
             }
             catch (Exception ex)
             {
@@ -37,7 +39,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                CheckEvents(actionerList, monitorDNS, actionParameters, exception, hostEntry);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, hostEntry);
             }
             catch (Exception ex)
             {
@@ -49,10 +51,10 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorDNS;
+            return monitorItem.MonitorItemType == MonitorItemTypes.DNS;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorDNS monitorDNS, ActionParameters actionParameters, Exception exception, IPHostEntry hostEntry)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorDNS, ActionParameters actionParameters, Exception exception, IPHostEntry hostEntry)
         {
             foreach (EventItem eventItem in monitorDNS.EventItems)
             {                            

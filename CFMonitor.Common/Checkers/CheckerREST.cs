@@ -22,7 +22,7 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorREST monitorREST = (MonitorREST)monitorItem;
+            //MonitorREST monitorREST = (MonitorREST)monitorItem;
             Exception exception = null;
             string result = "";
             HttpWebRequest webRequest = null;
@@ -31,7 +31,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                webRequest = CreateWebRequest(monitorREST);
+                webRequest = CreateWebRequest(monitorItem);
                 webResponse = (HttpWebResponse)webRequest.GetResponse();
 
                 //using (WebResponse response = webRequest.GetResponse())
@@ -49,7 +49,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                CheckEvents(actionerList, monitorREST, actionParameters, exception, webRequest, webResponse);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, webRequest, webResponse);
             }
             catch (Exception ex)
             {
@@ -59,19 +59,21 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private HttpWebRequest CreateWebRequest(MonitorREST monitorREST)
+        private HttpWebRequest CreateWebRequest(MonitorItem monitorREST)
         {
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(monitorREST.URL);
+            var urlParam = monitorREST.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_RESTURL);
+
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(urlParam.Value);
             webRequest.Method = "GET";            
             return webRequest;
         }
        
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorREST;
+            return monitorItem.MonitorItemType == MonitorItemTypes.REST;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorREST monitorREST, ActionParameters actionParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorREST, ActionParameters actionParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
         {
             int webExceptionStatus = -1;
             if (exception is WebException)

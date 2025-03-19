@@ -18,25 +18,31 @@ namespace CFMonitor.Actioners
 
         public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
         {
-            ActionEmail actionEmail = (ActionEmail)actionItem;
+            //ActionEmail actionEmail = (ActionEmail)actionItem;
+            var bodyParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_EmailBody);
+            var serverParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_EmailServer);
+            var subjectParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_EmailSubject);
+            var recipientParams = actionItem.Parameters.Where(p => p.SystemValueType == SystemValueTypes.AIP_EmailRecipient);
+            var ccParams = actionItem.Parameters.Where(p => p.SystemValueType == SystemValueTypes.AIP_EmailCC);
+
             MailMessage message = new MailMessage()
             {
-                Subject = actionEmail.Subject,
+                Subject = subjectParam.Value,
                 Body = actionParameters.Values[ActionParameterTypes.Body].ToString(),
                 IsBodyHtml = true,               
             };
 
-            foreach(string rcecipient in actionEmail.RecipientList)
+            foreach(var recipientParam in recipientParams)
             {
-                message.To.Add(new MailAddress(rcecipient));
+                message.To.Add(new MailAddress(recipientParam.Value));
             }
        
-            foreach(string cc in actionEmail.CCList)
+            foreach(var ccParam in ccParams)
             {
-                message.CC.Add(new MailAddress(cc));
+                message.CC.Add(new MailAddress(ccParam.Value));
             }
 
-            SmtpClient client = new SmtpClient(actionEmail.Server);
+            SmtpClient client = new SmtpClient(serverParam.Value);
             client.Send(message);
 
             return Task.CompletedTask;
@@ -44,7 +50,7 @@ namespace CFMonitor.Actioners
 
         public bool CanExecute(ActionItem actionItem)
         {
-            return actionItem is ActionEmail;
+            return actionItem.ActionerType == ActionerTypes.Email;
         }
     }
 }

@@ -25,7 +25,7 @@ namespace CFMonitor.Actioners
 
         public bool CanExecute(ActionItem actionItem)
         {
-            return actionItem is ActionLog;
+            return actionItem.ActionerType == ActionerTypes.EventLog;                 
         }
     }
 }

@@ -18,10 +18,13 @@ namespace CFMonitor.Actioners
 
         public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
         {
-            ActionSQL actionSQL = (ActionSQL)actionItem;
-            OleDbDatabase database = new OleDbDatabase(actionSQL.ConnectionString);
+            var connectionStringParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_SQLConnectionString);
+            var sqlParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_SQLSQL);
+
+            //ActionSQL actionSQL = (ActionSQL)actionItem;
+            OleDbDatabase database = new OleDbDatabase(connectionStringParam.Value);
             database.Open();            
-            database.ExecuteNonQuery(System.Data.CommandType.Text, actionSQL.SQL, null);
+            database.ExecuteNonQuery(System.Data.CommandType.Text, sqlParam.Value, null);
             database.Close();
 
             return Task.CompletedTask;
@@ -29,7 +32,7 @@ namespace CFMonitor.Actioners
 
         public bool CanExecute(ActionItem actionItem)
         {
-            return actionItem is ActionSQL;
+            return actionItem.ActionerType == ActionerTypes.SQL;
         }
     }
 }

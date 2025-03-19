@@ -20,7 +20,7 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorActiveProcess monitorProcess = (MonitorActiveProcess)monitorItem;
+            //MonitorActiveProcess monitorProcess = (MonitorActiveProcess)monitorItem;
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
             int? exitCode = null;
@@ -38,7 +38,7 @@ namespace CFMonitor.Checkers
             {
                 // Check events
                 actionParameters.Values.Add(ActionParameterTypes.Body, "Error running process");
-                CheckEvents(actionerList, monitorProcess, actionParameters, exception, exitCode);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, exitCode);
             }
             catch (System.Exception ex)
             {
@@ -48,7 +48,7 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorActiveProcess monitorProcess, ActionParameters actionParameters, Exception exception, int? exitCode)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorProcess, ActionParameters actionParameters, Exception exception, int? exitCode)
         {
             foreach (EventItem eventItem in monitorProcess.EventItems)
             {
@@ -79,7 +79,7 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorRunProcess;
+            return monitorItem.MonitorItemType == MonitorItemTypes.RunProcess;                 
         }
 
         private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

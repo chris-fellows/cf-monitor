@@ -20,7 +20,8 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorCPU monitorCPU = (MonitorCPU)monitorItem;
+            //MonitorCPU monitorCPU = (MonitorCPU)monitorItem;
+
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
 
@@ -37,7 +38,7 @@ namespace CFMonitor.Checkers
             {
                 // Check events
                 actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking NTP time");
-                CheckEvents(actionerList, monitorCPU, actionParameters, exception);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception);
             }
             catch (System.Exception ex)
             {
@@ -47,7 +48,7 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorCPU monitorCPU, ActionParameters actionParameters, Exception exception)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorCPU, ActionParameters actionParameters, Exception exception)
         {
             foreach (EventItem eventItem in monitorCPU.EventItems)
             {
@@ -80,7 +81,7 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorCPU;
+            return monitorItem.MonitorItemType == MonitorItemTypes.CPU;
         }
 
         private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

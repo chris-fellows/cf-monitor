@@ -18,9 +18,11 @@ namespace CFMonitor.Actioners
 
         public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
         {
-            ActionProcess actionProcess = (ActionProcess)actionItem;
+            //ActionProcess actionProcess = (ActionProcess)actionItem;
+            var filenameParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_ProcessFileName);
+
             ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.FileName = actionProcess.FileName;                     
+            startInfo.FileName = filenameParam.Value;
             var process = Process.Start(startInfo);
 
             // Wait for completion
@@ -32,7 +34,7 @@ namespace CFMonitor.Actioners
 
         public bool CanExecute(ActionItem actionItem)
         {
-            return actionItem is ActionProcess;
+            return actionItem.ActionerType == ActionerTypes.Process;
         }
     }
 }

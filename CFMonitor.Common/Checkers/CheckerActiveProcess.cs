@@ -21,19 +21,23 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorActiveProcess monitorProcess = (MonitorActiveProcess)monitorItem;
+            //MonitorActiveProcess monitorProcess = (MonitorActiveProcess)monitorItem;
+
+            var fileNameParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_ActiveProcessFileName);
+            var machineNameParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_ActiveProcessMachineName);
+            
             Exception exception = null;          
             ActionParameters actionParameters = new ActionParameters();
             List<Process> processesFound = new List<Process>();
 
             try
             {
-                Process[] processes = String.IsNullOrEmpty(monitorProcess.MachineName) ? 
-                        Process.GetProcesses() : Process.GetProcesses(monitorProcess.MachineName);
+                Process[] processes = String.IsNullOrEmpty(machineNameParam.Value) ? 
+                        Process.GetProcesses() : Process.GetProcesses(machineNameParam.Value);
                 foreach (Process process in processes)
                 {
                     string filePath = process.MainModule.FileName;
-                    if (filePath.Equals(monitorProcess.FileName, StringComparison.InvariantCultureIgnoreCase))
+                    if (filePath.Equals(fileNameParam.Value, StringComparison.InvariantCultureIgnoreCase))
                     {
                         processesFound.Add(process);
                     }
@@ -48,7 +52,7 @@ namespace CFMonitor.Checkers
             {
                 // Check events
                 actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking service");
-                CheckEvents(actionerList, monitorProcess, actionParameters, exception, processesFound);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, processesFound);
             }
             catch (System.Exception ex)
             {
@@ -58,7 +62,7 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorActiveProcess monitorProcess, ActionParameters actionParameters, Exception exception, List<Process> processesFound)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorProcess, ActionParameters actionParameters, Exception exception, List<Process> processesFound)
         {
             foreach (EventItem eventItem in monitorProcess.EventItems)
             {
@@ -92,7 +96,8 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorActiveProcess;
+            return monitorItem.MonitorItemType == MonitorItemTypes.ActiveProcess;
+            //return monitorItem is MonitorActiveProcess;
         }
 
         private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

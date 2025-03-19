@@ -20,7 +20,7 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorMemory monitorMemory = (MonitorMemory)monitorItem;
+            //MonitorMemory monitorMemory = (MonitorMemory)monitorItem;
             Exception exception = null;       
             ActionParameters actionParameters = new ActionParameters();          
 
@@ -36,7 +36,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                CheckEvents(actionerList, monitorMemory, actionParameters, exception);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception);
             }
             catch (Exception ex)
             {
@@ -48,10 +48,10 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorLocalFile;
+            return monitorItem.MonitorItemType == MonitorItemTypes.Memory;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorMemory monitorMemory, ActionParameters actionParameters, Exception exception)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorMemory, ActionParameters actionParameters, Exception exception)
         {
             foreach (EventItem eventItem in monitorMemory.EventItems)
             {

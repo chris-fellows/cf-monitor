@@ -18,14 +18,14 @@ namespace CFMonitor.Actioners
 
         public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
         {
-            ActionServiceRestart actionServiceRestart = (ActionServiceRestart)actionItem;
+            //ActionServiceRestart actionServiceRestart = (ActionServiceRestart)actionItem;
 
             return Task.CompletedTask;
         }
 
         public bool CanExecute(ActionItem actionItem)
         {
-            return actionItem is ActionLog;
+            return actionItem.ActionerType == ActionerTypes.ServiceRestart;
         }
     }
 }

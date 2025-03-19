@@ -21,7 +21,8 @@ namespace CFMonitor.Checkers
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            MonitorURL monitorURL = (MonitorURL)monitorItem;
+            //MonitorURL monitorURL = (MonitorURL)monitorItem;
+            
             HttpWebRequest request = null;
             HttpWebResponse response = null;
             Exception exception = null;
@@ -30,7 +31,7 @@ namespace CFMonitor.Checkers
             try
             {
                 // Create request
-                request = CreateWebRequest(monitorURL);
+                request = CreateWebRequest(monitorItem);
 
                 // Get response
                 response = (HttpWebResponse)request.GetResponse();
@@ -54,24 +55,32 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private HttpWebRequest CreateWebRequest(MonitorURL monitorURL)
+        private HttpWebRequest CreateWebRequest(MonitorItem monitorURL)
         {
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(monitorURL.URL);
-            request.Method = monitorURL.Method;
+            var urlParam = monitorURL.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_URLURL);
+            var methodParam = monitorURL.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_URLMethod);
+            var usernameParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.MIP_URLUsername);
+            var passwordParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.MIP_URLPassword);
+            var proxyNameParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.MIP_URLProxyName);
+            var proxyPortParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.MIP_URLProxyPort);
+
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(urlParam.Value);
+            request.Method = methodParam.Value;
             request.KeepAlive = true;            
-            if (!String.IsNullOrEmpty(monitorURL.ProxyName))
+            if (proxyNameParam != null && !String.IsNullOrEmpty(proxyNameParam.Value))
             {
-                WebProxy proxy = new WebProxy(monitorURL.ProxyName, monitorURL.ProxyPort);
-                if (!String.IsNullOrEmpty(monitorURL.UserName))
+                WebProxy proxy = new WebProxy(proxyNameParam.Value, Convert.ToInt32(proxyPortParam.Value));
+                //if (!String.IsNullOrEmpty(monitorURL.UserName))
+                if (usernameParam != null && !String.IsNullOrWhiteSpace(usernameParam.Value))
                 {
-                    proxy.Credentials = new NetworkCredential(monitorURL.UserName, monitorURL.Password);
+                    proxy.Credentials = new NetworkCredential(usernameParam.Value, passwordParam.Value);
                 }
                 request.Proxy = proxy;
             }
             return request;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorURL monitorURL, ActionParameters actionParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorURL, ActionParameters actionParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
         {
             int webExceptionStatus = -1;
             if (exception is WebException)
@@ -112,7 +121,7 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem is MonitorURL;
+            return monitorItem.MonitorItemType == MonitorItemTypes.URL;                 
         }
 
         private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

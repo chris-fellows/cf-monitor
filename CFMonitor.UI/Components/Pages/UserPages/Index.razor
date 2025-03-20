@@ -1,0 +1,133 @@
+﻿@page "/users"
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using CFMonitor.Interfaces
+@using CFMonitor.Models
+@using CFMonitor.Utilities
+@using CFUtilities
+@inject IUserService UserService
+
+@using System.IO
+@inject IJSRuntime JS
+
+
+<script>
+    window.downloadFileFromStream = async (fileName, contentStreamReference) =>
+    {
+    const arrayBuffer = await contentStreamReference.arrayBuffer();
+    const blob = new Blob([arrayBuffer]);
+    const url = URL.createObjectURL(blob);
+    const anchorElement = document.createElement('a');
+    anchorElement.href = url;
+    anchorElement.download = fileName ?? '';
+    anchorElement.click();
+    anchorElement.remove();
+    URL.revokeObjectURL(url);
+    }
+</script>
+
+<PageTitle>Index</PageTitle>
+
+<h1>User List</h1>
+
+<p>
+    <a href="users/create">Create New</a>
+    <button @onclick="DownloadCSVAsync" class="btn btn-primary">Download</button>
+</p>
+
+
+@if (UsersQueryable == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <QuickGrid Class="table" Items="@UsersQueryable" Pagination="@Pagination">
+        <PropertyColumn Property="user => user.Name" />
+        <PropertyColumn Property="user => user.Email" />
+
+        <TemplateColumn Title="Color" Context="user">
+            <input type="color" value="@GetUserColor(@user)" />
+        </TemplateColumn>
+
+        <TemplateColumn Title="Image" Context="user">
+            <img class="entityimage" src="../images/users/@user.ImageSource" />
+        </TemplateColumn>
+
+        <TemplateColumn Title="Active">
+            @if (context.Active)
+            {
+                <input type="checkbox" checked />
+            }
+            else
+            {
+                <input type="checkbox" />
+            }
+        </TemplateColumn>
+
+        <TemplateColumn Context="user">
+            <a href="@($"users/edit?id={user.Id}")">Edit</a> |
+            <a href="@($"users/details?id={user.Id}")">Details</a> |
+            <a href="@($"users/delete?id={user.Id}")">Delete</a>
+        </TemplateColumn>
+    </QuickGrid>
+
+    <Paginator State="@Pagination" />
+}
+
+@code {
+    private IQueryable<User>? UsersQueryable;
+
+    private PaginationState Pagination = new PaginationState() { ItemsPerPage = 25 };
+
+    private bool IsBusy { get; set; }
+
+    private string SelectedTabId { get; set; } = "2";
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsBusy = true;
+
+        await RefreshUsersAsync();
+    }
+
+    private async Task RefreshUsersAsync()
+    {
+        IsBusy = true;
+
+        UsersQueryable = UserService.GetAll().AsQueryable();
+
+        IsBusy = false;        
+    }
+
+    private string GetUserColor(User user)
+    {
+        return HTMLUtilities.GetHTMLColor(user.Color);
+    }
+
+    private async Task DownloadCSVAsync()
+    {
+        // using (var session = new DisposableActionsSession())
+        // {
+        //     IsBusy = true;
+        //     session.AddAction(() => IsBusy = false);
+
+        //     // Get file stream
+        //     var tempFile = Path.GetTempFileName();
+        //     session.AddAction(() =>
+        //     {
+        //         if (File.Exists(tempFile)) File.Delete(tempFile);
+        //     });
+
+        //     var entityWriter = new CSVUserWriter(tempFile, (Char)9, System.Text.Encoding.UTF8);
+        //     entityWriter.Write(UsersQueryable.ToList());
+        //     var fileStream = File.OpenRead(tempFile);
+
+        //     using var streamRef = new DotNetStreamReference(stream: fileStream);
+
+        //     await JS.InvokeVoidAsync("downloadFileFromStream", "Users.txt", streamRef);
+        // }
+    }
+
+    //@implements IAsyncDisposable
+    //public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

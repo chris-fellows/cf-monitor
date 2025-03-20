@@ -1,4 +1,8 @@
+using CFMonitor.UI.Data;
 using CFMonitor.Interfaces;
+using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
+using CFMonitor.Seed;
 using CFMonitor.Services;
 using CFMonitor.UI.Components;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -35,6 +39,15 @@ builder.Services.AddScoped<IUserService>((scope) =>
 });
 builder.Services.AddScoped<IMonitorItemTypeService, MonitorItemTypeService>();
 
+// Add file security checker (E.g. Checking images being uploaded)
+builder.Services.AddScoped<IFileSecurityCheckerService, FileSecurityCheckerService>();
+
+// Seed
+builder.Services.AddKeyedScoped<IEntityReader<MonitorAgent>, MonitorAgentSeed1>("MonitorAgentSeed");
+builder.Services.AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed");
+builder.Services.AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed");
+builder.Services.AddKeyedScoped<IEntityReader<User>, UserSeed1>("UserSeed");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -52,5 +65,22 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Load data
+using (var scope = app.Services.CreateScope())
+{
+    //// Check for data
+    //var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
+    //var systemValuesTypes = systemValueTypeService.GetAll();
+    //if (!systemValuesTypes.Any())
+    //{
+    //    throw new ArgumentException("System contains no data");
+    //}
+
+    // Enable this to load seed data
+    //new SeedLoader().DeleteAsync(scope).Wait();
+    new SeedLoader().LoadAsync(scope).Wait();
+}
+
 
 app.Run();

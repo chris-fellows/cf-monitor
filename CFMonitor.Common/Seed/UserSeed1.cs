@@ -20,6 +20,8 @@ namespace CFMonitor.Seed
                     Id = Guid.NewGuid().ToString(),
                     Name = "Test User 1",
                     Email = "testuser1@domain.com",
+                    Color = "Blue",
+                    ImageSource = "user.png",
                     Password = "testuser1",
                     Role = UserRoleNames.Administrator,
                     Active = true
@@ -27,9 +29,11 @@ namespace CFMonitor.Seed
                 new User()
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Name = "Test User 1",
-                    Email = "testuser1@domain.com",
-                    Password = "testuser1",
+                    Name = "Test User 2",
+                    Email = "testuser2@domain.com",
+                    Color = "Blue",
+                    ImageSource = "user.png",                    
+                    Password = "testuser2",
                     Role = UserRoleNames.Administrator,
                     Active = true
                 }

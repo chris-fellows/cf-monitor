@@ -14,6 +14,10 @@ namespace CFMonitor.Models
 
         public string Email { get; set; } = String.Empty;
 
+        public string Color { get; set; } = String.Empty;
+
+        public string ImageSource { get; set; } = String.Empty;
+
         public string Salt { get; set; } = String.Empty;
 
         public string Password { get; set; } = String.Empty;

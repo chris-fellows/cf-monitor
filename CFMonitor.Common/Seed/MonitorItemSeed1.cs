@@ -68,7 +68,7 @@ namespace CFMonitor.Seed
                     new MonitorItemParameter()
                     {
                         SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SQLSQL).Id,
-                        Value = File.ReadAllText(@"D:\\Temp\\Data\\Query1.sql")
+                        Value = "SELECT * FROM Test"            // File.ReadAllText(@"D:\\Temp\\Data\\Query1.sql")
                     }
                 }
             };

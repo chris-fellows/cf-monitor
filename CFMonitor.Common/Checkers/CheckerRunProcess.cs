@@ -63,7 +63,7 @@ namespace CFMonitor.Checkers
                         meetsCondition = (exception == null);
                         break;
                     case EventConditionSource.RunProcessExitCodeReturned:
-                        meetsCondition = (eventItem.EventCondition.Evaluate(exitCode));
+                        meetsCondition = (eventItem.EventCondition.IsValid(exitCode));
                         break;                    
                 }
 

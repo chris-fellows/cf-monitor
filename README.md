@@ -12,9 +12,14 @@ Monitor Manager
 ---------------
 UI for managing the list of items to monitor.
 
-Monitor Agent Service
+Monitor Agent
+-------------
+Runs silently on specific machines and performs checking of items being monitored. It communicates with Monitor
+Agent Manager via TCP.
+
+Monitor Agent Manager
 ---------------------
-Checks the list of items to be monitored.
+Runs silently on single machine and controls agents via TCP connection.
 
 Monitor Items
 -------------

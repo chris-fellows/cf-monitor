@@ -1,7 +1,5 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Models.MonitorItems;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace CFMonitor.Interfaces
 {

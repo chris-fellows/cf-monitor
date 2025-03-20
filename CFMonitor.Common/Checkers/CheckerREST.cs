@@ -95,10 +95,10 @@ namespace CFMonitor.Checkers
                         meetsCondition = (exception == null);
                         break;
                     case EventConditionSource.HttpResponseStatusCode:
-                        meetsCondition = eventItem.EventCondition.Evaluate(response.StatusCode);
+                        meetsCondition = eventItem.EventCondition.IsValid(response.StatusCode);
                         break;
                     case EventConditionSource.WebExceptionStatus:
-                        meetsCondition = eventItem.EventCondition.Evaluate(webExceptionStatus);
+                        meetsCondition = eventItem.EventCondition.IsValid(webExceptionStatus);
                         break;
                 }
               

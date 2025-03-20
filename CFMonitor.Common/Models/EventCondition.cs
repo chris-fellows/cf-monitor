@@ -11,8 +11,7 @@ namespace CFMonitor.Models
     [XmlType("EventCondition")]
     public class EventCondition
     {        
-        [XmlAttribute("Source")]
-        //public string Source { get; set; }
+        [XmlAttribute("Source")]        
         public EventConditionSource Source { get; set; }
 
         [XmlAttribute("Operator")]
@@ -23,11 +22,11 @@ namespace CFMonitor.Models
         public List<object> Values = new List<object>();
 
         /// <summary>
-        /// Evaluates in input value against this condition
+        /// Whether value is valid for event condition
         /// </summary>
         /// <param name="value"></param>
-        /// <returns>Whether input value is valid for condition</returns>
-        public bool Evaluate(object value)
+        /// <returns></returns>
+        public bool IsValid(object value)
         {
             bool result = false;
 

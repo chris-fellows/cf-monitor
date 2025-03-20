@@ -1,22 +1,23 @@
-﻿using CFMonitor.Enums;
+﻿using CFMonitor.Actioners;
+using CFMonitor.Enums;
+using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.Models.ActionItems;
 using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace CFMonitor
+namespace CFMonitor.Seed
 {
-    /// <summary>
-    /// Factory for creating monitor items for testing
-    /// </summary>
-    public class MonitorItemTestFactory
+    public class MonitorItemSeed1 : IEntityReader<MonitorItem>
     {
-        public static string DeveloperEmail = "chrismfellows@hotmail.co.uk";
-
-        public static List<MonitorItem> Create()
+        public Task<List<MonitorItem>> ReadAllAsync()
         {
             var items = new List<MonitorItem>();
+
             items.Add(CreateTestMonitorCPU());
             items.Add(CreateTestMonitorFileSize());
             items.Add(CreateTestMonitorFolderSize());
@@ -28,8 +29,9 @@ namespace CFMonitor
             items.Add(CreateTestMonitorSQL());
             items.Add(CreateTestMonitorLocalFile());
             items.Add(CreateTestMonitorActiveProcess());
-            return items;
-        }
+
+            return Task.FromResult(items);
+        }    
 
         private static string GetNewMonitorItemID()
         {
@@ -37,15 +39,26 @@ namespace CFMonitor
             //return string.Format("Monitor Item.{0}", Guid.NewGuid().ToString());        
         }
 
-        private static MonitorSQL CreateTestMonitorSQL()
+        private static MonitorItem CreateTestMonitorSQL()
         {
-            MonitorSQL monitorSQL = new MonitorSQL()
+            MonitorItem monitorSQL = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Monitor SQL",
-                ConnectionString = "Connection String",
-                QueryFile = @"C:\My Data\Query1.sql"
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_SQLConnectionString,
+                        Value = "Connection String",
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_SQLQuery,
+                        Value = @"C:\My Data\Query1.sql"
+                    }
+                }
             };
 
             // Set schedule
@@ -61,14 +74,26 @@ namespace CFMonitor
             return monitorSQL;
         }
 
-        private static MonitorActiveProcess CreateTestMonitorActiveProcess()
+        private static MonitorItem CreateTestMonitorActiveProcess()
         {
-            MonitorActiveProcess monitorProcess = new MonitorActiveProcess()
+            MonitorItem monitorProcess = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Check Process",
-                FileName = @"C:\My Data\SomeProcess.exe"
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_ActiveProcessFileName,
+                        Value = @"C:\My Data\SomeProcess.exe"
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_ActiveProcessMachineName
+                        Value = @"MY_MACHINE"
+                    },
+                }
             };
 
             // Set schedule
@@ -88,14 +113,21 @@ namespace CFMonitor
             return monitorProcess;
         }
 
-        private static MonitorLocalFile CreateTestMonitorLocalFile()
+        private static MonitorItem CreateTestMonitorLocalFile()
         {
-            MonitorLocalFile monitorFile = new MonitorLocalFile()
+            MonitorItem monitorFile = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Check Process",
-                FileName = @"C:\My Data\SomeProcess.exe"
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_LocalFileFileName,
+                        Value = @"C:\My Data\SomeProcess.exe"
+                    }
+                }                
             };
 
             // Set schedule
@@ -110,19 +142,26 @@ namespace CFMonitor
             EventItem eventItem2 = new EventItem();
             eventItem2.EventCondition.Source = EventConditionSource.FileNotExists; //  "OnFileNotExists";
             monitorFile.EventItems.Add(eventItem2);
-            eventItem2.ActionItems.Add(CreateDefaultActionEmail("File not found", 
+            eventItem2.ActionItems.Add(CreateDefaultActionEmail("File not found",
                     string.Format("The file {0} was not found", monitorFile.FileName)));
             return monitorFile;
         }
 
-        private static MonitorPing CreateTestMonitorPing()
+        private static MonitorItem CreateTestMonitorPing()
         {
-            MonitorPing monitorPing = new MonitorPing()
+            MonitorItem monitorPing = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Ping Google",
-                Server = "google.co.uk"
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_PingServer,
+                        Value = "google.co.uk"
+                    }
+                }                
             };
 
             // Set schedule
@@ -134,24 +173,52 @@ namespace CFMonitor
             eventItem.EventCondition.Operator = ConditionOperators.NotEquals;
             eventItem.EventCondition.Values.Add(System.Net.NetworkInformation.IPStatus.Success);
             monitorPing.EventItems.Add(eventItem);
-            eventItem.ActionItems.Add(CreateDefaultActionEmail("Ping failed", 
+            eventItem.ActionItems.Add(CreateDefaultActionEmail("Ping failed",
                         string.Format("Ping {0} failed", monitorPing.Server)));
             return monitorPing;
         }
 
-        private static MonitorURL CreateTestMonitorURL()
+        private static MonitorItem CreateTestMonitorURL()
         {
-            MonitorURL monitorURL = new MonitorURL()
+            MonitorItem monitorURL = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Name = "Check Google",
                 Enabled = true,
-                URL = @"https://www.google.co.uk",
-                Method = "GET",                
-                ProxyName = "",
-                ProxyPort = 0,
-                UserName = "",
-                Password = ""
+
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_URLMethod,
+                        Value = "GET"
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_URLPassword,
+                        Value = ""
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_URLProxyName,
+                        Value = ""
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_URLProxyPort,
+                        Value = "0"
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_URLURL,
+                        Value = @"https://www.google.co.uk"
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_URLUsername,
+                        Value = ""
+                    }
+                }
             };
 
             // Set schedule
@@ -163,19 +230,31 @@ namespace CFMonitor
             eventItem.EventCondition.Operator = ConditionOperators.NotEquals;
             eventItem.EventCondition.Values.Add(System.Net.HttpStatusCode.OK);
             monitorURL.EventItems.Add(eventItem);
-            eventItem.ActionItems.Add(CreateDefaultActionEmail("Web connection failed", 
-                        string.Format("Error opening URL {0}", monitorURL.URL)));                        
+            eventItem.ActionItems.Add(CreateDefaultActionEmail("Web connection failed",
+                        string.Format("Error opening URL {0}", monitorURL.URL)));
             return monitorURL;
         }
 
-        private static MonitorService CreateTestSQLServiceMonitor()
+        private static MonitorItem CreateTestSQLServiceMonitor()
         {
-            MonitorService monitorService = new MonitorService()
+            MonitorItem monitorService = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Name = "Check SQL Server",
-                ServiceName = "SQL Server (SQLEXPRESS)",
-                Enabled = true                
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_ServiceServiceName,
+                        Value = "SQL Server (SQLEXPRESS)"
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_ServiceMachineName
+                        Value = ""
+                    },
+                },                
+                Enabled = true
             };
 
             // Set schedule
@@ -188,13 +267,13 @@ namespace CFMonitor
             eventItem.EventCondition.Values.Add(System.ServiceProcess.ServiceControllerStatus.Running);
             monitorService.EventItems.Add(eventItem);
             eventItem.ActionItems.Add(CreateDefaultActionEmail("SQL Server service not running",
-                        string.Format("Service {0} is not running", monitorService.ServiceName)));            
+                        string.Format("Service {0} is not running", monitorService.ServiceName)));
             return monitorService;
         }
 
-        private static ActionEmail CreateDefaultActionEmail(string subject, string body)
+        private static ActionItem CreateDefaultActionEmail(string subject, string body)
         {
-            ActionEmail action = new ActionEmail()
+            ActionItem action = new ActionItem()
             {
                 Subject = subject,
                 Body = body
@@ -204,33 +283,44 @@ namespace CFMonitor
             return action;
         }
 
-        private static ActionLog CreateDefaultActionLog(string body)
+        private static ActionItem CreateDefaultActionLog(string body)
         {
-            ActionLog action = new ActionLog()
+            ActionItem action = new ActionItem()
             {
                 LogFileName = "D:\\Temp\\Logs\\MyLog.txt"
-            };            
-            return action;
-        }
-
-        private static ActionConsole CreateDefaultActionConsole(string body)
-        {
-            ActionConsole action = new ActionConsole()
-            {
-                
             };
             return action;
         }
 
-        private static MonitorFolderSize CreateTestMonitorFolderSize()
+        private static ActionItem CreateDefaultActionConsole(string body)
         {
-            MonitorFolderSize monitorFolderSize = new MonitorFolderSize()
+            ActionItem action = new ActionItem()
+            {
+
+            };
+            return action;
+        }
+
+        private static MonitorItem CreateTestMonitorFolderSize()
+        {
+            MonitorItem monitorFolderSize = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Monitor folder size",
-                Folder = "D:\\Temp",
-                MaxFolderSizeBytes = 50000
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_FolderSizeFolder,
+                        Value ="D:\\Temp"
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes,
+                        Value = "5000"
+                    }
+                }
             };
 
             // Set schedule
@@ -251,15 +341,26 @@ namespace CFMonitor
             return monitorFolderSize;
         }
 
-        private static MonitorFileSize CreateTestMonitorFileSize()
+        private static MonitorItem CreateTestMonitorFileSize()
         {
-            MonitorFileSize monitorFileSize = new MonitorFileSize()
+            MonitorItem monitorFileSize = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Monitor test log file size",
-                File = "D:\\Temp\\Test.log",
-                MaxFileSizeBytes = 50000
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_FileSizeFile,
+                        Value ="D:\\Temp\\Test.log"
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_FileSizeMaxFileSizeBytes,
+                        Value = "5000"
+                    }
+                }
             };
 
             // Set schedule
@@ -280,14 +381,21 @@ namespace CFMonitor
             return monitorFileSize;
         }
 
-        private static MonitorCPU CreateTestMonitorCPU()
+        private static MonitorItem CreateTestMonitorCPU()
         {
-            MonitorCPU monitorCPU = new MonitorCPU()
+            MonitorItem monitorCPU = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Check CPU",
-                Server = Environment.MachineName               
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_CPUServer,
+                        Value =Environment.MachineName
+                    }
+                }                
             };
 
             // Set schedule
@@ -304,17 +412,21 @@ namespace CFMonitor
             monitorCPU.EventItems.Add(eventItem2);
             eventItem2.ActionItems.Add(CreateDefaultActionEmail("CPU above threshold",
                             "The CPU is above the threshold"));
-                        
+
             return monitorCPU;
         }
 
-        private static MonitorMemory CreateTestMonitorMemory()
+        private static MonitorItem CreateTestMonitorMemory()
         {
-            MonitorMemory monitorMemory = new MonitorMemory()
+            MonitorItem monitorMemory = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
-                Name = "Check memory"                
+                Name = "Check memory",
+                Parameters = new List<MonitorItemParameter>()
+                {
+
+                }
             };
 
             // Set schedule
@@ -335,14 +447,26 @@ namespace CFMonitor
             return monitorMemory;
         }
 
-        private static MonitorNTP CreateTestMonitorNTP()
+        private static MonitorItem CreateTestMonitorNTP()
         {
-            MonitorNTP monitorNTP = new MonitorNTP()
+            MonitorItem monitorNTP = new MonitorItem()
             {
                 ID = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Check NTP time",
-                MaxToleranceSecs = 30
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_NTPServer,
+                        Value = Environment.MachineName
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueType = SystemValueTypes.MIP_NTPMaxToleranceSecs,
+                        Value = "30"
+                    }
+                }                
             };
 
             // Set schedule

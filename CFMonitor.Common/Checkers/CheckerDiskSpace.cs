@@ -69,7 +69,7 @@ namespace CFMonitor.Checkers
                         meetsCondition = (exception == null);
                         break;
                     case EventConditionSource.DriveAvailableFreeSpace:
-                        meetsCondition = eventItem.EventCondition.Evaluate(driveInfo.AvailableFreeSpace);
+                        meetsCondition = eventItem.EventCondition.IsValid(driveInfo.AvailableFreeSpace);
                         break;
                 }
            

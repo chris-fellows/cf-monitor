@@ -1,5 +1,4 @@
 ﻿using CFMonitor.Models;
-using System.Collections.Generic;
 
 namespace CFMonitor.Interfaces
 {

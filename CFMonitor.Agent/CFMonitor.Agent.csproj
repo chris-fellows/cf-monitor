@@ -12,4 +12,13 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\cf-connection-messaging\CFConnectionMessaging.Common\CFConnectionMessaging.Common.csproj" />
+    <ProjectReference Include="..\CFMonitor.Common\CFMonitor.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
+
 </Project>

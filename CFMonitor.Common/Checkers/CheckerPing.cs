@@ -85,7 +85,7 @@ namespace CFMonitor.Checkers
                         meetsCondition = (exception == null);
                         break;
                     case EventConditionSource.PingReplyStatus:
-                        meetsCondition = (pingReply != null && eventItem.EventCondition.Evaluate(pingReply.Status));
+                        meetsCondition = (pingReply != null && eventItem.EventCondition.IsValid(pingReply.Status));
                         break;
                 }
                

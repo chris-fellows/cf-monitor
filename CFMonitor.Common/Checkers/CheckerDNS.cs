@@ -15,14 +15,23 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerDNS : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerDNS(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "DNS";
 
         public CheckerTypes CheckerType => CheckerTypes.DNS;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            //MonitorDNS monitorDNS = (MonitorDNS)monitorItem;
-            var hostParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_DNSHost);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var svtHost = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_DNSHost);
+            var hostParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtHost.Id);
 
             Exception exception = null;
             IPHostEntry hostEntry = null;
@@ -62,16 +71,16 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.HostEntryExists:
+                    case EventConditionSources.HostEntryExists:
                         meetsCondition = (hostEntry != null);
                         break;
-                    case EventConditionSource.HostEntryNotExists:
+                    case EventConditionSources.HostEntryNotExists:
                         meetsCondition = (hostEntry == null);
                         break;
                 }        

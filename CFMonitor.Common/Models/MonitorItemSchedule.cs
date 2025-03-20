@@ -1,7 +1,6 @@
-﻿using System;
-using CFMonitor.Enums;
+﻿using CFMonitor.Enums;
+using CFUtilities.Utilities;
 using System.Xml.Serialization;
-using CFUtilities;
 
 namespace CFMonitor.Models
 {

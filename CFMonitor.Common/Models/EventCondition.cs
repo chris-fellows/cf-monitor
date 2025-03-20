@@ -12,7 +12,7 @@ namespace CFMonitor.Models
     public class EventCondition
     {        
         [XmlAttribute("Source")]        
-        public EventConditionSource Source { get; set; }
+        public EventConditionSources Source { get; set; }
 
         [XmlAttribute("Operator")]
         public ConditionOperators Operator { get; set; }

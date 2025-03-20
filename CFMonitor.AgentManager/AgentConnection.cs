@@ -24,6 +24,8 @@ namespace CFMonitor.AgentManager
         private ConnectionTcp _connection;
 
         // Message converters
+        private IExternalMessageConverter<GetFileObjectRequest> _getFileObjectRequestConverter = new GetFileObjectRequestConverter();
+        private IExternalMessageConverter<GetFileObjectResponse> _getFileObjectResponseConverter = new GetFileObjectResponseConverter();
         private IExternalMessageConverter<GetMonitorItemsRequest> _getMonitorItemsRequestConverter = new GetMonitorItemsRequestConverter();
         private IExternalMessageConverter<GetMonitorItemsResponse> _getMonitorItemsResponseConverter = new GetMonitorItemsResponseConverter();
         private IExternalMessageConverter<Heartbeat> _heartbeatConverter = new HeartbeatConverter();

@@ -63,15 +63,15 @@ namespace CFMonitor.Enums
 
         MIP_PingServer,
 
-        MIP_RegistryKey,
-        MIP_RegistryValue,
+        //MIP_RegistryKey,
+        //MIP_RegistryValue,
 
         MIP_RESTURL,
 
         MIP_RunProcessFileName,
 
-        MIP_ServiceMachineName,
-        MIP_ServiceServiceName,
+        //MIP_ServiceMachineName,
+        //MIP_ServiceServiceName,
 
         MIP_SMTPServer,
         MIP_SMTPPort,
@@ -84,7 +84,7 @@ namespace CFMonitor.Enums
         MIP_SocketProtocol,
 
         MIP_SQLConnectionString,
-        MIP_SQLQuery,
+        MIP_SQLSQL,
 
         MIP_URLURL,
         MIP_URLMethod,
@@ -92,7 +92,5 @@ namespace CFMonitor.Enums
         MIP_URLProxyName,
         MIP_URLProxyPort,
         MIP_URLUsername,        
-
-
     }
 }

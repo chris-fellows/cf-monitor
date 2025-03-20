@@ -14,21 +14,31 @@ namespace CFMonitor.Seed
 {
     public class MonitorItemSeed1 : IEntityReader<MonitorItem>
     {
+        //private readonly IFileObjectService _fileObjectService;
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public MonitorItemSeed1(ISystemValueTypeService systemValueTypeService)
+        {          
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public Task<List<MonitorItem>> ReadAllAsync()
         {
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
             var items = new List<MonitorItem>();
 
-            items.Add(CreateTestMonitorCPU());
-            items.Add(CreateTestMonitorFileSize());
-            items.Add(CreateTestMonitorFolderSize());
-            items.Add(CreateTestMonitorURL());
-            items.Add(CreateTestMonitorMemory());
-            items.Add(CreateTestMonitorNTP());
-            items.Add(CreateTestSQLServiceMonitor());
-            items.Add(CreateTestMonitorPing());
-            items.Add(CreateTestMonitorSQL());
-            items.Add(CreateTestMonitorLocalFile());
-            items.Add(CreateTestMonitorActiveProcess());
+            items.Add(CreateTestMonitorCPU(systemValueTypes));
+            items.Add(CreateTestMonitorFileSize(systemValueTypes));
+            items.Add(CreateTestMonitorFolderSize(systemValueTypes));
+            items.Add(CreateTestMonitorURL(systemValueTypes));
+            items.Add(CreateTestMonitorMemory(systemValueTypes));
+            items.Add(CreateTestMonitorNTP(systemValueTypes));
+            //items.Add(CreateTestSQLServiceMonitor(systemValueTypes));
+            items.Add(CreateTestMonitorPing(systemValueTypes));
+            items.Add(CreateTestMonitorSQL(systemValueTypes));
+            items.Add(CreateTestMonitorLocalFile(systemValueTypes));
+            items.Add(CreateTestMonitorActiveProcess(systemValueTypes));
 
             return Task.FromResult(items);
         }    
@@ -39,24 +49,26 @@ namespace CFMonitor.Seed
             //return string.Format("Monitor Item.{0}", Guid.NewGuid().ToString());        
         }
 
-        private static MonitorItem CreateTestMonitorSQL()
+        private MonitorItem CreateTestMonitorSQL(List<SystemValueType> systemValueTypes)
         {
+            //var fileObject = _fileObjectService.GetAll().First(fo => fo.Name == "Query1.sql");
+
             MonitorItem monitorSQL = new MonitorItem()
             {
-                ID = GetNewMonitorItemID(),
+                Id = GetNewMonitorItemID(),
                 Enabled = true,
-                Name = "Monitor SQL",
+                Name = "Monitor SQL",                
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_SQLConnectionString,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SQLConnectionString).Id,
                         Value = "Connection String",
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_SQLQuery,
-                        Value = @"C:\My Data\Query1.sql"
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SQLSQL).Id,
+                        Value = File.ReadAllText(@"D:\\Temp\\Data\\Query1.sql")
                     }
                 }
             };
@@ -66,7 +78,7 @@ namespace CFMonitor.Seed
 
             // Add event for Status not success
             EventItem eventItem = new EventItem();
-            eventItem.EventCondition.Source = EventConditionSource.SQLReturnsRows;  //  "OnRows";
+            eventItem.EventCondition.Source = EventConditionSources.SQLReturnsRows;  //  "OnRows";
             //eventItem.EventCondition.Operator = ConditionOperators.NotEquals;
             //eventItem.EventCondition.Values.Add(System.Net.NetworkInformation.IPStatus.Success);
             monitorSQL.EventItems.Add(eventItem);
@@ -74,23 +86,26 @@ namespace CFMonitor.Seed
             return monitorSQL;
         }
 
-        private static MonitorItem CreateTestMonitorActiveProcess()
+        private static MonitorItem CreateTestMonitorActiveProcess(List<SystemValueType> systemValueTypes)
         {
+            var svtActiveProcessFileName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_ActiveProcessFileName);
+            var svtActiveProcessMachineName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_ActiveProcessMachineName);
+
             MonitorItem monitorProcess = new MonitorItem()
             {
-                ID = GetNewMonitorItemID(),
+                Id = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Check Process",
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_ActiveProcessFileName,
+                        SystemValueTypeId = svtActiveProcessFileName.Id,
                         Value = @"C:\My Data\SomeProcess.exe"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_ActiveProcessMachineName
+                        SystemValueTypeId = svtActiveProcessMachineName.Id,
                         Value = @"MY_MACHINE"
                     },
                 }
@@ -106,25 +121,27 @@ namespace CFMonitor.Seed
             //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
 
             EventItem eventItem2 = new EventItem();
-            eventItem2.EventCondition.Source = EventConditionSource.ActiveProcessNotRunning;
+            eventItem2.EventCondition.Source = EventConditionSources.ActiveProcessNotRunning;
             monitorProcess.EventItems.Add(eventItem2);
             eventItem2.ActionItems.Add(CreateDefaultActionEmail("Process not running",
-                        string.Format("The process {0} is not running", monitorProcess.FileName)));
+                        string.Format("The process {0} is not running", monitorProcess.Parameters.First(p => p.SystemValueTypeId == svtActiveProcessFileName.Id).Value)));
             return monitorProcess;
         }
 
-        private static MonitorItem CreateTestMonitorLocalFile()
+        private static MonitorItem CreateTestMonitorLocalFile(List<SystemValueType> systemValueTypes)
         {
+            var svtLocalFileName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_LocalFileFileName);
+
             MonitorItem monitorFile = new MonitorItem()
             {
-                ID = GetNewMonitorItemID(),
+                Id = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Check Process",
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_LocalFileFileName,
+                        SystemValueTypeId = svtLocalFileName.Id,
                         Value = @"C:\My Data\SomeProcess.exe"
                     }
                 }                
@@ -140,25 +157,27 @@ namespace CFMonitor.Seed
             //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
 
             EventItem eventItem2 = new EventItem();
-            eventItem2.EventCondition.Source = EventConditionSource.FileNotExists; //  "OnFileNotExists";
+            eventItem2.EventCondition.Source = EventConditionSources.FileNotExists; //  "OnFileNotExists";
             monitorFile.EventItems.Add(eventItem2);
             eventItem2.ActionItems.Add(CreateDefaultActionEmail("File not found",
-                    string.Format("The file {0} was not found", monitorFile.FileName)));
+                    string.Format("The file {0} was not found", monitorFile.Parameters.First(p => p.SystemValueTypeId == svtLocalFileName.Id).Value)));
             return monitorFile;
         }
 
-        private static MonitorItem CreateTestMonitorPing()
+        private static MonitorItem CreateTestMonitorPing(List<SystemValueType> systemValueTypes)
         {
+            var svtServer = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_PingServer);
+
             MonitorItem monitorPing = new MonitorItem()
             {
-                ID = GetNewMonitorItemID(),
+                Id = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Ping Google",
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_PingServer,
+                        SystemValueTypeId = svtServer.Id,
                         Value = "google.co.uk"
                     }
                 }                
@@ -169,20 +188,22 @@ namespace CFMonitor.Seed
 
             // Add event for Status not success
             EventItem eventItem = new EventItem();
-            eventItem.EventCondition.Source = EventConditionSource.PingReplyStatus; //  "Reply.Status";
+            eventItem.EventCondition.Source = EventConditionSources.PingReplyStatus; //  "Reply.Status";
             eventItem.EventCondition.Operator = ConditionOperators.NotEquals;
             eventItem.EventCondition.Values.Add(System.Net.NetworkInformation.IPStatus.Success);
             monitorPing.EventItems.Add(eventItem);
             eventItem.ActionItems.Add(CreateDefaultActionEmail("Ping failed",
-                        string.Format("Ping {0} failed", monitorPing.Server)));
+                        string.Format("Ping {0} failed", monitorPing.Parameters.First(p => p.SystemValueTypeId == svtServer.Id).Value)));
             return monitorPing;
         }
 
-        private static MonitorItem CreateTestMonitorURL()
+        private static MonitorItem CreateTestMonitorURL(List<SystemValueType> systemValueTypes)
         {
+            var svtUrl = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLURL);
+
             MonitorItem monitorURL = new MonitorItem()
             {
-                ID = GetNewMonitorItemID(),
+                Id = GetNewMonitorItemID(),
                 Name = "Check Google",
                 Enabled = true,
 
@@ -190,32 +211,32 @@ namespace CFMonitor.Seed
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLMethod,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLMethod).Id,
                         Value = "GET"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLPassword,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType ==SystemValueTypes.MIP_URLPassword).Id,
                         Value = ""
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLProxyName,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLProxyName).Id,
                         Value = ""
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLProxyPort,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType ==SystemValueTypes.MIP_URLProxyPort).Id,
                         Value = "0"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLURL,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLURL).Id,
                         Value = @"https://www.google.co.uk"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLUsername,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLUsername).Id,
                         Value = ""
                     }
                 }
@@ -226,60 +247,60 @@ namespace CFMonitor.Seed
 
             // Add event for StatusCode not OK, send email
             EventItem eventItem = new EventItem();
-            eventItem.EventCondition.Source = EventConditionSource.HttpResponseStatusCode;  // "Response.StatusCode";
+            eventItem.EventCondition.Source = EventConditionSources.HttpResponseStatusCode;  // "Response.StatusCode";
             eventItem.EventCondition.Operator = ConditionOperators.NotEquals;
             eventItem.EventCondition.Values.Add(System.Net.HttpStatusCode.OK);
             monitorURL.EventItems.Add(eventItem);
             eventItem.ActionItems.Add(CreateDefaultActionEmail("Web connection failed",
-                        string.Format("Error opening URL {0}", monitorURL.URL)));
+                        string.Format("Error opening URL {0}", monitorURL.Parameters.First(p => p.SystemValueTypeId == svtUrl.Id).Value)));
             return monitorURL;
         }
 
-        private static MonitorItem CreateTestSQLServiceMonitor()
-        {
-            MonitorItem monitorService = new MonitorItem()
-            {
-                ID = GetNewMonitorItemID(),
-                Name = "Check SQL Server",
-                Parameters = new List<MonitorItemParameter>()
-                {
-                    new MonitorItemParameter()
-                    {
-                        SystemValueType = SystemValueTypes.MIP_ServiceServiceName,
-                        Value = "SQL Server (SQLEXPRESS)"
-                    },
-                    new MonitorItemParameter()
-                    {
-                        SystemValueType = SystemValueTypes.MIP_ServiceMachineName
-                        Value = ""
-                    },
-                },                
-                Enabled = true
-            };
+        //private static MonitorItem CreateTestSQLServiceMonitor()
+        //{
+        //    MonitorItem monitorService = new MonitorItem()
+        //    {
+        //        Id = GetNewMonitorItemID(),
+        //        Name = "Check SQL Server",
+        //        Parameters = new List<MonitorItemParameter>()
+        //        {
+        //            new MonitorItemParameter()
+        //            {
+        //                SystemValueType = SystemValueTypes.MIP_ServiceServiceName,
+        //                Value = "SQL Server (SQLEXPRESS)"
+        //            },
+        //            new MonitorItemParameter()
+        //            {
+        //                SystemValueType = SystemValueTypes.MIP_ServiceMachineName,
+        //                Value = ""
+        //            },
+        //        },                
+        //        Enabled = true
+        //    };
 
-            // Set schedule
-            monitorService.MonitorItemSchedule.Times = "60sec";
+        //    // Set schedule
+        //    monitorService.MonitorItemSchedule.Times = "60sec";
 
-            // Add event for StatusCode not OK, send email
-            EventItem eventItem = new EventItem();
-            eventItem.EventCondition.Source = EventConditionSource.ServiceControllerStatus; // "ServiceController.Status";
-            eventItem.EventCondition.Operator = ConditionOperators.NotEquals;
-            eventItem.EventCondition.Values.Add(System.ServiceProcess.ServiceControllerStatus.Running);
-            monitorService.EventItems.Add(eventItem);
-            eventItem.ActionItems.Add(CreateDefaultActionEmail("SQL Server service not running",
-                        string.Format("Service {0} is not running", monitorService.ServiceName)));
-            return monitorService;
-        }
+        //    // Add event for StatusCode not OK, send email
+        //    EventItem eventItem = new EventItem();
+        //    eventItem.EventCondition.Source = EventConditionSource.ServiceControllerStatus; // "ServiceController.Status";
+        //    eventItem.EventCondition.Operator = ConditionOperators.NotEquals;
+        //    eventItem.EventCondition.Values.Add(System.ServiceProcess.ServiceControllerStatus.Running);
+        //    monitorService.EventItems.Add(eventItem);
+        //    eventItem.ActionItems.Add(CreateDefaultActionEmail("SQL Server service not running",
+        //                string.Format("Service {0} is not running", monitorService.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_ServiceServiceName).Value)));
+        //    return monitorService;
+        //}
 
         private static ActionItem CreateDefaultActionEmail(string subject, string body)
         {
             ActionItem action = new ActionItem()
             {
-                Subject = subject,
-                Body = body
+                //Subject = subject,
+                //Body = body
             };
-            action.RecipientList.Add(MonitorItemTestFactory.DeveloperEmail);
-            action.Server = "MyEmailServer";
+            //action.RecipientList.Add(MonitorItemTestFactory.DeveloperEmail);
+            //action.Server = "MyEmailServer";
             return action;
         }
 
@@ -287,7 +308,7 @@ namespace CFMonitor.Seed
         {
             ActionItem action = new ActionItem()
             {
-                LogFileName = "D:\\Temp\\Logs\\MyLog.txt"
+                //LogFileName = "D:\\Temp\\Logs\\MyLog.txt"
             };
             return action;
         }
@@ -301,23 +322,23 @@ namespace CFMonitor.Seed
             return action;
         }
 
-        private static MonitorItem CreateTestMonitorFolderSize()
+        private static MonitorItem CreateTestMonitorFolderSize(List<SystemValueType> systemValueTypes)
         {
             MonitorItem monitorFolderSize = new MonitorItem()
             {
-                ID = GetNewMonitorItemID(),
+                Id = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Monitor folder size",
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_FolderSizeFolder,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType ==SystemValueTypes.MIP_FolderSizeFolder).Id,
                         Value ="D:\\Temp"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType ==SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes).Id,
                         Value = "5000"
                     }
                 }
@@ -333,7 +354,7 @@ namespace CFMonitor.Seed
             //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
 
             EventItem eventItem2 = new EventItem();
-            eventItem2.EventCondition.Source = EventConditionSource.FolderSizeOutsideTolerance;
+            eventItem2.EventCondition.Source = EventConditionSources.FolderSizeOutsideTolerance;
             monitorFolderSize.EventItems.Add(eventItem2);
             eventItem2.ActionItems.Add(CreateDefaultActionEmail("Folder size above threshold",
                             "The folder size is above the threshold"));
@@ -341,23 +362,23 @@ namespace CFMonitor.Seed
             return monitorFolderSize;
         }
 
-        private static MonitorItem CreateTestMonitorFileSize()
+        private static MonitorItem CreateTestMonitorFileSize(List<SystemValueType> systemValueTypes)
         {
             MonitorItem monitorFileSize = new MonitorItem()
             {
-                ID = GetNewMonitorItemID(),
+                Id = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Monitor test log file size",
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_FileSizeFile,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_FileSizeFile).Id,
                         Value ="D:\\Temp\\Test.log"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_FileSizeMaxFileSizeBytes,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType ==SystemValueTypes.MIP_FileSizeMaxFileSizeBytes).Id,
                         Value = "5000"
                     }
                 }
@@ -373,7 +394,7 @@ namespace CFMonitor.Seed
             //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
 
             EventItem eventItem2 = new EventItem();
-            eventItem2.EventCondition.Source = EventConditionSource.FileSizeOutsideTolerance;
+            eventItem2.EventCondition.Source = EventConditionSources.FileSizeOutsideTolerance;
             monitorFileSize.EventItems.Add(eventItem2);
             eventItem2.ActionItems.Add(CreateDefaultActionEmail("File size above threshold",
                             "The file size is above the threshold"));
@@ -381,19 +402,19 @@ namespace CFMonitor.Seed
             return monitorFileSize;
         }
 
-        private static MonitorItem CreateTestMonitorCPU()
+        private static MonitorItem CreateTestMonitorCPU(List<SystemValueType> systemValueTypes)
         {
             MonitorItem monitorCPU = new MonitorItem()
             {
-                ID = GetNewMonitorItemID(),
+                Id = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Check CPU",
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_CPUServer,
-                        Value =Environment.MachineName
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_CPUServer).Id,
+                        Value = Environment.MachineName
                     }
                 }                
             };
@@ -408,7 +429,7 @@ namespace CFMonitor.Seed
             //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
 
             EventItem eventItem2 = new EventItem();
-            eventItem2.EventCondition.Source = EventConditionSource.CPUOutsideTolerance;
+            eventItem2.EventCondition.Source = EventConditionSources.CPUOutsideTolerance;
             monitorCPU.EventItems.Add(eventItem2);
             eventItem2.ActionItems.Add(CreateDefaultActionEmail("CPU above threshold",
                             "The CPU is above the threshold"));
@@ -416,11 +437,11 @@ namespace CFMonitor.Seed
             return monitorCPU;
         }
 
-        private static MonitorItem CreateTestMonitorMemory()
+        private static MonitorItem CreateTestMonitorMemory(List<SystemValueType> systemValueTypes)
         {
             MonitorItem monitorMemory = new MonitorItem()
             {
-                ID = GetNewMonitorItemID(),
+                Id = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Check memory",
                 Parameters = new List<MonitorItemParameter>()
@@ -439,7 +460,7 @@ namespace CFMonitor.Seed
             //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
 
             EventItem eventItem2 = new EventItem();
-            eventItem2.EventCondition.Source = EventConditionSource.MemoryOutsideTolerance;
+            eventItem2.EventCondition.Source = EventConditionSources.MemoryOutsideTolerance;
             monitorMemory.EventItems.Add(eventItem2);
             eventItem2.ActionItems.Add(CreateDefaultActionEmail("Memory use above threshold",
                             "The memory use is above the threshold"));
@@ -447,23 +468,23 @@ namespace CFMonitor.Seed
             return monitorMemory;
         }
 
-        private static MonitorItem CreateTestMonitorNTP()
+        private static MonitorItem CreateTestMonitorNTP(List<SystemValueType> systemValueTypes)
         {
             MonitorItem monitorNTP = new MonitorItem()
             {
-                ID = GetNewMonitorItemID(),
+                Id = GetNewMonitorItemID(),
                 Enabled = true,
                 Name = "Check NTP time",
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_NTPServer,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_NTPServer).Id,
                         Value = Environment.MachineName
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_NTPMaxToleranceSecs,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType ==SystemValueTypes.MIP_NTPMaxToleranceSecs).Id,
                         Value = "30"
                     }
                 }                
@@ -479,7 +500,7 @@ namespace CFMonitor.Seed
             //eventItem1.ActionItems.Add(CreateDefaultActionEmail("Process running"));
 
             EventItem eventItem2 = new EventItem();
-            eventItem2.EventCondition.Source = EventConditionSource.NTPTimeOutsideTolerance;
+            eventItem2.EventCondition.Source = EventConditionSources.NTPTimeOutsideTolerance;
             monitorNTP.EventItems.Add(eventItem2);
             eventItem2.ActionItems.Add(CreateDefaultActionEmail("Machine time incorrect",
                             "The machine time is different from the NTP server and outside the threshold"));

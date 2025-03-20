@@ -2,7 +2,6 @@
 using CFMonitor.Interfaces;
 using CFMonitor.Models.ActionItems;
 using CFMonitor.Models.MonitorItems;
-using CFUtilities.Databases;
 using System.Threading.Tasks;
 
 namespace CFMonitor.Actioners
@@ -18,14 +17,14 @@ namespace CFMonitor.Actioners
 
         public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
         {
-            var connectionStringParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_SQLConnectionString);
-            var sqlParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_SQLSQL);
+            //var connectionStringParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_SQLConnectionString);
+            //var sqlParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_SQLSQL);
 
-            //ActionSQL actionSQL = (ActionSQL)actionItem;
-            OleDbDatabase database = new OleDbDatabase(connectionStringParam.Value);
-            database.Open();            
-            database.ExecuteNonQuery(System.Data.CommandType.Text, sqlParam.Value, null);
-            database.Close();
+            ////ActionSQL actionSQL = (ActionSQL)actionItem;
+            //OleDbDatabase database = new OleDbDatabase(connectionStringParam.Value);
+            //database.Open();            
+            //database.ExecuteNonQuery(System.Data.CommandType.Text, sqlParam.Value, null);
+            //database.Close();
 
             return Task.CompletedTask;
         }

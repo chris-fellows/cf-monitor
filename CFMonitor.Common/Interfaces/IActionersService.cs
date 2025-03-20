@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
+﻿//using System.Collections.Generic;
 
-namespace CFMonitor.Interfaces
-{
-    public interface IActionersService
-    {
-        List<IActioner> GetAll();
-    }
-}
+//namespace CFMonitor.Interfaces
+//{
+//    public interface IActionersService
+//    {
+//        List<IActioner> GetAll();
+//    }
+//}

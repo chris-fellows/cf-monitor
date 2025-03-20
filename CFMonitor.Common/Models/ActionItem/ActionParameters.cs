@@ -1,6 +1,4 @@
-﻿using CFMonitor.Common.Enums;
-using CFMonitor.Enums;
-using System.Collections.Generic;
+﻿using CFMonitor.Enums;
 
 namespace CFMonitor.Models.ActionItems
 {

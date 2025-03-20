@@ -22,11 +22,11 @@ namespace CFMonitor.Models
         /// Monitor item type
         /// </summary>
         public MonitorItemTypes ItemType { get; set; }
-       
-        ///// <summary>
-        ///// Function to create instance of monitor item with default properties
-        ///// </summary>
-        //public Func<MonitorItem> CreateMonitorItem;
+
+        /// <summary>
+        /// Event conditions that are relevant
+        /// </summary>
+        public List<EventConditionSources> EventConditionSources { get; set; } = new List<EventConditionSources>();      
 
         /// <summary>
         /// Checker type

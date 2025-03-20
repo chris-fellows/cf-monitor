@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\cf-connection-messaging\CFConnectionMessaging.Common\CFConnectionMessaging.Common.csproj" />
+    <ProjectReference Include="..\..\cf-utilities-core\CFUtilities\CFUtilities.csproj" />
   </ItemGroup>
 
 </Project>

@@ -10,8 +10,17 @@ namespace CFMonitor.Services
 {
     public class MonitorItemTypeService : IMonitorItemTypeService
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public MonitorItemTypeService(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public List<MonitorItemType> GetAll()
         {
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
             var list = new List<MonitorItemType>();
             list.Add(new MonitorItemType()
             {
@@ -19,16 +28,23 @@ namespace CFMonitor.Services
                 Description = "Checks an active process",
                 ItemType = MonitorItemTypes.ActiveProcess,
                 CheckerType = CheckerTypes.ActiveProcess,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.ActiveProcessNotRunning,
+                    EventConditionSources.ActiveProcessRunning,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,                   
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_ActiveProcessFileName,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_ActiveProcessFileName).Id,
                         Value = "File.exe"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_ActiveProcessMachineName
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_ActiveProcessMachineName).Id
                     }
                 }
                 //CreateMonitorItem = () => new MonitorActiveProcess() { ID = Guid.NewGuid().ToString(), 
@@ -40,6 +56,13 @@ namespace CFMonitor.Services
                 Description = "Checks CPU",
                 ItemType = MonitorItemTypes.CPU,
                 CheckerType = CheckerTypes.CPU,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.CPUInTolerance,
+                    EventConditionSources.CPUOutsideTolerance,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
@@ -59,6 +82,11 @@ namespace CFMonitor.Services
                 Description = "Checks that DHCP is working",
                 ItemType = MonitorItemTypes.DHCP,
                 CheckerType = CheckerTypes.DHCP,
+                EventConditionSources = new List<EventConditionSources>()
+                {                    
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
@@ -72,11 +100,17 @@ namespace CFMonitor.Services
                 Description = "Checks disk space on particular device",
                 ItemType = MonitorItemTypes.DiskSpace,
                 CheckerType = CheckerTypes.DiskSpace,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.DriveAvailableFreeSpace,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_DiskSpaceDrive,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_DiskSpaceDrive).Id,
                         Value = "D:\\"
                     }
                 }
@@ -89,11 +123,16 @@ namespace CFMonitor.Services
                 Description = "Checks that DNS is working",
                 ItemType = MonitorItemTypes.DNS,
                 CheckerType = CheckerTypes.DNS,
+                EventConditionSources = new List<EventConditionSources>()
+                {                    
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_DNSHost,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_DNSHost).Id,
                         Value = "Host"
                     }
                 }
@@ -106,16 +145,25 @@ namespace CFMonitor.Services
                 Description = "Checks size of file",
                 ItemType = MonitorItemTypes.FileSize,
                 CheckerType = CheckerTypes.FileSize,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    //EventConditionSources.FileExists,
+                    //EventConditionSources.FileNotExists,
+                    EventConditionSources.FileSizeInTolerance,
+                    EventConditionSources.FileSizeOutsideTolerance,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_FileSizeFile,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_FileSizeFile).Id,
                         Value = "File.txt"                        
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_FileSizeMaxFileSizeBytes,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_FileSizeMaxFileSizeBytes).Id,
                         Value = "1000000"
                     }
                 }
@@ -135,16 +183,23 @@ namespace CFMonitor.Services
                 Description = "Checks size of folder",
                 ItemType = MonitorItemTypes.FolderSize,
                 CheckerType = CheckerTypes.FolderSize,
+                EventConditionSources = new List<EventConditionSources>()
+                {                   
+                    EventConditionSources.FolderSizeInTolerance,
+                    EventConditionSources.FolderSizeOutsideTolerance,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_FolderSizeFolder,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_FolderSizeFolder).Id,
                         Value = "Folder"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes).Id,
                          Value = "1000000"
                     }
                 }
@@ -163,6 +218,13 @@ namespace CFMonitor.Services
                 Description = "Checks connection to IMAP server",
                 ItemType = MonitorItemTypes.IMAP,
                 CheckerType = CheckerTypes.IMAP,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.IMAPConnected,
+                    EventConditionSources.IMAPConnectError,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
@@ -182,16 +244,26 @@ namespace CFMonitor.Services
                 Description = "Checks local file exists and optionally contains specific text",
                 ItemType = MonitorItemTypes.LocalFile,
                 CheckerType = CheckerTypes.LocalFile,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.FileExists,
+                    EventConditionSources.FileNotExists,
+                    EventConditionSources.TextFoundInFile,
+                    EventConditionSources.TextNotFoundInFile,
+                    EventConditionSources.IMAPConnectError,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_LocalFileFileName,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType ==SystemValueTypes.MIP_LocalFileFileName).Id,
                         Value = "File.txt"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_LocalFileFindText,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_LocalFileFindText).Id,
                         Value = "FindThis"
                     }
                 }
@@ -204,6 +276,11 @@ namespace CFMonitor.Services
                 Description = "Checks JSON file",
                 ItemType = MonitorItemTypes.JSON,
                 CheckerType = CheckerTypes.JSON,
+                EventConditionSources = new List<EventConditionSources>()
+                {                    
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
@@ -217,6 +294,11 @@ namespace CFMonitor.Services
                 Description = "Checks that LDAP is working",
                 ItemType = MonitorItemTypes.LDAP,
                 CheckerType = CheckerTypes.LDAP,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
@@ -230,6 +312,13 @@ namespace CFMonitor.Services
                 Description = "Checks local memory use",
                 ItemType = MonitorItemTypes.Memory,
                 CheckerType = CheckerTypes.Memory,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.MemoryInTolerance,
+                    EventConditionSources.MemoryOutsideTolerance,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
@@ -243,16 +332,23 @@ namespace CFMonitor.Services
                 Description = "Checks time with NTP server",
                 ItemType = MonitorItemTypes.NTP,
                 CheckerType = CheckerTypes.NTP,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.NTPTimeInTolerance,
+                    EventConditionSources.NTPTimeOutsideTolerance,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_NTPServer,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_NTPServer).Id,
                         Value = "Server"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_NTPMaxToleranceSecs,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_NTPMaxToleranceSecs).Id,
                         Value = "60"
                     }
                 }
@@ -271,11 +367,17 @@ namespace CFMonitor.Services
                 Description = "Pings endpoint",
                 ItemType = MonitorItemTypes.Ping,
                 CheckerType = CheckerTypes.Ping,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.PingReplyStatus,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_PingServer,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_PingServer).Id,
                         Value = "Server"
                     }
                 }
@@ -288,6 +390,13 @@ namespace CFMonitor.Services
                 Description = "Checks connection to POP server",
                 ItemType = MonitorItemTypes.POP,
                 CheckerType = CheckerTypes.POP,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.POPConnected,
+                    EventConditionSources.POPConnectError,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
@@ -301,39 +410,45 @@ namespace CFMonitor.Services
                 //    MonitorItemSchedule = new MonitorItemSchedule()
                 //}
             });
-            list.Add(new MonitorItemType()
-            {
-                Name = "Registry",
-                Description = "Checks for particular registry setting(s)",
-                ItemType = MonitorItemTypes.Registry,
-                CheckerType = CheckerTypes.Registry,
-                DefaultParameters = new List<MonitorItemParameter>()
-                {
-                    new MonitorItemParameter()
-                    {
-                        SystemValueType= SystemValueTypes.MIP_RegistryKey,
-                        Value = "Key"
-                    },
-                    new MonitorItemParameter()
-                    {
-                        SystemValueType = SystemValueTypes.MIP_RegistryValue,
-                        Value= "Value"
-                    }
-                }
-                //CreateMonitorItem = () => new MonitorRegistry() { ID = Guid.NewGuid().ToString(), 
-                //            Name = "Registry [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
-            });
+            //list.Add(new MonitorItemType()
+            //{
+            //    Name = "Registry",
+            //    Description = "Checks for particular registry setting(s)",
+            //    ItemType = MonitorItemTypes.Registry,
+            //    CheckerType = CheckerTypes.Registry,
+            //    DefaultParameters = new List<MonitorItemParameter>()
+            //    {
+            //        new MonitorItemParameter()
+            //        {
+            //            SystemValueType= SystemValueTypes.MIP_RegistryKey,
+            //            Value = "Key"
+            //        },
+            //        new MonitorItemParameter()
+            //        {
+            //            SystemValueType = SystemValueTypes.MIP_RegistryValue,
+            //            Value= "Value"
+            //        }
+            //    }
+            //    //CreateMonitorItem = () => new MonitorRegistry() { ID = Guid.NewGuid().ToString(), 
+            //    //            Name = "Registry [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
+            //});
             list.Add(new MonitorItemType()
             {
                 Name = "REST API",
                 Description = "Checks REST API returns expected response",
                 ItemType = MonitorItemTypes.REST,
                 CheckerType = CheckerTypes.REST,
-                DefaultParameters= new List<MonitorItemParameter>()
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.WebExceptionStatus,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
+                DefaultParameters = new List<MonitorItemParameter>()
                 { 
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_RESTURL,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_RESTURL).Id,
                         Value = "http://myrestapi.com/test"
                     }
                 }
@@ -346,55 +461,66 @@ namespace CFMonitor.Services
                 Description = "Runs process and checks the exit code",
                 ItemType = MonitorItemTypes.RunProcess,
                 CheckerType = CheckerTypes.RunProcess,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.RunProcessExitCodeReturned,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType= SystemValueTypes.MIP_RunProcessFileName,
+                        SystemValueTypeId =systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_RunProcessFileName).Id,
                         Value = "File.exe"
                     }
                 }
                 //CreateMonitorItem = () => new MonitorRunProcess() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "Run Process [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
-            list.Add(new MonitorItemType()
-            {
-                Name = "Service",
-                Description = "Checks Windows service status",
-                ItemType = MonitorItemTypes.Service,
-                CheckerType = CheckerTypes.Service,
-                DefaultParameters = new List<MonitorItemParameter>()
-                {
-                    new MonitorItemParameter()
-                    {
-                        SystemValueType = SystemValueTypes.MIP_ServiceMachineName,
-                        Value = "Machine"
-                    },
-                    new MonitorItemParameter()
-                    {
-                        SystemValueType = SystemValueTypes.MIP_ServiceServiceName,
-                        Value = "My Service"
-                    }
-                }
-                //CreateMonitorItem = () => new MonitorService() { ID = Guid.NewGuid().ToString(), 
-                //            Name = "Service [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
-            });
+            //list.Add(new MonitorItemType()
+            //{
+            //    Name = "Service",
+            //    Description = "Checks Windows service status",
+            //    ItemType = MonitorItemTypes.Service,
+            //    CheckerType = CheckerTypes.Service,
+            //    DefaultParameters = new List<MonitorItemParameter>()
+            //    {
+            //        new MonitorItemParameter()
+            //        {
+            //            SystemValueType = SystemValueTypes.MIP_ServiceMachineName,
+            //            Value = "Machine"
+            //        },
+            //        new MonitorItemParameter()
+            //        {
+            //            SystemValueType = SystemValueTypes.MIP_ServiceServiceName,
+            //            Value = "My Service"
+            //        }
+            //    }
+            //    //CreateMonitorItem = () => new MonitorService() { ID = Guid.NewGuid().ToString(), 
+            //    //            Name = "Service [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
+            //});
             list.Add(new MonitorItemType()
             {
                 Name = "SMTP",
                 Description = "Checks SMTP connection",
                 ItemType = MonitorItemTypes.SMTP,
                 CheckerType = CheckerTypes.SMTP,
+                EventConditionSources = new List<EventConditionSources>()
+                {                    
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_SMTPPort,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SMTPPort).Id,
                         Value = "100"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_SMTPServer,
+                        SystemValueTypeId =systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SMTPServer).Id,
                         Value = "Server"
                     }
                 }
@@ -407,16 +533,22 @@ namespace CFMonitor.Services
                 Description = "Checks SOAP API returns expected response",
                 ItemType = MonitorItemTypes.SOAP,
                 CheckerType = CheckerTypes.SOAP,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.WebExceptionStatus,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_SOAPURL,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SOAPURL).Id,
                         Value = "http://soapurl/test"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_SOAPXML,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SOAPXML).Id,
                         Value = "test"
                     }
                 }
@@ -429,21 +561,28 @@ namespace CFMonitor.Services
                 Description = "Checks TCP or UDP socket",
                 ItemType = MonitorItemTypes.Socket,
                 CheckerType = CheckerTypes.Socket,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.SocketConnected,
+                    EventConditionSources.SocketNotConnected,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_SocketHost,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SocketHost).Id,
                         Value = "Host"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_SocketPort,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SocketPort).Id,
                         Value = "1000"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_SocketProtocol,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SocketProtocol).Id,
                         Value = "TCP"
                     }
                 }
@@ -456,16 +595,23 @@ namespace CFMonitor.Services
                 Description = "Checks results of SQL query",
                 ItemType = MonitorItemTypes.SQL,
                 CheckerType = CheckerTypes.SQL,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.SQLReturnsNoRows,
+                    EventConditionSources.SQLReturnsRows,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_SQLConnectionString,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SQLConnectionString).Id,
                         Value= "Connection String"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType  = SystemValueTypes.MIP_SQLQuery,
+                        SystemValueTypeId  = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SQLSQL).Id,
                         Value = "select * from Test"
                     }
                 }
@@ -478,36 +624,42 @@ namespace CFMonitor.Services
                 Description = "Checks HTTP/HTTPS endpoint returns expected response",
                 ItemType = MonitorItemTypes.URL,
                 CheckerType = CheckerTypes.URL,
+                EventConditionSources = new List<EventConditionSources>()
+                {
+                    EventConditionSources.WebExceptionStatus,
+                    EventConditionSources.Exception,
+                    EventConditionSources.NoException,
+                },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLMethod,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_URLMethod).Id,
                         Value = "GET"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLPassword,
+                        SystemValueTypeId =systemValueTypes.First(t => t.ValueType ==  SystemValueTypes.MIP_URLPassword).Id,
                         Value = "password"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType= SystemValueTypes.MIP_URLProxyName,
+                        SystemValueTypeId= systemValueTypes.First(t => t.ValueType ==SystemValueTypes.MIP_URLProxyName).Id,
                         Value = "Proxy"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLProxyPort,
+                        SystemValueTypeId =systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_URLProxyPort).Id,
                         Value = "1000"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLURL,
+                        SystemValueTypeId =systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_URLURL).Id,
                         Value = "http://google.co.uk/test"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueType = SystemValueTypes.MIP_URLUsername,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType ==SystemValueTypes.MIP_URLUsername).Id,
                         Value = "username"
                     }
                 }

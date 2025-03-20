@@ -55,16 +55,16 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.IMAPConnected:
+                    case EventConditionSources.IMAPConnected:
                         // TODO: Set this
                         break;
-                    case EventConditionSource.IMAPConnectError:
+                    case EventConditionSources.IMAPConnectError:
                         break;
                 }
 

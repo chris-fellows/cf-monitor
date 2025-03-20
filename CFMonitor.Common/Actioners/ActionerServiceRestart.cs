@@ -1,31 +1,31 @@
-﻿using CFMonitor.Enums;
-using CFMonitor.Interfaces;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
-using System;
-using System.Threading.Tasks;
+﻿//using CFMonitor.Enums;
+//using CFMonitor.Interfaces;
+//using CFMonitor.Models.ActionItems;
+//using CFMonitor.Models.MonitorItems;
+//using System;
+//using System.Threading.Tasks;
 
-namespace CFMonitor.Actioners
-{
-    /// <summary>
-    /// Actions restart of service
-    /// </summary>
-    public class ActionerServiceRestart : IActioner
-    {
-        public string Name => "Restart service";
+//namespace CFMonitor.Actioners
+//{
+//    /// <summary>
+//    /// Actions restart of service
+//    /// </summary>
+//    public class ActionerServiceRestart : IActioner
+//    {
+//        public string Name => "Restart service";
 
-        public ActionerTypes ActionerType => ActionerTypes.ServiceRestart;
+//        public ActionerTypes ActionerType => ActionerTypes.ServiceRestart;
 
-        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
-        {
-            //ActionServiceRestart actionServiceRestart = (ActionServiceRestart)actionItem;
+//        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+//        {
+//            //ActionServiceRestart actionServiceRestart = (ActionServiceRestart)actionItem;
 
-            return Task.CompletedTask;
-        }
+//            return Task.CompletedTask;
+//        }
 
-        public bool CanExecute(ActionItem actionItem)
-        {
-            return actionItem.ActionerType == ActionerTypes.ServiceRestart;
-        }
-    }
-}
+//        public bool CanExecute(ActionItem actionItem)
+//        {
+//            return actionItem.ActionerType == ActionerTypes.ServiceRestart;
+//        }
+//    }
+//}

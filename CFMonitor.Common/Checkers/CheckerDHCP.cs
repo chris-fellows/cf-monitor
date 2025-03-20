@@ -57,10 +57,10 @@ namespace CFMonitor.Checkers
                 bool meetsCondition = false;
                 switch(eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
                 }            

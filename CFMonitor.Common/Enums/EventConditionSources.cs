@@ -3,7 +3,7 @@
     /// <summary>
     /// What to check when determining if an event condition is true
     /// </summary>
-    public enum EventConditionSource
+    public enum EventConditionSources
     {
         Exception = 0,
         NoException = 1,

@@ -14,7 +14,7 @@ namespace CFMonitor.Models.ActionItems
     //[XmlInclude(typeof(ActionURL))]
     //[XmlInclude(typeof(ActionSMS))]
     //[XmlInclude(typeof(ActionSQL))]    
-    public abstract class ActionItem
+    public class ActionItem
     {
         public ActionerTypes ActionerType { get; set; }
 

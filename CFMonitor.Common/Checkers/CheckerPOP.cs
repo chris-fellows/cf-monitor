@@ -55,16 +55,16 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.POPConnected:
+                    case EventConditionSources.POPConnected:
                         // TODO: Set this
                         break;
-                    case EventConditionSource.POPConnectError:
+                    case EventConditionSources.POPConnectError:
                         break;
                 }
 

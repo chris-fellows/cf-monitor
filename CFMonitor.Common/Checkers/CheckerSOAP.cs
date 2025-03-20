@@ -17,12 +17,21 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerSOAP : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerSOAP(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "SOAP";
 
         public CheckerTypes CheckerType => CheckerTypes.SOAP;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
             //MonitorSOAP monitorSOAP = (MonitorSOAP)monitorItem;
             Exception exception = null;
             string result = "";
@@ -32,7 +41,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                webRequest = CreateWebRequest(monitorItem);          
+                webRequest = CreateWebRequest(monitorItem, systemValueTypes);          
                 webResponse = (HttpWebResponse)webRequest.GetResponse();
                
                 //using (WebResponse response = webRequest.GetResponse())
@@ -80,16 +89,16 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.HttpResponseStatusCode:
+                    case EventConditionSources.HttpResponseStatusCode:
                         meetsCondition = eventItem.EventCondition.IsValid(response.StatusCode);
                         break;
-                    case EventConditionSource.WebExceptionStatus:
+                    case EventConditionSources.WebExceptionStatus:
                         meetsCondition = eventItem.EventCondition.IsValid(webExceptionStatus);
                         break;
                 }
@@ -104,10 +113,13 @@ namespace CFMonitor.Checkers
             }
         }
 
-        private HttpWebRequest CreateWebRequest(MonitorItem monitorSOAP)
+        private HttpWebRequest CreateWebRequest(MonitorItem monitorSOAP, List<SystemValueType> systemValueTypes)
         {
-            var urlParam = monitorSOAP.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SOAPURL);
-            var xmlParam = monitorSOAP.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SOAPXML);
+            var svtUrl = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SOAPURL);
+            var urlParam = monitorSOAP.Parameters.First(p => p.SystemValueTypeId == svtUrl.Id);
+
+            var svtXml = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SOAPXML);
+            var xmlParam = monitorSOAP.Parameters.First(p => p.SystemValueTypeId == svtXml.Id);
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(urlParam.Value);
             webRequest.Headers.Add(@"SOAP:Action");

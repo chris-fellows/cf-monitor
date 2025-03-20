@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 
 namespace CFMonitor.Checkers
@@ -16,12 +17,21 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerREST : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerREST(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "REST API";
 
         public CheckerTypes CheckerType => CheckerTypes.REST;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
             //MonitorREST monitorREST = (MonitorREST)monitorItem;
             Exception exception = null;
             string result = "";
@@ -31,7 +41,7 @@ namespace CFMonitor.Checkers
 
             try
             {
-                webRequest = CreateWebRequest(monitorItem);
+                webRequest = CreateWebRequest(monitorItem, systemValueTypes);
                 webResponse = (HttpWebResponse)webRequest.GetResponse();
 
                 //using (WebResponse response = webRequest.GetResponse())
@@ -59,9 +69,10 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private HttpWebRequest CreateWebRequest(MonitorItem monitorREST)
+        private HttpWebRequest CreateWebRequest(MonitorItem monitorREST, List<SystemValueType> systemValueTypes)
         {
-            var urlParam = monitorREST.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_RESTURL);
+            var svtParam = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_RESTURL);
+            var urlParam = monitorREST.Parameters.First(p => p.SystemValueTypeId == svtParam.Id);
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(urlParam.Value);
             webRequest.Method = "GET";            
@@ -88,16 +99,16 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.HttpResponseStatusCode:
+                    case EventConditionSources.HttpResponseStatusCode:
                         meetsCondition = eventItem.EventCondition.IsValid(response.StatusCode);
                         break;
-                    case EventConditionSource.WebExceptionStatus:
+                    case EventConditionSources.WebExceptionStatus:
                         meetsCondition = eventItem.EventCondition.IsValid(webExceptionStatus);
                         break;
                 }

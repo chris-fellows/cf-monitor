@@ -16,14 +16,23 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerPing : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerPing(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "Ping";
 
         public CheckerTypes CheckerType => CheckerTypes.Ping;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            //MonitorPing monitorPing = (MonitorPing)monitorItem;
-            var serverParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_PingServer);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var svtServer = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_PingServer);
+            var serverParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtServer.Id);
 
             Exception exception = null;
             PingReply pingReply = null;
@@ -78,13 +87,13 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.PingReplyStatus:
+                    case EventConditionSources.PingReplyStatus:
                         meetsCondition = (pingReply != null && eventItem.EventCondition.IsValid(pingReply.Status));
                         break;
                 }

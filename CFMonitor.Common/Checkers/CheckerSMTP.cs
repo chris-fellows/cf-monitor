@@ -17,15 +17,26 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerSMTP : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerSMTP(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "SMTP";
 
         public CheckerTypes CheckerType => CheckerTypes.SMTP;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            //MonitorSMTP monitorSMTP = (MonitorSMTP)monitorItem;
-            var serverParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SMTPServer);
-            var portParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SMTPPort);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var svtServer = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SMTPServer);
+            var serverParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtServer.Id);
+
+            var svtPort = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SMTPPort);
+            var portParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtPort.Id);
 
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
@@ -86,10 +97,10 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;                    
                 }

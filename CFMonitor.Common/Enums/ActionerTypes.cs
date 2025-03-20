@@ -9,7 +9,7 @@
         Log,
         Process,
         MachineRestart,
-        ServiceRestart,
+        //ServiceRestart,
         SMS,
         SQL,
         URL

@@ -15,14 +15,23 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerDiskSpace : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerDiskSpace(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "Disk space";
 
         public CheckerTypes CheckerType => CheckerTypes.DiskSpace;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            //MonitorDiskSpace monitorDiskSpace = (MonitorDiskSpace)monitorItem;
-            var driveParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_DiskSpaceDrive);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var svtDrive = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_DiskSpaceDrive);
+            var driveParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtDrive.Id);
 
             Exception exception = null;
             DriveInfo driveInfo = null;            
@@ -62,13 +71,13 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.DriveAvailableFreeSpace:
+                    case EventConditionSources.DriveAvailableFreeSpace:
                         meetsCondition = eventItem.EventCondition.IsValid(driveInfo.AvailableFreeSpace);
                         break;
                 }

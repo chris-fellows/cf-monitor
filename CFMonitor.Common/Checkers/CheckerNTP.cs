@@ -55,16 +55,16 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.NTPTimeInTolerance:
+                    case EventConditionSources.NTPTimeInTolerance:
                         // TODO: Set this
                         break;
-                    case EventConditionSource.NTPTimeOutsideTolerance:
+                    case EventConditionSources.NTPTimeOutsideTolerance:
                         break;
                 }
 

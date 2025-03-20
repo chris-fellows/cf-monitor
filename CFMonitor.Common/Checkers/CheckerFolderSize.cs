@@ -3,7 +3,7 @@ using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.Models.ActionItems;
 using CFMonitor.Models.MonitorItems;
-using CFUtilities;
+using CFUtilities.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,14 +16,23 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerFolderSize : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerFolderSize(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "Folder size";
 
         public CheckerTypes CheckerType => CheckerTypes.FolderSize;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            //MonitorFolderSize monitorFolderSize = (MonitorFolderSize)monitorItem;
-            var folderParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_FolderSizeFolder);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var svtFolder = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_FolderSizeFolder);
+            var folderParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFolder.Id);
 
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
@@ -33,7 +42,7 @@ namespace CFMonitor.Checkers
             {
                 if (Directory.Exists(folderParam.Value))
                 {
-                    folderSize = IOUtilities.GetDirectorySize(monitorFolderSize.Folder);
+                    folderSize = IOUtilities.GetDirectorySize(folderParam.Value);
                 }
             }
             catch (System.Exception ex)
@@ -44,8 +53,8 @@ namespace CFMonitor.Checkers
             try
             {
                 // Check events
-                actionParameters.Values.Add("Body", "Error checking folder size");
-                CheckEvents(actionerList, monitorItem, actionParameters, exception, folderSize);
+                actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking folder size");
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, folderSize, systemValueTypes);
             }
             catch (System.Exception ex)
             {
@@ -55,9 +64,11 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorFolderSize, ActionParameters actionParameters, Exception exception, long? folderSize)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorFolderSize, ActionParameters actionParameters, Exception exception, long? folderSize,
+                                List<SystemValueType> systemValueTypes)
         {
-            var folderSizeMaxFolderSize = monitorFolderSize.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes);
+            var svtfolderSizeMaxFolderSize = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes);
+            var folderSizeMaxFolderSize = monitorFolderSize.Parameters.First(p => p.SystemValueTypeId == svtfolderSizeMaxFolderSize.Id);
             var maxFolderSizeBytes = Convert.ToDouble(folderSizeMaxFolderSize.Value);
 
             foreach (EventItem eventItem in monitorFolderSize.EventItems)
@@ -66,16 +77,16 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.FolderSizeInTolerance:
+                    case EventConditionSources.FolderSizeInTolerance:
                         meetsCondition = folderSize != null && folderSize.Value <= maxFolderSizeBytes;
                         break;
-                    case EventConditionSource.FolderSizeOutsideTolerance:
+                    case EventConditionSources.FolderSizeOutsideTolerance:
                         meetsCondition = folderSize != null && folderSize.Value > maxFolderSizeBytes;
                         break;
                 }

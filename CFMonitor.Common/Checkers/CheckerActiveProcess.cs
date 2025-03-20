@@ -15,16 +15,26 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerActiveProcess : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerActiveProcess(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "Active Process";
 
         public CheckerTypes CheckerType => CheckerTypes.ActiveProcess;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            //MonitorActiveProcess monitorProcess = (MonitorActiveProcess)monitorItem;
+            var systemValueTypes = _systemValueTypeService.GetAll();
 
-            var fileNameParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_ActiveProcessFileName);
-            var machineNameParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_ActiveProcessMachineName);
+            var svtFileName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_ActiveProcessFileName);             
+            var fileNameParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFileName.Id);
+
+            var svtMachineName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_ActiveProcessMachineName);
+            var machineNameParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtMachineName.Id);
             
             Exception exception = null;          
             ActionParameters actionParameters = new ActionParameters();
@@ -70,16 +80,16 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.ActiveProcessRunning:
+                    case EventConditionSources.ActiveProcessRunning:
                         meetsCondition = (processesFound.Count > 0);
                         break;
-                    case EventConditionSource.ActiveProcessNotRunning:
+                    case EventConditionSources.ActiveProcessNotRunning:
                         meetsCondition = (processesFound.Count == 0);
                         break;
                 }          

@@ -19,16 +19,26 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerLocalFile : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerLocalFile(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "Local file";
 
         public CheckerTypes CheckerType => CheckerTypes.LocalFile;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            //MonitorLocalFile monitorFile = (MonitorLocalFile)monitorItem;
+            var systemValueTypes = _systemValueTypeService.GetAll();
 
-            var fileNameParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_LocalFileFileName);
-            var findTextParam = monitorItem.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.MIP_LocalFileFindText);
+            var svtFileName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_LocalFileFileName);
+            var fileNameParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFileName.Id);
+
+            var svtFindText = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_LocalFileFindText);
+            var findTextParam = monitorItem.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtFindText.Id);
 
             Exception exception = null;       
             ActionParameters actionParameters = new ActionParameters();
@@ -73,22 +83,22 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.FileExists:
+                    case EventConditionSources.FileExists:
                         meetsCondition = fileInfo != null && fileInfo.Exists;
                         break;
-                    case EventConditionSource.FileNotExists:
+                    case EventConditionSources.FileNotExists:
                         meetsCondition = (fileInfo == null) || (fileInfo != null && !fileInfo.Exists);
                         break;
-                    case EventConditionSource.TextFoundInFile:
+                    case EventConditionSources.TextFoundInFile:
                         meetsCondition = textFound;
                         break;
-                    case EventConditionSource.TextNotFoundInFile:
+                    case EventConditionSources.TextNotFoundInFile:
                         meetsCondition = !textFound;
                         break;
                 }

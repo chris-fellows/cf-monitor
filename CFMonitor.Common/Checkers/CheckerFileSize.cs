@@ -15,15 +15,23 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerFileSize : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerFileSize(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "File size";
 
         public CheckerTypes CheckerType => CheckerTypes.FileSize;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            //MonitorFileSize monitorFileSize = (MonitorFileSize)monitorItem;
-            var fileSizeParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_FileSizeFile);
-            //var fileSizeMaxFileSize = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.FileSizeMaxFileSizeBytes);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var svtFileSize = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_FileSizeFile);
+            var fileSizeParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFileSize.Id);            
 
             Exception exception = null;
             ActionParameters actionParameters = new ActionParameters();
@@ -46,7 +54,7 @@ namespace CFMonitor.Checkers
             {
                 // Check events
                 actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking file size");
-                CheckEvents(actionerList, monitorItem, actionParameters, exception, fileSize);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, fileSize, systemValueTypes);
             }
             catch (System.Exception ex)
             {
@@ -56,9 +64,11 @@ namespace CFMonitor.Checkers
             return Task.CompletedTask;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorFileSize, ActionParameters actionParameters, Exception exception, double? fileSize)
+        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorFileSize, ActionParameters actionParameters, Exception exception, double? fileSize,
+                                List<SystemValueType> systemValueTypes)
         {
-            var fileSizeMaxFileSize = monitorFileSize.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_FileSizeMaxFileSizeBytes);
+            var svtFileSizeMailFileSize = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_FileSizeMaxFileSizeBytes);
+            var fileSizeMaxFileSize = monitorFileSize.Parameters.First(p => p.SystemValueTypeId == svtFileSizeMailFileSize.Id);            
             var maxFileSizeBytes = Convert.ToDouble(fileSizeMaxFileSize.Value);
 
             foreach (EventItem eventItem in monitorFileSize.EventItems)
@@ -67,16 +77,16 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.FileSizeInTolerance:
+                    case EventConditionSources.FileSizeInTolerance:
                         meetsCondition = fileSize != null && fileSize.Value <= maxFileSizeBytes;
                         break;
-                    case EventConditionSource.FileSizeOutsideTolerance:
+                    case EventConditionSources.FileSizeOutsideTolerance:
                         meetsCondition = fileSize != null && fileSize.Value > maxFileSizeBytes;
                         break;
                 }

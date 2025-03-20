@@ -15,6 +15,13 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerURL : IChecker
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public CheckerURL(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "URL";
 
         public CheckerTypes CheckerType => CheckerTypes.URL;
@@ -45,7 +52,7 @@ namespace CFMonitor.Checkers
             {
                 // Check events
                 actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking URL");
-                CheckEvents(actionerList, monitorURL, actionParameters, exception, request, response);
+                CheckEvents(actionerList, monitorItem, actionParameters, exception, request, response);
             }
             catch(System.Exception ex)
             {
@@ -57,12 +64,25 @@ namespace CFMonitor.Checkers
 
         private HttpWebRequest CreateWebRequest(MonitorItem monitorURL)
         {
-            var urlParam = monitorURL.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_URLURL);
-            var methodParam = monitorURL.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_URLMethod);
-            var usernameParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.MIP_URLUsername);
-            var passwordParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.MIP_URLPassword);
-            var proxyNameParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.MIP_URLProxyName);
-            var proxyPortParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.MIP_URLProxyPort);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var svtParam = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLURL);
+            var urlParam = monitorURL.Parameters.First(p => p.SystemValueTypeId == svtParam.Id);
+
+            var svtMethod = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLMethod);
+            var methodParam = monitorURL.Parameters.First(p => p.SystemValueTypeId == svtMethod.Id);
+
+            var svtUsername = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLUsername);
+            var usernameParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtUsername.Id);
+
+            var svtPassword = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLPassword);
+            var passwordParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtPassword.Id);
+
+            var svtProxyName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLProxyName);
+            var proxyNameParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtProxyName.Id);
+
+            var svtProxyPort = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLProxyPort);
+            var proxyPortParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtProxyPort.Id);
 
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(urlParam.Value);
             request.Method = methodParam.Value;
@@ -95,16 +115,16 @@ namespace CFMonitor.Checkers
 
                 switch (eventItem.EventCondition.Source)
                 {
-                    case EventConditionSource.Exception:
+                    case EventConditionSources.Exception:
                         meetsCondition = (exception != null);
                         break;
-                    case EventConditionSource.NoException:
+                    case EventConditionSources.NoException:
                         meetsCondition = (exception == null);
                         break;
-                    case EventConditionSource.HttpResponseStatusCode:
+                    case EventConditionSources.HttpResponseStatusCode:
                         meetsCondition = eventItem.EventCondition.IsValid(response.StatusCode);
                         break;
-                    case EventConditionSource.WebExceptionStatus:
+                    case EventConditionSources.WebExceptionStatus:
                         meetsCondition = eventItem.EventCondition.IsValid(webExceptionStatus);
                         break;
                 }          

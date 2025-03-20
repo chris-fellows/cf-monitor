@@ -6,24 +6,24 @@ namespace CFMonitor.Models
 {
     public class EventConditionValuesService
     {
-        public List<EventConditionItem> GetItems(EventConditionSource eventConditionSource)
+        public List<EventConditionItem> GetItems(EventConditionSources eventConditionSource)
         {
             switch (eventConditionSource)
             {
-                case EventConditionSource.DriveAvailableFreeSpace:
+                case EventConditionSources.DriveAvailableFreeSpace:
 
                     break;
-                case EventConditionSource.Exception:
+                case EventConditionSources.Exception:
                     break;
-                case EventConditionSource.FileExists:
+                case EventConditionSources.FileExists:
                     break;
-                case EventConditionSource.FileNotExists:
+                case EventConditionSources.FileNotExists:
                     break;
-                case EventConditionSource.HostEntryExists:
+                case EventConditionSources.HostEntryExists:
                     break;
-                case EventConditionSource.HostEntryNotExists:
+                case EventConditionSources.HostEntryNotExists:
                     break;
-                case EventConditionSource.HttpResponseStatusCode:
+                case EventConditionSources.HttpResponseStatusCode:
                     break;
             }
 

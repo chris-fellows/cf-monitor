@@ -1,14 +1,19 @@
 ﻿using CFMonitor.AgentManager;
 using CFMonitor.Interfaces;
+using CFMonitor.Models;
 using CFMonitor.Models.MonitorItems;
 using CFMonitor.Seed;
 using CFMonitor.Services;
 using System.Reflection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 internal static class Program
 {
     private static void Main(string[] args)
     {
+        Console.WriteLine("Starting CF Monitor Agent Manager");
+
         var serviceProvider = CreateServiceProvider();
 
         // Start worker
@@ -30,7 +35,7 @@ internal static class Program
         // Stop worker
         worker.Stop();
 
-        Console.WriteLine("Terminated CF Monitor Agent");
+        Console.WriteLine("Terminated CF Monitor Agent Manager");
     }
 
 
@@ -43,14 +48,23 @@ internal static class Program
             .Build();
 
         var serviceProvider = new ServiceCollection()
+            // Add data services
             .AddScoped<IMonitorAgentService, XmlMonitorAgentService>()
             .AddScoped<IMonitorItemService, XmlMonitorItemService>()
+            .AddScoped<IUserService, XmlUserService>()
             .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()
-            .AddScoped<IActionersService, ActionersService>()
-            .AddScoped<ICheckersService, CheckersService>()
+            .AddScoped<ISystemValueTypeService, XmlSystemValueTypeService>()
+
+            //.AddScoped<IActionersService, ActionersService>()
+            //.AddScoped<ICheckersService, CheckersService>()
+
+            .RegisterAllTypes<IChecker>(new[] { typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
+            .RegisterAllTypes<IActioner>(new[] { typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
 
             // Seed
             .AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed1")
+            .AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed1")
+            .AddKeyedScoped<IEntityReader<User>, UserSeed1>("UserSeed1")
 
             .BuildServiceProvider();
 
@@ -64,12 +78,14 @@ internal static class Program
     /// <param name="services"></param>
     /// <param name="assemblies"></param>
     /// <param name="lifetime"></param>
-    private static void RegisterAllTypes<T>(this IServiceCollection services, IEnumerable<Assembly> assemblies, ServiceLifetime lifetime = ServiceLifetime.Transient)
+    private static IServiceCollection RegisterAllTypes<T>(this IServiceCollection services, IEnumerable<Assembly> assemblies, ServiceLifetime lifetime = ServiceLifetime.Transient)
     {
         var typesFromAssemblies = assemblies.SelectMany(a => a.DefinedTypes.Where(x => x.GetInterfaces().Contains(typeof(T))));
         foreach (var type in typesFromAssemblies)
         {
             services.Add(new ServiceDescriptor(typeof(T), type, lifetime));
         }
+
+        return services;
     }
 }

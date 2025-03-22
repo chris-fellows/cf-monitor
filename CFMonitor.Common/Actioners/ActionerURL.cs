@@ -1,7 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -13,21 +12,30 @@ namespace CFMonitor.Actioners
     /// </summary>
     public class ActionerURL : IActioner
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public ActionerURL(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "Opens URL";
 
-        public ActionerTypes ActionerType => ActionerTypes.URL;
+        //public ActionerTypes ActionerType => ActionerTypes.URL;
 
-        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> parameters)
         {
             //ActionURL actionURL = (ActionURL)actionItem;
             HttpWebRequest request = null;
             HttpWebResponse response = null;
             Exception exception = null;
 
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
             try
             {
                 // Create request
-                request = CreateWebRequest(actionItem);
+                request = CreateWebRequest(actionItem, systemValueTypes);
 
                 // Get response
                 response = (HttpWebResponse)request.GetResponse();
@@ -45,14 +53,14 @@ namespace CFMonitor.Actioners
             return actionItem.ActionerType == ActionerTypes.URL;
         }
 
-        private static HttpWebRequest CreateWebRequest(ActionItem actionURL)
+        private static HttpWebRequest CreateWebRequest(ActionItem actionURL, List<SystemValueType> systemValueTypes)
         {
-            var urlParam = actionURL.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_URLURL);
-            var methodParam = actionURL.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_URLMethod);
-            var usernameParam = actionURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.AIP_URLUsername);
-            var passwordParam = actionURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.AIP_URLPassword);
-            var proxyNameParam = actionURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.AIP_URLProxyName);
-            var proxyPortParam = actionURL.Parameters.FirstOrDefault(p => p.SystemValueType == SystemValueTypes.AIP_URLProxyPort);
+            var urlParam = actionURL.Parameters.First(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_URLURL).Id);
+            var methodParam = actionURL.Parameters.First(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_URLMethod).Id);
+            var usernameParam = actionURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_URLUsername).Id);
+            var passwordParam = actionURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_URLPassword).Id);
+            var proxyNameParam = actionURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_URLProxyName).Id);
+            var proxyPortParam = actionURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_URLProxyPort).Id);
 
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(urlParam.Value);
             request.Method = methodParam.Value;

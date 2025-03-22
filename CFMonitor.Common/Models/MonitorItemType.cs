@@ -1,5 +1,4 @@
 ﻿using CFMonitor.Enums;
-using CFMonitor.Models.MonitorItems;
 
 namespace CFMonitor.Models
 {
@@ -25,13 +24,13 @@ namespace CFMonitor.Models
 
         /// <summary>
         /// Event conditions that are relevant
-        /// </summary>
-        public List<EventConditionSources> EventConditionSources { get; set; } = new List<EventConditionSources>();      
+        /// </summary>        
+        public List<SystemValueTypes> EventConditionValueTypes { get; set; } = new List<SystemValueTypes>();
 
         /// <summary>
         /// Checker type
         /// </summary>
-        public CheckerTypes CheckerType { get; set; }
+        //public CheckerTypes CheckerType { get; set; }
 
         public List<MonitorItemParameter> DefaultParameters = new List<MonitorItemParameter>();
     }

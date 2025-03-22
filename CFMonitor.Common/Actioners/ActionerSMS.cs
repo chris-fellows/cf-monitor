@@ -1,7 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
 using System;
 using System.Threading.Tasks;
 
@@ -12,11 +11,18 @@ namespace CFMonitor.Actioners
     /// </summary>
     public class ActionerSMS : IActioner
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public ActionerSMS(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "Send SMS text";
 
-        public ActionerTypes ActionerType => ActionerTypes.SMS;
+        //public ActionerTypes ActionerType => ActionerTypes.SMS;
 
-        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> parameters)
         {
             //ActionSMS actionSMS = (ActionSMS)actionItem;
 

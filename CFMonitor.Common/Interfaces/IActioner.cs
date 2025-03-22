@@ -1,6 +1,5 @@
 ﻿using CFMonitor.Enums;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
 using System.Threading.Tasks;
 
 namespace CFMonitor.Interfaces
@@ -16,7 +15,7 @@ namespace CFMonitor.Interfaces
         /// </summary>
         string Name { get; }
         
-        ActionerTypes ActionerType { get; }
+        //ActionerTypes ActionerType { get; }
 
         /// <summary>
         /// Executes action
@@ -24,7 +23,7 @@ namespace CFMonitor.Interfaces
         /// <param name="monitorItem"></param>
         /// <param name="actionItem"></param>
         /// <param name="actionParameters"></param>
-        Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters);
+        Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> parameters);
 
         /// <summary>
         /// Determines if this nstance can execute action

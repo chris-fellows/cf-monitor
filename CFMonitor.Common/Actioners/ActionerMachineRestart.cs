@@ -1,7 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
 using System;
 using System.Threading.Tasks;
 
@@ -12,11 +11,18 @@ namespace CFMonitor.Actioners
     /// </summary>
     public class ActionerMachineRestart : IActioner
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public ActionerMachineRestart(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "Restart machine";
 
-        public ActionerTypes ActionerType => ActionerTypes.MachineRestart;
+        //public ActionerTypes ActionerType => ActionerTypes.MachineRestart;
 
-        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> parameters)
         {
             //ActionMachineRestart actionMachineRestart = (ActionMachineRestart)actionItem;
 

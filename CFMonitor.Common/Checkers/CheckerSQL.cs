@@ -1,8 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.Data.OleDb;
@@ -16,88 +14,91 @@ namespace CFMonitor.Checkers
     /// Examples of use:
     /// - Check SQL query that returns a list of issues from the data.
     /// </summary>
-    public class CheckerSQL : IChecker
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public CheckerSQL(ISystemValueTypeService systemValueTypeService)
+    public class CheckerSQL : CheckerBase, IChecker
+    {        
+        public CheckerSQL(IEventItemService eventItemService,
+                        ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+            
         }
 
         public string Name => "SQL query";
 
-        public CheckerTypes CheckerType => CheckerTypes.SQL;
+        //public CheckerTypes CheckerType => CheckerTypes.SQL;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
-        {            
-            ////MonitorSQL monitorSQL = (MonitorSQL)monitorItem;
-            //var connectionStringParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLConnectionString);
-            //var queryParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLQuery);
+        {
+            return Task.Factory.StartNew(async () =>
+            {
 
-            //Exception exception = null;
-            //OleDbDatabase database = null;
-            //OleDbDataReader reader = null;
-            //ActionParameters actionParameters = new ActionParameters();
+                // Get event items
+                var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
+                if (!eventItems.Any())
+                {
+                    return;
+                }
 
-            //try
-            //{
-            //    database = new OleDbDatabase(connectionStringParam.Value);
-            //    database.Open();
-            //    string sql = System.IO.File.ReadAllText(queryParam.Value);
-            //    reader = database.ExecuteReader(System.Data.CommandType.Text, sql, System.Data.CommandBehavior.Default, null);                
-            //}
-            //catch (System.Exception ex)
-            //{
-            //    exception = ex;
-            //}
+                ////MonitorSQL monitorSQL = (MonitorSQL)monitorItem;
+                //var connectionStringParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLConnectionString);
+                //var queryParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLQuery);
 
-            //try
-            //{
-            //    // Check events
-            //    actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking SQL");
-            //    CheckEvents(actionerList, monitorItem, actionParameters, exception, reader);
-            //}
-            //catch (System.Exception ex)
-            //{
+                //Exception exception = null;
+                //OleDbDatabase database = null;
+                //OleDbDataReader reader = null;
+                //ActionParameters actionParameters = new ActionParameters();
 
-            //}
-            //finally
-            //{
-            //    if (reader != null && !reader.IsClosed)
-            //    {
-            //        reader.Close();
-            //    }
-            //    if (database != null && database.IsOpen)
-            //    {
-            //        database.Close();
-            //    }
-            //}
+                //try
+                //{
+                //    database = new OleDbDatabase(connectionStringParam.Value);
+                //    database.Open();
+                //    string sql = System.IO.File.ReadAllText(queryParam.Value);
+                //    reader = database.ExecuteReader(System.Data.CommandType.Text, sql, System.Data.CommandBehavior.Default, null);                
+                //}
+                //catch (System.Exception ex)
+                //{
+                //    exception = ex;
+                //}
 
-            return Task.CompletedTask;
+                //try
+                //{
+                //    // Check events
+                //    actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking SQL");
+                //    foreach(var eventItem in eventItems)
+                //    {
+                //      CheckEvent(eventItem, actionerList, monitorItem, actionParameters, exception, reader);
+                //     }
+                //}
+                //catch (System.Exception ex)
+                //{
+
+                //}
+                //finally
+                //{
+                //    if (reader != null && !reader.IsClosed)
+                //    {
+                //        reader.Close();
+                //    }
+                //    if (database != null && database.IsOpen)
+                //    {
+                //        database.Close();
+                //    }
+                //}
+            });
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorSQL, ActionParameters actionParameters, Exception exception)      //, OleDbDataReader reader)
-        {
+        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorSQL, ActionParameters actionParameters, Exception exception)      //, OleDbDataReader reader)
+        {            
             bool readerHasRows = true;  // (reader != null && reader.Read());
-
-            foreach (EventItem eventItem in monitorSQL.EventItems)
-            {
+            
                 bool meetsCondition = false;
 
-                switch (eventItem.EventCondition.Source)
+                switch (eventItem.EventCondition.SourceValueType)
                 {
-                    case EventConditionSources.Exception:
-                        meetsCondition = (exception != null);
+                    case SystemValueTypes.ECS_Exception:
+                        meetsCondition = eventItem.EventCondition.IsValid(exception != null);
                         break;
-                    case EventConditionSources.NoException:
-                        meetsCondition = (exception == null);
-                        break;
-                    case EventConditionSources.SQLReturnsRows:
-                        //meetsCondition = (reader != null && readerHasRows == true);
-                        break;
-                    case EventConditionSources.SQLReturnsNoRows:
-                        //meetsCondition = (reader != null && readerHasRows == false);
+                    case SystemValueTypes.ECS_SQLReturnsRows:
+                        meetsCondition = eventItem.EventCondition.IsValid(readerHasRows);
                         break;
                 }
 
@@ -105,10 +106,9 @@ namespace CFMonitor.Checkers
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)
                     {
-                        DoAction(actionerList, monitorSQL, actionItem, actionParameters);
+                        await ExecuteActionAsync(actionerList, monitorSQL, actionItem, actionParameters);
                     }
                 }
-            }
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -116,16 +116,16 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.SQL;
         }
 
-        private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
-        {
-            foreach (IActioner actioner in actionerList)
-            {
-                if (actioner.CanExecute(actionItem))
-                {
-                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
-                    break;
-                }
-            }
-        }
+        //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        //{
+        //    foreach (IActioner actioner in actionerList)
+        //    {
+        //        if (actioner.CanExecute(actionItem))
+        //        {
+        //            actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
+        //            break;
+        //        }
+        //    }
+        //}
     }
 }

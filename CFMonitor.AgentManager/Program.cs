@@ -1,7 +1,6 @@
 ﻿using CFMonitor.AgentManager;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
-using CFMonitor.Models.MonitorItems;
 using CFMonitor.Seed;
 using CFMonitor.Services;
 using System.Reflection;
@@ -62,6 +61,7 @@ internal static class Program
             .RegisterAllTypes<IActioner>(new[] { typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
 
             // Seed
+            .AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed1")
             .AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed1")
             .AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed1")
             .AddKeyedScoped<IEntityReader<User>, UserSeed1>("UserSeed1")

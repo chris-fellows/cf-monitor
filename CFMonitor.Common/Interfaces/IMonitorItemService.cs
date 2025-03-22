@@ -1,4 +1,4 @@
-﻿using CFMonitor.Models.MonitorItems;
+﻿using CFMonitor.Models;
 
 namespace CFMonitor.Interfaces
 {

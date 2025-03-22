@@ -1,5 +1,5 @@
 ﻿using CFMonitor.Enums;
-using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
 
 namespace CFMonitor.Interfaces
 {
@@ -14,10 +14,10 @@ namespace CFMonitor.Interfaces
         /// </summary>
         string Name { get; }
 
-        /// <summary>
-        /// Internal name
-        /// </summary>
-        CheckerTypes CheckerType { get; }
+        ///// <summary>
+        ///// Internal name
+        ///// </summary>
+        //CheckerTypes CheckerType { get; }
 
         /// <summary>
         /// Checks monitor item

@@ -1,15 +1,13 @@
 ﻿using CFMonitor.Interfaces;
 using CFMonitor.Models;
+using CFMonitor.Seed;
 using CFMonitor.Services;
 using System.ComponentModel;
 using System.Net;
 using System.Reflection;
 using System;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using CFMonitor.Models.MonitorItems;
-using CFMonitor.Seed;
 
 namespace CFMonitor.Agent
 {
@@ -63,7 +61,8 @@ namespace CFMonitor.Agent
                 //.AddScoped<IActionersService, ActionersService>()
                 //.AddScoped<ICheckersService, CheckersService>()
 
-                // Seed
+                // Seed                
+                .AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed1")
                 .AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed1")
                 .AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed1")
                 .AddKeyedScoped<IEntityReader<User>, UserSeed1>("UserSeed1")                

@@ -1,6 +1,4 @@
 ﻿using CFMonitor.Enums;
-using System;
-using System.Collections.Generic;
 using System.Xml.Serialization;
 
 namespace CFMonitor.Models
@@ -11,12 +9,15 @@ namespace CFMonitor.Models
     [XmlType("EventCondition")]
     public class EventCondition
     {        
-        [XmlAttribute("Source")]        
-        public EventConditionSources Source { get; set; }
+        [XmlAttribute("SourceValueType")]        
+        public SystemValueTypes SourceValueType { get; set; }
 
         [XmlAttribute("Operator")]
-        public ConditionOperators Operator { get; set; }
+        public ConditionOperators Operator { get; set; } = ConditionOperators.Equals;
 
+        /// <summary>
+        /// Value(s) for checking
+        /// </summary>
         [XmlArray("Values")]
         [XmlArrayItem("Value")]
         public List<object> Values = new List<object>();

@@ -1,8 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,58 +13,68 @@ namespace CFMonitor.Checkers
     /// <summary>
     /// Checks SOAP web service
     /// </summary>
-    public class CheckerSOAP : IChecker
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public CheckerSOAP(ISystemValueTypeService systemValueTypeService)
+    public class CheckerSOAP : CheckerBase, IChecker
+    {        
+        public CheckerSOAP(IEventItemService eventItemService,
+                        ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+     
         }
 
         public string Name => "SOAP";
 
-        public CheckerTypes CheckerType => CheckerTypes.SOAP;
+       // public CheckerTypes CheckerType => CheckerTypes.SOAP;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public async Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            var systemValueTypes = _systemValueTypeService.GetAll();
-
-            //MonitorSOAP monitorSOAP = (MonitorSOAP)monitorItem;
-            Exception exception = null;
-            string result = "";
-            HttpWebRequest webRequest = null;
-            HttpWebResponse webResponse = null;
-            ActionParameters actionParameters = new ActionParameters();
-
-            try
+            return Task.Factory.StartNew(async () =>
             {
-                webRequest = CreateWebRequest(monitorItem, systemValueTypes);          
-                webResponse = (HttpWebResponse)webRequest.GetResponse();
-               
-                //using (WebResponse response = webRequest.GetResponse())
-                //{
+                // Get event items
+                var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
+                if (!eventItems.Any())
+                {
+                    return;
+                }
+
+                var systemValueTypes = _systemValueTypeService.GetAll();
+
+                //MonitorSOAP monitorSOAP = (MonitorSOAP)monitorItem;
+                Exception exception = null;
+                string result = "";
+                HttpWebRequest webRequest = null;
+                HttpWebResponse webResponse = null;
+                ActionParameters actionParameters = new ActionParameters();
+
+                try
+                {
+                    webRequest = CreateWebRequest(monitorItem, systemValueTypes);
+                    webResponse = (HttpWebResponse)webRequest.GetResponse();
+
+                    //using (WebResponse response = webRequest.GetResponse())
+                    //{
                     using (StreamReader reader = new StreamReader(webResponse.GetResponseStream()))
                     {
                         result = reader.ReadToEnd();
                     }
-                //}
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
+                    //}
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
 
-            try
-            {
-                CheckEvents(actionerList, monitorItem, actionParameters, exception, webRequest, webResponse);
-            }
-            catch (Exception ex)
-            {
+                try
+                {
+                    foreach (var eventItem in eventItems)
+                    {
+                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionParameters, exception, webRequest, webResponse);
+                    }
+                }
+                catch (Exception ex)
+                {
 
-            }
-
-            return Task.CompletedTask;
+                }
+            });
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -74,43 +82,43 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.SOAP;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorSOAP, ActionParameters actionParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
-        {
+        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorSOAP, ActionParameters actionParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
+        {            
             int webExceptionStatus = -1;
             if (exception is WebException)
             {
                 WebException webException = (WebException)exception;
                 webExceptionStatus = Convert.ToInt32(webException.Status);
             }
-
-            foreach (EventItem eventItem in monitorSOAP.EventItems)
-            {
+            
                 bool meetsCondition = false;
 
-                switch (eventItem.EventCondition.Source)
+                switch (eventItem.EventCondition.SourceValueType)
                 {
-                    case EventConditionSources.Exception:
-                        meetsCondition = (exception != null);
+                    case SystemValueTypes.ECS_Exception:
+                        meetsCondition = eventItem.EventCondition.IsValid(exception != null);
                         break;
-                    case EventConditionSources.NoException:
-                        meetsCondition = (exception == null);
+                    case SystemValueTypes.ECS_HTTPResponseStatusCode:
+                        meetsCondition = eventItem.EventCondition.IsValid(response.StatusCode);
                         break;
+
+                    /*
                     case EventConditionSources.HttpResponseStatusCode:
                         meetsCondition = eventItem.EventCondition.IsValid(response.StatusCode);
                         break;
                     case EventConditionSources.WebExceptionStatus:
                         meetsCondition = eventItem.EventCondition.IsValid(webExceptionStatus);
                         break;
+                    */
                 }
           
                 if (meetsCondition)
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)
                     {
-                        DoAction(actionerList, monitorSOAP, actionItem, actionParameters);
+                        await ExecuteActionAsync(actionerList, monitorSOAP, actionItem, actionParameters);
                     }
-                }
-            }
+                }            
         }
 
         private HttpWebRequest CreateWebRequest(MonitorItem monitorSOAP, List<SystemValueType> systemValueTypes)
@@ -137,16 +145,16 @@ namespace CFMonitor.Checkers
             return webRequest;
         }
       
-        private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
-        {
-            foreach (IActioner actioner in actionerList)
-            {
-                if (actioner.CanExecute(actionItem))
-                {
-                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
-                    break;
-                }
-            }
-        }
+        //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        //{
+        //    foreach (IActioner actioner in actionerList)
+        //    {
+        //        if (actioner.CanExecute(actionItem))
+        //        {
+        //            actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
+        //            break;
+        //        }
+        //    }
+        //}
     }
 }

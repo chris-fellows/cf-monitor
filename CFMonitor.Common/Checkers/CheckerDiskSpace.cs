@@ -1,8 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,49 +11,65 @@ namespace CFMonitor.Checkers
     /// <summary>
     /// Checks disk space
     /// </summary>
-    public class CheckerDiskSpace : IChecker
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public CheckerDiskSpace(ISystemValueTypeService systemValueTypeService)
+    public class CheckerDiskSpace : CheckerBase, IChecker
+    {        
+        public CheckerDiskSpace(IEventItemService eventItemService,
+                                ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+     
         }
 
         public string Name => "Disk space";
 
-        public CheckerTypes CheckerType => CheckerTypes.DiskSpace;
+        //public CheckerTypes CheckerType => CheckerTypes.DiskSpace;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            var systemValueTypes = _systemValueTypeService.GetAll();
-
-            var svtDrive = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_DiskSpaceDrive);
-            var driveParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtDrive.Id);
-
-            Exception exception = null;
-            DriveInfo driveInfo = null;            
-            ActionParameters actionParameters = new ActionParameters();
-
-            try
+            return Task.Factory.StartNew(async () =>
             {
-                driveInfo = new DriveInfo(driveParam.Value);                             
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
+                // Get event items
+                var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
+                if (!eventItems.Any())
+                {
+                    return;
+                }
 
-            try
-            {
-                CheckEvents(actionerList, monitorItem, actionParameters, exception, driveInfo);
-            }
-            catch (Exception ex)
-            {
+                var systemValueTypes = _systemValueTypeService.GetAll();
 
-            }
+                var svtDrive = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_DiskSpaceDrive);
+                var driveParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtDrive.Id);
 
-            return Task.CompletedTask;
+                Exception exception = null;
+                DriveInfo driveInfo = null;
+                var actionItemParameters = new List<ActionItemParameter>();
+
+                try
+                {
+                    driveInfo = new DriveInfo(driveParam.Value);
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+
+                    actionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
+                }
+
+                try
+                {
+                    foreach (var eventItem in eventItems)
+                    {
+                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionItemParameters, exception, driveInfo);
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                }
+            });
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -63,21 +77,16 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.DiskSpace;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorDiskSpace, ActionParameters actionParameters, Exception exception, DriveInfo driveInfo)
-        {
-            foreach (EventItem eventItem in monitorDiskSpace.EventItems)
-            {
+        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorDiskSpace, List<ActionItemParameter> actionItemParameters, Exception exception, DriveInfo driveInfo)
+        {            
                 bool meetsCondition = false;
 
-                switch (eventItem.EventCondition.Source)
+                switch (eventItem.EventCondition.SourceValueType)
                 {
-                    case EventConditionSources.Exception:
-                        meetsCondition = (exception != null);
+                    case SystemValueTypes.ECS_Exception:
+                        meetsCondition = eventItem.EventCondition.IsValid(exception != null);
                         break;
-                    case EventConditionSources.NoException:
-                        meetsCondition = (exception == null);
-                        break;
-                    case EventConditionSources.DriveAvailableFreeSpace:
+                    case SystemValueTypes.ECS_DiskSpaceAvailableBytes:
                         meetsCondition = eventItem.EventCondition.IsValid(driveInfo.AvailableFreeSpace);
                         break;
                 }
@@ -86,22 +95,21 @@ namespace CFMonitor.Checkers
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)
                     {
-                        DoAction(actionerList, monitorDiskSpace, actionItem, actionParameters);
+                        await ExecuteActionAsync(actionerList, monitorDiskSpace, actionItem, actionItemParameters);
                     }
-                }
-            }
+                }            
         }
 
-        private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
-        {
-            foreach (IActioner actioner in actionerList)
-            {
-                if (actioner.CanExecute(actionItem))
-                {
-                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
-                    break;
-                }
-            }
-        }
+        //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> actionItemParameters)
+        //{
+        //    foreach (IActioner actioner in actionerList)
+        //    {
+        //        if (actioner.CanExecute(actionItem))
+        //        {
+        //            actioner.ExecuteAsync(monitorItem, actionItem, actionItemParameters);
+        //            break;
+        //        }
+        //    }
+        //}
     }
 }

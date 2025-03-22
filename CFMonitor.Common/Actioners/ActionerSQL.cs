@@ -1,7 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
 using System.Threading.Tasks;
 
 namespace CFMonitor.Actioners
@@ -11,14 +10,23 @@ namespace CFMonitor.Actioners
     /// </summary>
     public class ActionerSQL : IActioner
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public ActionerSQL(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "Execute SQL";
 
-        public ActionerTypes ActionerType => ActionerTypes.SQL;
+        //public ActionerTypes ActionerType => ActionerTypes.SQL;
 
-        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> parameters)
         {
-            //var connectionStringParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_SQLConnectionString);
-            //var sqlParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_SQLSQL);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var connectionStringParam = actionItem.Parameters.First(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_SQLConnectionString).Id);
+            var sqlParam = actionItem.Parameters.First(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_SQLSQL).Id);
 
             ////ActionSQL actionSQL = (ActionSQL)actionItem;
             //OleDbDatabase database = new OleDbDatabase(connectionStringParam.Value);

@@ -1,0 +1,306 @@
+﻿@page "/monitoritems/edit"
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.EntityFrameworkCore
+@using CFMonitor.Enums
+@using CFMonitor.Interfaces
+@using CFMonitor.Models
+@using CFMonitor.Utilities
+@inject NavigationManager NavigationManager
+@inject IEventItemService EventItemService
+@inject IFileSecurityCheckerService FileSecurityCheckerService
+@inject IMonitorAgentService MonitorAgentService
+@inject IMonitorItemService MonitorItemService
+@inject IMonitorItemTypeService MonitorItemTypeService
+@inject ISystemValueTypeService SystemValueTypeService
+
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>Monitor Item</h2>
+<hr />
+@if (MonitorItem is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="MonitorItem" OnValidSubmit="UpdateMonitorItem" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert" />
+                <input type="hidden" name="MonitorItem.Id" value="@MonitorItem.Id" />
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name:</label>
+                    <InputText id="name" @bind-Value="MonitorItem.Name" class="form-control" />
+                    <ValidationMessage For="() => MonitorItem.Name" class="text-danger" />
+                </div>
+
+                <p>Monitor Agents</p>
+                @foreach (MySelectableItem monitorAgentItem in MonitorAgentItems)
+                {
+                    <div class="mb-3">
+                        <label for="@monitorAgentItem.Id" class="form-label">@monitorAgentItem.Name</label>
+                        <InputCheckbox id="@monitorAgentItem.Id" @bind-Value="@monitorAgentItem.Selected" class="form-check-input" />
+                    </div>
+                }
+
+                <p>Parameters</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parameter</th><th>Value</th>                        
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(ParameterItem parameterItem in ParameterItems)
+                        {
+                            <tr>
+                                <td>@parameterItem.SystemValueType.Name</td>
+                                <td>
+                                    @{
+                                        // Get allowed values if finite list. E.g. HTTP methods, HTTP status codes etc
+                                        var allowedValues = SystemValueDataTypeUtilities.GetAllowedValues(parameterItem.SystemValueType.DataType);
+
+                                        if (!String.IsNullOrEmpty(parameterItem.SystemValueType.MinValue))    // Fixed range
+                                        {
+                                            switch (parameterItem.SystemValueType.DataType)
+                                            {
+                                                case SystemValueDataTypes.Integer:
+                                                    <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueInteger" min="@parameterItem.MinValueInteger" max="@parameterItem.MaxValueInteger" class="form-control" />
+                                                    break;
+                                            }
+                                        }
+                                        else if (allowedValues == null || !allowedValues.Any())
+                                        {
+                                            switch (parameterItem.SystemValueType.DataType)
+                                            {
+                                                case SystemValueDataTypes.Boolean:
+                                                    <InputCheckbox id="@parameterItem.Id" @bind-Value="@parameterItem.ValueBoolean" class="form-control" />
+                                                    break;
+                                                case SystemValueDataTypes.Decimal:
+                                                    <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueDecimal" class="form-control" />
+                                                    break;
+                                                case SystemValueDataTypes.Integer:
+                                                    <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueInteger" class="form-control" />
+                                                    break;
+                                                default:
+                                                    <InputText id="@parameterItem.Id" @bind-Value="@parameterItem.Value" class="form-control" />
+                                                    break;
+                                            }
+                                        }
+                                        else     // Finite values
+                                        {
+                                            <InputSelect id="@parameterItem.Id" @bind-Value="@parameterItem.Value" class="form-control">
+                                                @foreach (string allowedValue in allowedValues)
+                                                {
+                                                    @if (allowedValue == parameterItem.Value)
+                                                    {
+                                                        <option selected value="@allowedValue">@allowedValue</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@allowedValue">@allowedValue</option>
+                                                    }
+                                                }
+                                            </InputSelect>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <p>Events</p>
+                <QuickGrid Class="table" Items="@EventItemsQueryable">
+                    <PropertyColumn Property="eventItem => eventItem.DisplaySummary" />
+
+                    <TemplateColumn Context="eventItem">
+                        <a href="@($"eventitems/edit?id={eventItem.Id}")">Edit</a> |
+                        <a href="@($"eventitems/details?id={eventItem.Id}")">Details</a> |
+                        <a href="@($"eventitems/delete?id={eventItem.Id}")">Delete</a>
+                    </TemplateColumn>
+                </QuickGrid>
+
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/monitoritems">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private MonitorItem? MonitorItem { get; set; }
+
+    private IQueryable<EventItemSummary>? EventItemsQueryable;
+
+    private List<MonitorItemType> MonitorItemTypes = new();
+
+    private List<MySelectableItem> MonitorAgentItems = new();
+
+    private List<SystemValueType> SystemValueTypes = new();
+
+    private List<ParameterItem> ParameterItems = new();    
+
+    private class ParameterItem
+    {
+        public string Id { get; set; } = String.Empty;
+
+        public SystemValueType SystemValueType { get; set; } = new();
+
+        public string Name { get; set; } = String.Empty;
+
+        public string Value { get; set; } = String.Empty;        
+
+        public bool ValueBoolean { get; set; }
+
+        public Decimal ValueDecimal { get; set; }
+
+        public Int64 ValueInteger { get; set; }
+
+        public Int64 MinValueInteger { get; set; }
+
+        public Int64 MaxValueInteger { get; set; }
+    }
+
+    private class MySelectableItem
+    {
+        public string Id { get; set; } = String.Empty;
+
+        public string Name {get; set;} = String.Empty;
+
+        public bool Selected { get; set; }
+    }
+
+    private class EventItemSummary
+    {
+        public string Id { get; set; } = String.Empty;
+
+        public string DisplaySummary { get; set; } = String.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //using var context = DbFactory.CreateDbContext();
+        //User ??= await context.User.FirstOrDefaultAsync(m => m.Id == Id);
+
+        MonitorItem = MonitorItemService.GetById(Id);
+
+        MonitorItemTypes = MonitorItemTypeService.GetAll();
+
+        SystemValueTypes = SystemValueTypeService.GetAll();
+
+        if (MonitorItem is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+
+        // Get event items
+        var eventItems = EventItemService.GetAll().Where(ei => ei.MonitorItemId == MonitorItem.Id);
+        EventItemsQueryable = eventItems.Select(ei =>
+                new EventItemSummary()
+                    {
+                        Id = ei.Id,
+                        DisplaySummary = EventConditionUtilities.GetDisplaySummary(ei, SystemValueTypes)
+                    }).AsQueryable();
+
+        // Set monitor agents
+        MonitorAgentItems = MonitorAgentService.GetAll().Select(ma => new MySelectableItem() 
+            { 
+                Id = ma.ID, 
+                Name = ma.MachineName, 
+                Selected = MonitorItem.MonitorAgentIds.Contains(ma.ID) 
+            }).ToList();
+
+        // Get parameter items        
+        var systemValueTypes = SystemValueTypeService.GetAll();
+        ParameterItems.Clear();
+        foreach(var parameter in MonitorItem.Parameters)
+        {
+            var systemValueType = systemValueTypes.First(svt => svt.Id == parameter.SystemValueTypeId);
+
+            var parameterItem = new ParameterItem()
+            {
+                Id = $"parameter-{Guid.NewGuid().ToString()}",
+                SystemValueType = systemValueType,
+                Name = systemValueType.Name,
+                Value = parameter.Value                
+            };
+            switch(systemValueType.DataType)
+            {
+                case SystemValueDataTypes.Boolean: 
+                    parameterItem.ValueBoolean = Convert.ToBoolean(parameter.Value); 
+                    break;
+                case SystemValueDataTypes.Decimal: 
+                    parameterItem.ValueDecimal = Convert.ToDecimal(parameter.Value);                     
+                    break;
+                case SystemValueDataTypes.Integer: 
+                    parameterItem.ValueInteger = Convert.ToInt64(parameter.Value);
+
+                    if (!String.IsNullOrEmpty(systemValueType.MinValue)) parameterItem.MinValueInteger = Convert.ToInt64(systemValueType.MinValue);
+                    if (!String.IsNullOrEmpty(systemValueType.MaxValue)) parameterItem.MaxValueInteger = Convert.ToInt64(systemValueType.MaxValue);
+                    break;               
+            }            
+
+            ParameterItems.Add(parameterItem);
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateMonitorItem()
+    {
+        //using var context = DbFactory.CreateDbContext();
+        //context.Attach(User!).State = EntityState.Modified;
+
+        try
+        {          
+
+            MonitorItemService.Update(MonitorItem);
+            //await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!MonitorItemExists(MonitorItem!.Id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/monitoritems");
+    }    
+
+    private string GetMonitorItemTypeName(MonitorItem monitorItem)
+    {
+        return MonitorItemTypes.First(t => t.ItemType == monitorItem.MonitorItemType).Name;
+    }
+
+    private string GetEventItemName(EventItem eventItem)
+    {
+        return SystemValueTypes.First(svt => svt.ValueType == eventItem.EventCondition.SourceValueType).Name;
+    }
+
+    private bool MonitorItemExists(string id)
+    {
+        return MonitorItemService.GetById(id) != null;
+        //using var context = DbFactory.CreateDbContext();
+        //return context.User.Any(e => e.Id == id);
+    }
+}
+

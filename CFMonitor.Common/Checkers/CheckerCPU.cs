@@ -1,8 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,71 +10,85 @@ namespace CFMonitor.Checkers
     /// <summary>
     /// Checks result of CPU
     /// </summary>
-    public class CheckerCPU : IChecker
-    {
+    public class CheckerCPU : CheckerBase, IChecker
+    {        
+        public CheckerCPU(IEventItemService eventItemService,
+            ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        {
+            
+        }
+
         public string Name => "CPU";
 
-        public CheckerTypes CheckerType => CheckerTypes.CPU;
+       // public CheckerTypes CheckerType => CheckerTypes.CPU;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            //MonitorCPU monitorCPU = (MonitorCPU)monitorItem;
-
-            Exception exception = null;
-            ActionParameters actionParameters = new ActionParameters();
-
-            try
+            return Task.Factory.StartNew(async () =>
             {
+                // Get event items
+                var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
+                if (!eventItems.Any())
+                {
+                    return;
+                }
 
-            }
-            catch (System.Exception ex)
-            {
-                exception = ex;
-            }
+                var systemValueTypes = _systemValueTypeService.GetAll();
 
-            try
-            {
-                // Check events
-                actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking NTP time");
-                CheckEvents(actionerList, monitorItem, actionParameters, exception);
-            }
-            catch (System.Exception ex)
-            {
+                Exception exception = null;
+                var actionItemParameters = new List<ActionItemParameter>();
 
-            }
+                try
+                {
 
-            return Task.CompletedTask;
+                }
+                catch (System.Exception ex)
+                {
+                    exception = ex;
+
+                    actionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
+                }
+
+                try
+                {
+                    // Check events                
+                    foreach (var eventItem in eventItems)
+                    {
+                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionItemParameters, exception);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+
+                }
+            });
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorCPU, ActionParameters actionParameters, Exception exception)
-        {
-            foreach (EventItem eventItem in monitorCPU.EventItems)
-            {
+        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorCPU, List<ActionItemParameter> actionItemParameters, Exception exception)
+        {                        
                 bool meetsCondition = false;
 
-                switch (eventItem.EventCondition.Source)
+                switch (eventItem.EventCondition.SourceValueType)
                 {
-                    case EventConditionSources.Exception:
-                        meetsCondition = (exception != null);
+                    case SystemValueTypes.ECS_Exception:
+                        meetsCondition = eventItem.EventCondition.IsValid(exception != null);
                         break;
-                    case EventConditionSources.NoException:
-                        meetsCondition = (exception == null);
-                        break;
-                    case EventConditionSources.CPUInTolerance:
-                        // TODO: Set this
-                        break;
-                    case EventConditionSources.CPUOutsideTolerance:
-                        break;
+                    case SystemValueTypes.ECS_CPUInTolerance:
+                        // TODO Set this
+                        break;                    
                 }
 
                 if (meetsCondition)
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)
                     {
-                        DoAction(actionerList, monitorCPU, actionItem, actionParameters);
+                        await ExecuteActionAsync(actionerList, monitorCPU, actionItem, actionItemParameters);
                     }
-                }
-            }
+                }            
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -84,16 +96,16 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.CPU;
         }
 
-        private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
-        {
-            foreach (IActioner actioner in actionerList)
-            {
-                if (actioner.CanExecute(actionItem))
-                {
-                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
-                    break;
-                }
-            }
-        }
+        //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> actionItemParameters)
+        //{
+        //    foreach (IActioner actioner in actionerList)
+        //    {
+        //        if (actioner.CanExecute(actionItem))
+        //        {
+        //            actioner.ExecuteAsync(monitorItem, actionItem, actionItemParameters);
+        //            break;
+        //        }
+        //    }
+        //}
     }
 }

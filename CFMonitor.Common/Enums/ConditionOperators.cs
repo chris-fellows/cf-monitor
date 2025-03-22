@@ -12,5 +12,4 @@
         MoreThan = 7,
         MoreThanOrEqualTo = 8
     }
-
 }

@@ -1,6 +1,6 @@
 ﻿using CFMonitor.Interfaces;
+using CFMonitor.Models;
 using CFMonitor.Models.Messages;
-using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.Linq;

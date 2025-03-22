@@ -1,7 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
-using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.Net.Http.Headers;
@@ -23,17 +22,15 @@ namespace CFMonitor.Services
 
             var list = new List<MonitorItemType>();
             list.Add(new MonitorItemType()
-            {
+            {                 
                 Name = "Active Process",
                 Description = "Checks an active process",
                 ItemType = MonitorItemTypes.ActiveProcess,
-                CheckerType = CheckerTypes.ActiveProcess,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.ActiveProcess,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.ActiveProcessNotRunning,
-                    EventConditionSources.ActiveProcessRunning,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,                   
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_ActiveProcessRunning
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -55,13 +52,11 @@ namespace CFMonitor.Services
                 Name = "CPU",
                 Description = "Checks CPU",
                 ItemType = MonitorItemTypes.CPU,
-                CheckerType = CheckerTypes.CPU,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.CPU,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.CPUInTolerance,
-                    EventConditionSources.CPUOutsideTolerance,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_CPUInTolerance
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -81,11 +76,10 @@ namespace CFMonitor.Services
                 Name = "DCHP",
                 Description = "Checks that DHCP is working",
                 ItemType = MonitorItemTypes.DHCP,
-                CheckerType = CheckerTypes.DHCP,
-                EventConditionSources = new List<EventConditionSources>()
-                {                    
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                //CheckerType = CheckerTypes.DHCP,
+                EventConditionValueTypes = new List<SystemValueTypes>()
+                {
+                    SystemValueTypes.ECS_Exception                    
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -99,12 +93,11 @@ namespace CFMonitor.Services
                 Name = "Disk space",
                 Description = "Checks disk space on particular device",
                 ItemType = MonitorItemTypes.DiskSpace,
-                CheckerType = CheckerTypes.DiskSpace,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.DiskSpace,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.DriveAvailableFreeSpace,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_DiskSpaceAvailableBytes
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -122,11 +115,10 @@ namespace CFMonitor.Services
                 Name = "DNS",
                 Description = "Checks that DNS is working",
                 ItemType = MonitorItemTypes.DNS,
-                CheckerType = CheckerTypes.DNS,
-                EventConditionSources = new List<EventConditionSources>()
-                {                    
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+               // CheckerType = CheckerTypes.DNS,
+                EventConditionValueTypes = new List<SystemValueTypes>()
+                {
+                    SystemValueTypes.ECS_Exception
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -144,15 +136,11 @@ namespace CFMonitor.Services
                 Name = "File size",
                 Description = "Checks size of file",
                 ItemType = MonitorItemTypes.FileSize,
-                CheckerType = CheckerTypes.FileSize,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.FileSize,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    //EventConditionSources.FileExists,
-                    //EventConditionSources.FileNotExists,
-                    EventConditionSources.FileSizeInTolerance,
-                    EventConditionSources.FileSizeOutsideTolerance,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_FileSizeInTolerance,
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -182,13 +170,11 @@ namespace CFMonitor.Services
                 Name = "Folder size",
                 Description = "Checks size of folder",
                 ItemType = MonitorItemTypes.FolderSize,
-                CheckerType = CheckerTypes.FolderSize,
-                EventConditionSources = new List<EventConditionSources>()
-                {                   
-                    EventConditionSources.FolderSizeInTolerance,
-                    EventConditionSources.FolderSizeOutsideTolerance,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                //CheckerType = CheckerTypes.FolderSize,
+                EventConditionValueTypes = new List<SystemValueTypes>()
+                {
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_FolderSizeInTolerance
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -217,13 +203,11 @@ namespace CFMonitor.Services
                 Name = "IMAP",
                 Description = "Checks connection to IMAP server",
                 ItemType = MonitorItemTypes.IMAP,
-                CheckerType = CheckerTypes.IMAP,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.IMAP,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.IMAPConnected,
-                    EventConditionSources.IMAPConnectError,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_IMAPConnected
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -243,16 +227,12 @@ namespace CFMonitor.Services
                 Name = "Local file",
                 Description = "Checks local file exists and optionally contains specific text",
                 ItemType = MonitorItemTypes.LocalFile,
-                CheckerType = CheckerTypes.LocalFile,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.LocalFile,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.FileExists,
-                    EventConditionSources.FileNotExists,
-                    EventConditionSources.TextFoundInFile,
-                    EventConditionSources.TextNotFoundInFile,
-                    EventConditionSources.IMAPConnectError,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_LocalFileExists,
+                    SystemValueTypes.ECS_LocalFileTextFound
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -275,11 +255,10 @@ namespace CFMonitor.Services
                 Name = "JSON",
                 Description = "Checks JSON file",
                 ItemType = MonitorItemTypes.JSON,
-                CheckerType = CheckerTypes.JSON,
-                EventConditionSources = new List<EventConditionSources>()
-                {                    
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                //CheckerType = CheckerTypes.JSON,
+                EventConditionValueTypes = new List<SystemValueTypes>()
+                {
+                    SystemValueTypes.ECS_Exception,                    
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -293,11 +272,10 @@ namespace CFMonitor.Services
                 Name = "LDAP",
                 Description = "Checks that LDAP is working",
                 ItemType = MonitorItemTypes.LDAP,
-                CheckerType = CheckerTypes.LDAP,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.LDAP,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -311,13 +289,11 @@ namespace CFMonitor.Services
                 Name = "Memory",
                 Description = "Checks local memory use",
                 ItemType = MonitorItemTypes.Memory,
-                CheckerType = CheckerTypes.Memory,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.Memory,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.MemoryInTolerance,
-                    EventConditionSources.MemoryOutsideTolerance,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_MemoryInTolerance
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -331,13 +307,11 @@ namespace CFMonitor.Services
                 Name = "NTP time",
                 Description = "Checks time with NTP server",
                 ItemType = MonitorItemTypes.NTP,
-                CheckerType = CheckerTypes.NTP,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.NTP,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.NTPTimeInTolerance,
-                    EventConditionSources.NTPTimeOutsideTolerance,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_NTPTimeInTolerance
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -366,12 +340,11 @@ namespace CFMonitor.Services
                 Name = "Ping",
                 Description = "Pings endpoint",
                 ItemType = MonitorItemTypes.Ping,
-                CheckerType = CheckerTypes.Ping,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.Ping,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.PingReplyStatus,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_PingReplyStatus
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -389,13 +362,11 @@ namespace CFMonitor.Services
                 Name = "POP",
                 Description = "Checks connection to POP server",
                 ItemType = MonitorItemTypes.POP,
-                CheckerType = CheckerTypes.POP,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.POP,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.POPConnected,
-                    EventConditionSources.POPConnectError,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_POPConnected
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -437,12 +408,11 @@ namespace CFMonitor.Services
                 Name = "REST API",
                 Description = "Checks REST API returns expected response",
                 ItemType = MonitorItemTypes.REST,
-                CheckerType = CheckerTypes.REST,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.REST,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.WebExceptionStatus,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_HTTPResponseStatusCode
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 { 
@@ -460,12 +430,11 @@ namespace CFMonitor.Services
                 Name = "Run Process",
                 Description = "Runs process and checks the exit code",
                 ItemType = MonitorItemTypes.RunProcess,
-                CheckerType = CheckerTypes.RunProcess,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.RunProcess,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.RunProcessExitCodeReturned,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_RunProcessExitCode
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -505,11 +474,10 @@ namespace CFMonitor.Services
                 Name = "SMTP",
                 Description = "Checks SMTP connection",
                 ItemType = MonitorItemTypes.SMTP,
-                CheckerType = CheckerTypes.SMTP,
-                EventConditionSources = new List<EventConditionSources>()
-                {                    
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                //CheckerType = CheckerTypes.SMTP,
+                EventConditionValueTypes = new List<SystemValueTypes>()
+                {
+                    SystemValueTypes.ECS_Exception                    
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -532,12 +500,11 @@ namespace CFMonitor.Services
                 Name = "SOAP",
                 Description = "Checks SOAP API returns expected response",
                 ItemType = MonitorItemTypes.SOAP,
-                CheckerType = CheckerTypes.SOAP,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.SOAP,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.WebExceptionStatus,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_HTTPResponseStatusCode
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -560,13 +527,11 @@ namespace CFMonitor.Services
                 Name = "TCP or UDP socket",
                 Description = "Checks TCP or UDP socket",
                 ItemType = MonitorItemTypes.Socket,
-                CheckerType = CheckerTypes.Socket,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.Socket,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.SocketConnected,
-                    EventConditionSources.SocketNotConnected,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_SocketConnected
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -594,13 +559,11 @@ namespace CFMonitor.Services
                 Name = "SQL query",
                 Description = "Checks results of SQL query",
                 ItemType = MonitorItemTypes.SQL,
-                CheckerType = CheckerTypes.SQL,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.SQL,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.SQLReturnsNoRows,
-                    EventConditionSources.SQLReturnsRows,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_SQLReturnsRows
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
@@ -623,12 +586,11 @@ namespace CFMonitor.Services
                 Name = "HTTP/HTTPS endpoint",
                 Description = "Checks HTTP/HTTPS endpoint returns expected response",
                 ItemType = MonitorItemTypes.URL,
-                CheckerType = CheckerTypes.URL,
-                EventConditionSources = new List<EventConditionSources>()
+                //CheckerType = CheckerTypes.URL,
+                EventConditionValueTypes = new List<SystemValueTypes>()
                 {
-                    EventConditionSources.WebExceptionStatus,
-                    EventConditionSources.Exception,
-                    EventConditionSources.NoException,
+                    SystemValueTypes.ECS_Exception,
+                    SystemValueTypes.ECS_HTTPResponseStatusCode
                 },
                 DefaultParameters = new List<MonitorItemParameter>()
                 {

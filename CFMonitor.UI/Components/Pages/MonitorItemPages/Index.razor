@@ -2,7 +2,6 @@
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using CFMonitor.Interfaces
 @using CFMonitor.Models
-@using CFMonitor.Models.MonitorItems
 @using CFMonitor.Utilities
 @using CFUtilities
 @inject IMonitorItemService MonitorItemService
@@ -43,7 +42,13 @@
 else
 {
     <QuickGrid Class="table" Items="@MonitorItemsQueryable" Pagination="@Pagination">
-        <PropertyColumn Property="monitorItem => monitorItem.Name" />        
+        <PropertyColumn Property="monitorItem => monitorItem.Name" />
+
+        <TemplateColumn Context="monitorItem">
+            <a href="@($"monitoritems/edit?id={monitorItem.Id}")">Edit</a> |
+            <a href="@($"monitoritems/details?id={monitorItem.Id}")">Details</a> |
+            <a href="@($"monitoritems/delete?id={monitorItem.Id}")">Delete</a>
+        </TemplateColumn>
     </QuickGrid>
 
     <Paginator State="@Pagination" />

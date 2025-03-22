@@ -1,8 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,73 +13,83 @@ namespace CFMonitor.Checkers
     /// <summary>
     /// Checks SMTP server
     /// </summary>
-    public class CheckerSMTP : IChecker
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public CheckerSMTP(ISystemValueTypeService systemValueTypeService)
+    public class CheckerSMTP : CheckerBase, IChecker
+    {        
+        public CheckerSMTP(IEventItemService eventItemService,
+                        ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+            
         }
 
         public string Name => "SMTP";
 
-        public CheckerTypes CheckerType => CheckerTypes.SMTP;
+        //public CheckerTypes CheckerType => CheckerTypes.SMTP;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            var systemValueTypes = _systemValueTypeService.GetAll();
-
-            var svtServer = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SMTPServer);
-            var serverParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtServer.Id);
-
-            var svtPort = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SMTPPort);
-            var portParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtPort.Id);
-
-            Exception exception = null;
-            ActionParameters actionParameters = new ActionParameters();
-
-            try
+            return Task.Factory.StartNew(async () =>
             {
-                using (var client = new TcpClient())
+                // Get event items
+                var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
+                if (!eventItems.Any())
                 {
-                          
-                    //var server = "smtp.gmail.com";
-                    //var port = 465;
-                    client.Connect(serverParam.Value, Convert.ToInt32(portParam.Value));
-                    // As GMail requires SSL we should use SslStream
-                    // If your SMTP server doesn't support SSL you can
-                    // work directly with the underlying stream
-                    using (var stream = client.GetStream())
-                    using (var sslStream = new SslStream(stream))
+                    return;
+                }
+
+                var systemValueTypes = _systemValueTypeService.GetAll();
+
+                var svtServer = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SMTPServer);
+                var serverParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtServer.Id);
+
+                var svtPort = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SMTPPort);
+                var portParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtPort.Id);
+
+                Exception exception = null;
+                ActionParameters actionParameters = new ActionParameters();
+
+                try
+                {
+                    using (var client = new TcpClient())
                     {
-                        sslStream.AuthenticateAsClient(serverParam.Value);
-                        using (var writer = new StreamWriter(sslStream))
-                        using (var reader = new StreamReader(sslStream))
+
+                        //var server = "smtp.gmail.com";
+                        //var port = 465;
+                        client.Connect(serverParam.Value, Convert.ToInt32(portParam.Value));
+                        // As GMail requires SSL we should use SslStream
+                        // If your SMTP server doesn't support SSL you can
+                        // work directly with the underlying stream
+                        using (var stream = client.GetStream())
+                        using (var sslStream = new SslStream(stream))
                         {
-                            writer.WriteLine("EHLO " + serverParam.Value);
-                            writer.Flush();
-                            Console.WriteLine(reader.ReadLine());
-                            // GMail responds with: 220 mx.google.com ESMTP
+                            sslStream.AuthenticateAsClient(serverParam.Value);
+                            using (var writer = new StreamWriter(sslStream))
+                            using (var reader = new StreamReader(sslStream))
+                            {
+                                writer.WriteLine("EHLO " + serverParam.Value);
+                                writer.Flush();
+                                Console.WriteLine(reader.ReadLine());
+                                // GMail responds with: 220 mx.google.com ESMTP
+                            }
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
 
-            try
-            {
-                CheckEvents(actionerList, monitorItem, actionParameters, exception);
-            }
-            catch (Exception ex)
-            {
+                try
+                {
+                    foreach (var eventItem in eventItems)
+                    {
+                        await CheckEventAync(eventItem, actionerList, monitorItem, actionParameters, exception);
+                    }
+                }
+                catch (Exception ex)
+                {
 
-            }
-
-            return Task.CompletedTask;
+                }
+            });
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -89,19 +97,14 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.SMTP;
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorSMTP, ActionParameters actionParameters, Exception exception)
-        {
-            foreach (EventItem eventItem in monitorSMTP.EventItems)
-            {
+        private async Task CheckEventAync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorSMTP, ActionParameters actionParameters, Exception exception)
+        {            
                 bool meetsCondition = false;
 
-                switch (eventItem.EventCondition.Source)
+                switch (eventItem.EventCondition.SourceValueType)
                 {
-                    case EventConditionSources.Exception:
-                        meetsCondition = (exception != null);
-                        break;
-                    case EventConditionSources.NoException:
-                        meetsCondition = (exception == null);
+                    case SystemValueTypes.ECS_Exception:
+                        meetsCondition = eventItem.EventCondition.IsValid(exception != null);
                         break;                    
                 }
 
@@ -109,22 +112,21 @@ namespace CFMonitor.Checkers
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)
                     {
-                        DoAction(actionerList, monitorSMTP, actionItem, actionParameters);
+                        await ExecuteActionAsync(actionerList, monitorSMTP, actionItem, actionParameters);
                     }
-                }
-            }
+                }         
         }
 
-        private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
-        {
-            foreach (IActioner actioner in actionerList)
-            {
-                if (actioner.CanExecute(actionItem))
-                {
-                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
-                    break;
-                }
-            }
-        }
+        //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        //{
+        //    foreach (IActioner actioner in actionerList)
+        //    {
+        //        if (actioner.CanExecute(actionItem))
+        //        {
+        //            actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
+        //            break;
+        //        }
+        //    }
+        //}
     }
 }

@@ -1,8 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,59 +10,70 @@ namespace CFMonitor.Checkers
     /// <summary>
     /// Checks result of NTP time
     /// </summary>
-    public class CheckerNTP : IChecker
+    public class CheckerNTP : CheckerBase, IChecker
     {
+        
+        public CheckerNTP(IEventItemService eventItemService,
+            ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        {
+            
+        }
+
         public string Name => "NTP time";
 
-        public CheckerTypes CheckerType => CheckerTypes.NTP;
+        //public CheckerTypes CheckerType => CheckerTypes.NTP;
 
         public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
         {
-            //MonitorNTP monitorNTP = (MonitorNTP)monitorItem;
-            Exception exception = null;
-            ActionParameters actionParameters = new ActionParameters();
-            
-            try
+            return Task.Factory.StartNew(async () =>
             {
+                // Get event items
+                var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
+                if (!eventItems.Any())
+                {
+                    return;
+                }
 
-            }
-            catch (System.Exception ex)
-            {
-                exception = ex;
-            }
+                //MonitorNTP monitorNTP = (MonitorNTP)monitorItem;
+                Exception exception = null;
+                ActionParameters actionParameters = new ActionParameters();
 
-            try
-            {
-                // Check events
-                actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking NTP time");
-                CheckEvents(actionerList, monitorItem, actionParameters, exception);
-            }
-            catch (System.Exception ex)
-            {
+                try
+                {
 
-            }
+                }
+                catch (System.Exception ex)
+                {
+                    exception = ex;
+                }
 
-            return Task.CompletedTask;
+                try
+                {
+                    // Check events
+                    actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking NTP time");
+                    foreach (var eventItem in eventItems)
+                    {
+                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionParameters, exception);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+
+                }
+            });
         }
 
-        private void CheckEvents(List<IActioner> actionerList, MonitorItem monitorNTP, ActionParameters actionParameters, Exception exception)
+        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorNTP, ActionParameters actionParameters, Exception exception)
         {
-            foreach (EventItem eventItem in monitorNTP.EventItems)
-            {
                 bool meetsCondition = false;
 
-                switch (eventItem.EventCondition.Source)
+                switch (eventItem.EventCondition.SourceValueType)
                 {
-                    case EventConditionSources.Exception:
-                        meetsCondition = (exception != null);
+                    case SystemValueTypes.ECS_Exception:
+                        meetsCondition = eventItem.EventCondition.IsValid(exception != null);
                         break;
-                    case EventConditionSources.NoException:
-                        meetsCondition = (exception == null);
-                        break;
-                    case EventConditionSources.NTPTimeInTolerance:
-                        // TODO: Set this
-                        break;
-                    case EventConditionSources.NTPTimeOutsideTolerance:
+                    case SystemValueTypes.ECS_NTPTimeInTolerance:
+                        meetsCondition = eventItem.EventCondition.IsValid(true);        // TODO: Set this
                         break;
                 }
 
@@ -72,10 +81,9 @@ namespace CFMonitor.Checkers
                 {
                     foreach (ActionItem actionItem in eventItem.ActionItems)
                     {
-                        DoAction(actionerList, monitorNTP, actionItem, actionParameters);
+                        await ExecuteActionAsync(actionerList, monitorNTP, actionItem, actionParameters);
                     }
-                }
-            }
+                }            
         }
 
         public bool CanCheck(MonitorItem monitorItem)
@@ -83,16 +91,16 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.NTP;
         }
 
-        private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
-        {
-            foreach (IActioner actioner in actionerList)
-            {
-                if (actioner.CanExecute(actionItem))
-                {
-                    actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
-                    break;
-                }
-            }
-        }
+        //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        //{
+        //    foreach (IActioner actioner in actionerList)
+        //    {
+        //        if (actioner.CanExecute(actionItem))
+        //        {
+        //            actioner.ExecuteAsync(monitorItem, actionItem, actionParameters);
+        //            break;
+        //        }
+        //    }
+        //}
     }
 }

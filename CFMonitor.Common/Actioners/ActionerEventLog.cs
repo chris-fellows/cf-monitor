@@ -1,7 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
 using System;
 using System.Threading.Tasks;
 
@@ -12,11 +11,19 @@ namespace CFMonitor.Actioners
     /// </summary>
     public class ActionerEventLog : IActioner
     {
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public ActionerEventLog(ISystemValueTypeService systemValueTypeService)
+        {
+            _systemValueTypeService = systemValueTypeService;
+        }
+
+
         public string Name => "Write to Event Log";
 
-        public ActionerTypes ActionerType => ActionerTypes.Log;
+        //public ActionerTypes ActionerType => ActionerTypes.Log;
 
-        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> parameters)
         {
             throw new NotImplementedException();
 

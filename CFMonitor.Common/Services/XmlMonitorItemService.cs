@@ -1,5 +1,5 @@
 ﻿using CFMonitor.Interfaces;
-using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
 using CFWebServer.Services;
 
 namespace CFMonitor.Services
@@ -11,8 +11,8 @@ namespace CFMonitor.Services
     {
         public XmlMonitorItemService(string folder) : base(folder,
                                                 "MonitorItem.*.xml",
-                                              (monitorItem) => $"MonitorAgent.{monitorItem.Id}.xml",
-                                                (monitorItemId) => $"MonitorAgent.{monitorItemId}.xml")
+                                              (monitorItem) => $"MonitorItem.{monitorItem.Id}.xml",
+                                                (monitorItemId) => $"MonitorItem.{monitorItemId}.xml")
         {
 
         }

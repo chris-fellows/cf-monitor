@@ -1,7 +1,9 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
-using CFMonitor.Models.ActionItems;
-using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
+using CFUtilities.Interfaces;
+using CFUtilities.Models;
+using System.Net.Http.Headers;
 using System.Net.Mail;
 using System.Threading.Tasks;
 
@@ -12,23 +14,56 @@ namespace CFMonitor.Actioners
     /// </summary>
     public class ActionerEmail : IActioner
     {
+        private readonly IPlaceholderService _placeholderService;
+        private readonly ISystemValueTypeService _systemValueTypeService;
+
+        public ActionerEmail(IPlaceholderService placeholderService,
+                            ISystemValueTypeService systemValueTypeService)
+        {
+            _placeholderService = placeholderService;
+            _systemValueTypeService = systemValueTypeService;
+        }
+
         public string Name => "Send an email";
 
-        public ActionerTypes ActionerType => ActionerTypes.Email;
+        //public ActionerTypes ActionerType => ActionerTypes.Email;
 
-        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)
+        public Task ExecuteAsync(MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> parameters)
         {
-            //ActionEmail actionEmail = (ActionEmail)actionItem;
-            var bodyParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_EmailBody);
-            var serverParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_EmailServer);
-            var subjectParam = actionItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.AIP_EmailSubject);
-            var recipientParams = actionItem.Parameters.Where(p => p.SystemValueType == SystemValueTypes.AIP_EmailRecipient);
-            var ccParams = actionItem.Parameters.Where(p => p.SystemValueType == SystemValueTypes.AIP_EmailCC);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+            
+            var bodyParam = actionItem.Parameters.First(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType ==  SystemValueTypes.AIP_EmailBody).Id);
+            var serverParam = actionItem.Parameters.First(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_EmailServer).Id);
+            var subjectParam = actionItem.Parameters.First(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_EmailSubject).Id);
+            var recipientParams = actionItem.Parameters.Where(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_EmailRecipient).Id);
+            var ccParams = actionItem.Parameters.Where(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIP_EmailCC).Id);
 
+            var errorMessageParam = parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id);
+
+            // Add custom placeholders to replace error message
+            var placeholderValues = new Dictionary<string, object>();
+            _placeholderService.ResetDefaults();    // Reset default placeholders
+            if (errorMessageParam != null)
+            {
+                var errorMessagePlaceholder = new Placeholder()
+                {
+                    Name = "{error_message}",
+                    CanGetValue = (placeholderName) => placeholderName.Equals("{error_message}"),
+                    GetValue = (placeholderName, placeholderParameters) =>
+                    {
+                        return placeholderParameters[placeholderName].ToString()!;
+                    }
+                };
+                _placeholderService.Add(errorMessagePlaceholder);
+
+                // Add placeholder value to replace
+                placeholderValues.Add(errorMessagePlaceholder.Name, errorMessageParam.Value);
+            }
+            
             MailMessage message = new MailMessage()
             {
-                Subject = subjectParam.Value,
-                Body = actionParameters.Values[ActionParameterTypes.Body].ToString(),
+                Subject = _placeholderService.GetWithPlaceholdersReplaced(subjectParam.Value, placeholderValues),
+                Body = _placeholderService.GetWithPlaceholdersReplaced(bodyParam.Value, placeholderValues),
                 IsBodyHtml = true,               
             };
 
@@ -46,7 +81,7 @@ namespace CFMonitor.Actioners
             client.Send(message);
 
             return Task.CompletedTask;
-        }
+        }        
 
         public bool CanExecute(ActionItem actionItem)
         {

@@ -1,5 +1,5 @@
 ﻿using CFMonitor.Interfaces;
-using CFMonitor.Models.MonitorItems;
+using CFMonitor.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;

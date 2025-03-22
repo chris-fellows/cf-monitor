@@ -1,7 +1,7 @@
 ﻿using CFMonitor.Enums;
 using System.Xml.Serialization;
 
-namespace CFMonitor.Models.MonitorItems
+namespace CFMonitor.Models
 {
     [XmlType("MonitorItem")] 
     public class MonitorItem
@@ -31,12 +31,12 @@ namespace CFMonitor.Models.MonitorItems
         [XmlElement("MonitorItemSchedule")]
         public MonitorItemSchedule MonitorItemSchedule = new MonitorItemSchedule();
         
-        /// <summary>
-        /// Events to handle
-        /// </summary>
-        [XmlArray("EventItems")]
-        [XmlArrayItem("EventItem")]
-        public List<EventItem> EventItems = new List<EventItem>();
+        ///// <summary>
+        ///// Events to handle
+        ///// </summary>
+        //[XmlArray("EventItems")]
+        //[XmlArrayItem("EventItem")]
+        //public List<EventItem> EventItems = new List<EventItem>();
 
         /// <summary>
         /// Parameters that are specific to monitor item type

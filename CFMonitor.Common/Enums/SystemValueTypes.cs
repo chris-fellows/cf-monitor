@@ -1,13 +1,49 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CFMonitor.Enums
+﻿namespace CFMonitor.Enums
 {
+    /// <summary>
+    /// System value types   
+    /// </summary>
     public enum SystemValueTypes
     {
+        // -----------------------------------------------------------------------------------------------------
+        // Event condition sources
+        ECS_Exception,
+
+        ECS_DiskSpaceAvailableBytes,
+
+        ECS_DNSHostExists,
+
+        ECS_LocalFileExists,
+        ECS_LocalFileTextFound,
+
+        ECS_ActiveProcessRunning,
+
+        ECS_HTTPResponseStatusCode,
+
+        ECS_SocketConnected,
+
+        ECS_PingReplyStatus,        // Values=List of statuses
+
+        ECS_SQLReturnsRows,
+
+        ECS_RunProcessExitCode,
+
+        ECS_NTPTimeInTolerance,
+
+        ECS_CPUInTolerance,
+
+        ECS_FileSizeInTolerance,
+        
+        ECS_FolderSizeInTolerance,
+
+        ECS_MemoryInTolerance,
+
+        ECS_IMAPConnected,
+
+        ECS_POPConnected,
+
+        // -----------------------------------------------------------------------------------------------------
+        // Action item parameters
         AIP_EmailBody,
         AIP_EmailCC,
         AIP_EmailRecipient,
@@ -38,6 +74,13 @@ namespace CFMonitor.Enums
         AIP_URLProxyPort,
         AIP_URLUsername,
 
+        // -----------------------------------------------------------------------------------------------------
+        // Action item parameters (Custom - Generated during the check)
+        AIPC_ErrorMessage,        
+        AIPC_CheckMachineName,  // Machine that runs check
+
+        // -----------------------------------------------------------------------------------------------------
+        // Monitor item parameters
         MIP_ActiveProcessFileName,
         MIP_ActiveProcessMachineName,
 

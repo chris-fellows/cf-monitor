@@ -12,8 +12,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerSocket : CheckerBase, IChecker
     {        
-        public CheckerSocket(IEventItemService eventItemService,
-                        ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerSocket(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService, 
+            IEventItemService eventItemService,
+                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
             
         }
@@ -22,15 +25,17 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.Socket;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 var systemValueTypes = _systemValueTypeService.GetAll();
@@ -46,7 +51,7 @@ namespace CFMonitor.Checkers
 
                 Exception exception = null;
                 bool connected = false;
-                ActionParameters actionParameters = new ActionParameters();
+                var actionItemParameters = new List<ActionItemParameter>();
 
                 try
                 {
@@ -73,17 +78,22 @@ namespace CFMonitor.Checkers
                 {
                     foreach (var eventItem in eventItems)
                     {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionParameters, exception, connected);
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, connected))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
 
                 }
+
+                return monitorItemOutput;
             });
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorSocket, ActionParameters actionParameters, Exception exception, bool connected)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSocket, List<ActionItemParameter> actionItemParameters, Exception exception, bool connected)
         {            
                 bool meetsCondition = false;
 
@@ -95,15 +105,18 @@ namespace CFMonitor.Checkers
                     case SystemValueTypes.ECS_SocketConnected:
                         meetsCondition = eventItem.EventCondition.IsValid(connected);
                         break;
-                }          
+                }
 
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorSocket, actionItem, actionParameters);
-                    }
-                }            
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorSocket, actionItem, actionParameters);
+            //    }
+            //}
+            //
+
+            return meetsCondition;
         }
 
         public bool CanCheck(MonitorItem monitorItem)

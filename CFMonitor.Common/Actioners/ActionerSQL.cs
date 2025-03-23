@@ -8,13 +8,14 @@ namespace CFMonitor.Actioners
     /// <summary>
     /// Actions running SQL
     /// </summary>
-    public class ActionerSQL : IActioner
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public ActionerSQL(ISystemValueTypeService systemValueTypeService)
+    public class ActionerSQL : ActionerBase, IActioner
+    {        
+        public ActionerSQL(IAuditEventFactory auditEventFactory, 
+                            IAuditEventService auditEventService,
+                            IAuditEventTypeService auditEventTypeService, 
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+            
         }
 
         public string Name => "Execute SQL";

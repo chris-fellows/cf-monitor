@@ -219,9 +219,9 @@ else
         // Set monitor agents
         MonitorAgentItems = MonitorAgentService.GetAll().Select(ma => new MySelectableItem() 
             { 
-                Id = ma.ID, 
+                Id = ma.Id, 
                 Name = ma.MachineName, 
-                Selected = MonitorItem.MonitorAgentIds.Contains(ma.ID) 
+                Selected = MonitorItem.MonitorAgentIds.Contains(ma.Id) 
             }).ToList();
 
         // Get parameter items        

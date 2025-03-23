@@ -1,6 +1,8 @@
-﻿using CFMonitor.Interfaces;
+﻿using CFMonitor.AgentManager.Models;
+using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.Models.Messages;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,15 +18,19 @@ namespace CFMonitor.AgentManager
     {
         private readonly System.Timers.Timer _timer;
 
-        private readonly int _port;
-        private AgentConnection _agentConnection = new AgentConnection();
-
-        private readonly IMonitorItemService _monitorItemService;
-        private readonly IMonitorAgentService _monitorAgentService;
-
-        public Worker(int port)
+        private readonly IServiceProvider _serviceProvider;
+        private readonly SystemConfig _systemConfig;
+        private readonly AgentConnection _agentConnection;   // = new AgentConnection()
+        
+        public Worker(IServiceProvider serviceProvider,
+                      SystemConfig systemConfig)
         {
-            _port = port;
+            _serviceProvider = serviceProvider;
+            _systemConfig = systemConfig;
+
+            var monitorAgentService = _serviceProvider.GetRequiredService<IMonitorAgentService>();
+            var monitorItemService = _serviceProvider.GetRequiredService<IMonitorItemService>();
+            _agentConnection = new AgentConnection(monitorAgentService, monitorItemService);
 
             _timer = new System.Timers.Timer();
             _timer.Elapsed += _timer_Elapsed;
@@ -52,7 +58,7 @@ namespace CFMonitor.AgentManager
 
         public void Start()
         {
-            _agentConnection.StartListening(_port);
+            _agentConnection.StartListening(_systemConfig.LocalPort);
         }
 
         public void Stop()

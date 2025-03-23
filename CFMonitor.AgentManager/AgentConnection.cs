@@ -29,6 +29,7 @@ namespace CFMonitor.AgentManager
         private IExternalMessageConverter<GetMonitorItemsRequest> _getMonitorItemsRequestConverter = new GetMonitorItemsRequestConverter();
         private IExternalMessageConverter<GetMonitorItemsResponse> _getMonitorItemsResponseConverter = new GetMonitorItemsResponseConverter();
         private IExternalMessageConverter<Heartbeat> _heartbeatConverter = new HeartbeatConverter();
+        private IExternalMessageConverter<MonitorItemResult> _monitorItemResultConverter = new MonitorItemResultConverter();
         private IExternalMessageConverter<MonitorItemUpdated> _monitorItemUpdatedConverter = new MonitorItemUpdatedConverter();
         
         //public delegate void GetMonitorItemsRequestReceived(GetMonitorItemsRequest request);
@@ -41,11 +42,16 @@ namespace CFMonitor.AgentManager
 
         public string LocalUserName { get; set; } = String.Empty;
 
-        private IMonitorAgentService _monitorAgentService;
-        private IMonitorItemService _monitorItemService;
+        private readonly IMonitorAgentService _monitorAgentService;
+        private readonly IMonitorItemService _monitorItemService;
 
-        public AgentConnection()
+        public AgentConnection(IMonitorAgentService monitorAgentService,
+                    IMonitorItemService monitorItemService)
+            
         {
+            _monitorAgentService = monitorAgentService;
+            _monitorItemService = monitorItemService;
+
             _connection = new ConnectionTcp();
             _connection.OnConnectionMessageReceived += _connection_OnConnectionMessageReceived;
         }
@@ -89,38 +95,70 @@ namespace CFMonitor.AgentManager
             switch (connectionMessage.TypeId)
             {
                 case MessageTypeIds.GetMonitorItemsRequest:
-                    var monitorItems = _monitorItemService.GetAll();
+                    var getMonitorItemsRequest = _getMonitorItemsRequestConverter.GetExternalMessage(connectionMessage);
 
-                    var getMonitorItemsResponse = new GetMonitorItemsResponse()
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        MonitorItems = monitorItems,
-                        Response = new MessageResponse()
-                        {
-                            IsMore = false,
-                            MessageId = connectionMessage.Id,
-                            Sequence = 1
-                        }
-                    };
-
-                    // Send response
-                    _connection.SendMessage(_getMonitorItemsResponseConverter.GetConnectionMessage(getMonitorItemsResponse), messageReceivedInfo.RemoteEndpointInfo);
-
+                    ProcessGetMonitorItemsRequestAsync(getMonitorItemsRequest, messageReceivedInfo);
                     break;
 
                 case MessageTypeIds.Heartbeat:
                     var heartbeat = _heartbeatConverter.GetExternalMessage(connectionMessage);
 
-                    // Get monitor agent
-                    var monitorAgent = _monitorAgentService.GetById(heartbeat.SenderAgentId);
-                    if (monitorAgent != null)       // Known monitor agent
-                    {
-                        monitorAgent.HeartbeatDateTime = DateTimeOffset.UtcNow;
-                        _monitorAgentService.Update(monitorAgent);                       
-                    }   
-                    
-                    break;                             
+                    ProcessHeartbeatAsync(heartbeat, messageReceivedInfo);          
+                    break;
+
+                case MessageTypeIds.MonitorItemResult:
+                    var monitorItemResult = _monitorItemResultConverter.GetExternalMessage(connectionMessage);
+
+                    ProcessMonitorItemResultAsync(monitorItemResult, messageReceivedInfo);
+                    break;
             }
+        }
+
+        private Task ProcessGetMonitorItemsRequestAsync(GetMonitorItemsRequest getMonitorItemsRequest, MessageReceivedInfo messageReceivedInfo)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var monitorItems = _monitorItemService.GetAll();
+
+                var getMonitorItemsResponse = new GetMonitorItemsResponse()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    MonitorItems = monitorItems,
+                    Response = new MessageResponse()
+                    {
+                        IsMore = false,
+                        MessageId = getMonitorItemsRequest.Id,
+                        Sequence = 1
+                    }
+                };
+
+                // Send response
+                _connection.SendMessage(_getMonitorItemsResponseConverter.GetConnectionMessage(getMonitorItemsResponse), messageReceivedInfo.RemoteEndpointInfo);
+            });
+        }
+
+        private Task ProcessHeartbeatAsync(Heartbeat heartbeat, MessageReceivedInfo messageReceivedInfo)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                // Get monitor agent
+                var monitorAgent = _monitorAgentService.GetById(heartbeat.SenderAgentId);
+                if (monitorAgent != null)       // Known monitor agent
+                {
+                    monitorAgent.HeartbeatDateTime = DateTimeOffset.UtcNow;
+                    _monitorAgentService.Update(monitorAgent);
+                }
+            });
+        }
+
+        private Task ProcessMonitorItemResultAsync(MonitorItemResult monitorItemResult, MessageReceivedInfo messageReceivedInfo)
+        {
+            // TODO: Implement
+            // We need to decide how we execute the action(s).
+            // Possibly we need a queue.
+            return Task.Factory.StartNew(() =>
+            {
+            });
         }
 
         /// <summary>

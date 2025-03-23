@@ -1,4 +1,5 @@
-﻿using CFMonitor.Interfaces;
+﻿using CFMonitor.EntityReader;
+using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using System;
 using System.Collections.Generic;
@@ -10,26 +11,25 @@ namespace CFMonitor.Seed
 {
     public class MonitorAgentSeed1 : IEntityReader<MonitorAgent>
     {
-        public Task<List<MonitorAgent>> ReadAllAsync()
+        public IEnumerable<MonitorAgent> Read()
         {
             var items = new List<MonitorAgent>()
             {
                 new MonitorAgent()
                 {
-                    ID = Guid.NewGuid().ToString(),
+                    Id = Guid.NewGuid().ToString(),
                      MachineName  = Environment.MachineName,
                       UserName = Environment.UserName
                 },
                        new MonitorAgent()
                 {
-                    ID = Guid.NewGuid().ToString(),
+                    Id = Guid.NewGuid().ToString(),
                      MachineName  = Environment.MachineName + "XXX",
                       UserName = Environment.UserName
                 }
             };
 
-            return Task.FromResult(items);
+            return items;
         }
-
     }
 }

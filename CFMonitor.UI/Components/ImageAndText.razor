@@ -1,0 +1,26 @@
+﻿<style>
+    .imageandtextimg {
+        height: 18px;
+        width: 18px;
+    }
+</style>
+
+@if (!String.IsNullOrEmpty(ImageSource) || !String.IsNullOrEmpty(Text))
+{
+    <div>
+        <img class="imageandtextimg" src="@ImageSource" />@Text
+    </div>
+}
+
+@code {
+    [Parameter] public string ImageSource { get; set; } = String.Empty;
+
+    [Parameter] public string Text { get; set; } = String.Empty;
+
+        /*
+         *
+        <div>
+            <img class="imageandtextimg" src="@ImageSource" />@Text
+         </div>
+        */
+}

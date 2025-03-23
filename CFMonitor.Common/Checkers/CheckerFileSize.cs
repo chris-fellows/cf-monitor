@@ -14,8 +14,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerFileSize : CheckerBase, IChecker
     {        
-        public CheckerFileSize(IEventItemService eventItemService,
-                        ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerFileSize(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService,
+            IEventItemService eventItemService,
+                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
             
         }
@@ -24,15 +27,17 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.FileSize;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem,bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 var systemValueTypes = _systemValueTypeService.GetAll();
@@ -41,7 +46,7 @@ namespace CFMonitor.Checkers
                 var fileSizeParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFileSize.Id);
 
                 Exception exception = null;
-                ActionParameters actionParameters = new ActionParameters();
+                var actionItemParameters = new List<ActionItemParameter>();
                 double? fileSize = null;
 
                 try
@@ -60,20 +65,25 @@ namespace CFMonitor.Checkers
                 try
                 {
                     // Check events
-                    actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking file size");
+                    //actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking file size");
                     foreach (var eventItem in eventItems)
                     {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionParameters, exception, fileSize, systemValueTypes);
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, fileSize, systemValueTypes))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (System.Exception ex)
                 {
 
                 }
+
+                return monitorItemOutput;
             });
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorFileSize, ActionParameters actionParameters, Exception exception, double? fileSize,
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorFileSize, List<ActionItemParameter> actionItemParameters, Exception exception, double? fileSize,
                                 List<SystemValueType> systemValueTypes)
         {            
             var svtFileSizeMailFileSize = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_FileSizeMaxFileSizeBytes);
@@ -92,13 +102,16 @@ namespace CFMonitor.Checkers
                         break;
                 }
 
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorFileSize, actionItem, actionParameters);
-                    }
-                }            
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorFileSize, actionItem, actionParameters);
+            //    }
+            //}
+            //
+
+            return meetsCondition;
         }
 
         public bool CanCheck(MonitorItem monitorItem)

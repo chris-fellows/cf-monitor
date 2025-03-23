@@ -9,13 +9,14 @@ namespace CFMonitor.Actioners
     /// <summary>
     /// Actions writing to log file
     /// </summary>
-    public class ActionerLog : IActioner
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public ActionerLog(ISystemValueTypeService systemValueTypeService)
+    public class ActionerLog : ActionerBase, IActioner
+    {        
+        public ActionerLog(IAuditEventFactory auditEventFactory, 
+                            IAuditEventService auditEventService,
+                            IAuditEventTypeService auditEventTypeService, 
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+     
         }
 
 

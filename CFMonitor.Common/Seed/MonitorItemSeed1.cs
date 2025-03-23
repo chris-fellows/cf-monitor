@@ -1,4 +1,4 @@
-﻿using CFMonitor.Actioners;
+﻿using CFMonitor.EntityReader;
 using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
@@ -20,7 +20,7 @@ namespace CFMonitor.Seed
             _systemValueTypeService = systemValueTypeService;
         }
 
-        public Task<List<MonitorItem>> ReadAllAsync()
+        public IEnumerable<MonitorItem> Read()
         {
             var systemValueTypes = _systemValueTypeService.GetAll();
 
@@ -38,7 +38,7 @@ namespace CFMonitor.Seed
             items.Add(CreateTestMonitorLocalFile(systemValueTypes));
             items.Add(CreateTestMonitorActiveProcess(systemValueTypes));
 
-            return Task.FromResult(items);
+            return items;
         }    
 
         private static string GetNewMonitorItemID()
@@ -54,6 +54,7 @@ namespace CFMonitor.Seed
             MonitorItem monitorSQL = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
+                MonitorItemType = MonitorItemTypes.SQL,
                 Enabled = true,
                 Name = "Monitor SQL",                
                 Parameters = new List<MonitorItemParameter>()
@@ -92,6 +93,7 @@ namespace CFMonitor.Seed
             MonitorItem monitorProcess = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
+                MonitorItemType = MonitorItemTypes.ActiveProcess,
                 Enabled = true,
                 Name = "Check Process",
                 Parameters = new List<MonitorItemParameter>()
@@ -129,6 +131,7 @@ namespace CFMonitor.Seed
             MonitorItem monitorFile = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
+                MonitorItemType = MonitorItemTypes.LocalFile,
                 Enabled = true,
                 Name = "Check Log File Exists",
                 Parameters = new List<MonitorItemParameter>()
@@ -167,6 +170,7 @@ namespace CFMonitor.Seed
             MonitorItem monitorPing = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
+                MonitorItemType = MonitorItemTypes.Ping,
                 Enabled = true,
                 Name = "Ping Google",
                 Parameters = new List<MonitorItemParameter>()
@@ -200,6 +204,7 @@ namespace CFMonitor.Seed
             MonitorItem monitorURL = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
+                MonitorItemType = MonitorItemTypes.URL,
                 Name = "Check Google Website",
                 Enabled = true,
 
@@ -293,8 +298,9 @@ namespace CFMonitor.Seed
             MonitorItem monitorFolderSize = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
+                MonitorItemType = MonitorItemTypes.FolderSize,
                 Enabled = true,
-                Name = "Monitor Temp Folder Size",
+                Name = "Check Temp Folder Size",
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
@@ -329,6 +335,7 @@ namespace CFMonitor.Seed
             MonitorItem monitorFileSize = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
+                MonitorItemType = MonitorItemTypes.FileSize,
                 Enabled = true,
                 Name = "Monitor test log file size",
                 Parameters = new List<MonitorItemParameter>()
@@ -365,6 +372,7 @@ namespace CFMonitor.Seed
             MonitorItem monitorCPU = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
+                MonitorItemType= MonitorItemTypes.CPU,
                 Enabled = true,
                 Name = "Check CPU",
                 Parameters = new List<MonitorItemParameter>()
@@ -396,6 +404,7 @@ namespace CFMonitor.Seed
             MonitorItem monitorMemory = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
+                MonitorItemType = MonitorItemTypes.Memory,
                 Enabled = true,
                 Name = "Check Memory",
                 Parameters = new List<MonitorItemParameter>()
@@ -423,6 +432,7 @@ namespace CFMonitor.Seed
             MonitorItem monitorNTP = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
+                MonitorItemType = MonitorItemTypes.NTP,
                 Enabled = true,
                 Name = "Check NTP Time",
                 Parameters = new List<MonitorItemParameter>()

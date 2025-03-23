@@ -1,4 +1,5 @@
 using CFMonitor.UI.Data;
+using CFMonitor.EntityReader;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.Seed;
@@ -20,6 +21,18 @@ var configFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly
 //Directory.Delete(configFolder, true);
 
 // Add data services
+builder.Services.AddScoped<IActionItemTypeService>((scope) =>
+{
+    return new XmlActionItemTypeService(Path.Combine(configFolder, "ActionItemType"));
+});
+builder.Services.AddScoped<IAuditEventService>((scope) =>
+{
+    return new XmlAuditEventService(Path.Combine(configFolder, "AuditEvent"));
+});
+builder.Services.AddScoped<IAuditEventTypeService>((scope) =>
+{
+    return new XmlAuditEventTypeService(Path.Combine(configFolder, "AuditEventType"));
+});
 builder.Services.AddScoped<IEventItemService>((scope) =>
 {
     return new XmlEventItemService(Path.Combine(configFolder, "EventItem"));
@@ -44,7 +57,15 @@ builder.Services.AddScoped<IUserService>((scope) =>
 {
     return new XmlUserService(Path.Combine(configFolder, "User"));
 });
+
+// Add monitor item type service (Static data)
 builder.Services.AddScoped<IMonitorItemTypeService, MonitorItemTypeService>();
+
+// Add system value display service
+builder.Services.AddScoped<ISystemValueDisplayService, SystemValueDisplayService>();
+
+// Add audit event factory
+builder.Services.AddScoped<IAuditEventFactory, AuditEventFactory>();
 
 // Add file security checker (E.g. Checking images being uploaded)
 builder.Services.AddScoped<IFileSecurityCheckerService, FileSecurityCheckerService>();
@@ -55,7 +76,12 @@ builder.Services.AddScoped<IEventItemFactoryService, EventItemFactoryService>();
 // Add placeholder service. E.g. Replacing error message placeholder in email body
 builder.Services.AddScoped<IPlaceholderService, PlaceholderService>();
 
+// Add password service
+builder.Services.AddScoped<IPasswordService, PBKDF2PasswordService>();
+
 // Seed
+builder.Services.AddKeyedScoped<IEntityReader<ActionItemType>, ActionItemTypeSeed1>("ActionItemTypeSeed");
+builder.Services.AddKeyedScoped<IEntityReader<AuditEventType>, AuditEventTypeSeed1>("AuditEventTypeSeed");
 builder.Services.AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorAgent>, MonitorAgentSeed1>("MonitorAgentSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed");
@@ -80,20 +106,20 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Load data
-using (var scope = app.Services.CreateScope())
-{
-    //// Check for data
-    //var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
-    //var systemValuesTypes = systemValueTypeService.GetAll();
-    //if (!systemValuesTypes.Any())
-    //{
-    //    throw new ArgumentException("System contains no data");
-    //}
+//// Load data
+//using (var scope = app.Services.CreateScope())
+//{
+//    //// Check for data
+//    //var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
+//    //var systemValuesTypes = systemValueTypeService.GetAll();
+//    //if (!systemValuesTypes.Any())
+//    //{
+//    //    throw new ArgumentException("System contains no data");
+//    //}
 
-    // Enable this to load seed data
-    //new SeedLoader().DeleteAsync(scope).Wait();
-    new SeedLoader().LoadAsync(scope).Wait();
-}
+//    // Enable this to load seed data
+//    //new SeedLoader().DeleteAsync(scope).Wait();
+//    new SeedLoader().LoadAsync(scope).Wait();
+//}
 
 app.Run();

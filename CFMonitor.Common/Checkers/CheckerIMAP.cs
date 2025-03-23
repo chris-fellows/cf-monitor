@@ -14,28 +14,33 @@ namespace CFMonitor.Checkers
     {        
         public string Name => "IMAP";
 
-        public CheckerIMAP(IEventItemService eventItemService,
-            ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService) 
+        public CheckerIMAP(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService, 
+            IEventItemService eventItemService,
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService) 
         {
             
         }
 
         //public CheckerTypes CheckerType => CheckerTypes.IMAP;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem,  bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 //MonitorIMAP monitorIMAP = (MonitorIMAP)monitorItem;
                 Exception exception = null;
-                ActionParameters actionParameters = new ActionParameters();
+                var actionItemParameters = new List<ActionItemParameter>();
 
                 try
                 {
@@ -49,20 +54,25 @@ namespace CFMonitor.Checkers
                 try
                 {
                     // Check events
-                    actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking IMAP server");
+                    //actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking IMAP server");
                     foreach (var eventItem in eventItems)
                     {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionParameters, exception);
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (System.Exception ex)
                 {
 
                 }
+
+                return monitorItemOutput;
             });
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorIMAP, ActionParameters actionParameters, Exception exception)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorIMAP, List<ActionItemParameter> actionItemParameters, Exception exception)
         {            
                 bool meetsCondition = false;
 
@@ -76,13 +86,15 @@ namespace CFMonitor.Checkers
                         break;
                 }
 
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorIMAP, actionItem, actionParameters);
-                    }
-                }            
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorIMAP, actionItem, actionParameters);
+            //    }
+            //}
+            
+            return meetsCondition;
         }
 
         public bool CanCheck(MonitorItem monitorItem)

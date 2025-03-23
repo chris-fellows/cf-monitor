@@ -1,0 +1,110 @@
+﻿@page "/auditevents/details"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using CFMonitor.Interfaces
+@using CFMonitor.Models
+@inject NavigationManager NavigationManager
+@inject IAuditEventService AuditEventService
+@inject IAuditEventTypeService AuditEventTypeService
+@inject ISystemValueDisplayService SystemValueDisplayService
+@inject ISystemValueTypeService SystemValueTypeService
+@inject IUserService UserService
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h2>AuditEvent</h2>
+    <hr />
+    @if (auditevent is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <dl class="row">
+            <dt class="col-sm-2">Type</dt>
+            <dd class="col-sm-10">@GetAuditEventTypeName(@auditevent)</dd>            
+            <dt class="col-sm-2">Created  Time</dt>
+            <dd class="col-sm-10">@auditevent.CreatedDateTime</dd>
+        </dl>
+
+        <dl>
+            <QuickGrid Class="table" Items="@ParametersQueryable">
+                <PropertyColumn Property="parameter => parameter.Name" />
+                <PropertyColumn Property="parameter => parameter.Value" />
+            </QuickGrid>
+        </dl>
+
+        <div>
+            <a href="@($"/auditevents")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    private AuditEvent? auditevent;
+
+    [SupplyParameterFromQuery]
+    private string Id { get; set; }
+
+    private IQueryable<NameAndValue> ParametersQueryable { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //using var context = DbFactory.CreateDbContext();
+        //auditevent = await context.AuditEvent.FirstOrDefaultAsync(m => m.Id == Id);
+        auditevent = AuditEventService.GetById(Id);
+
+        if (auditevent is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+
+        // Get parameters for display
+        var parameters = await GetParametersAsync(auditevent);
+
+        ParametersQueryable = parameters.AsQueryable();
+    }
+
+    private string GetAuditEventTypeName(AuditEvent auditEvent)
+    {
+        return AuditEventTypeService.GetById(auditEvent.TypeId).Name;
+    }
+
+    // private string GetAuditEventCreatedUserName(AuditEvent auditEvent)
+    // {
+    //     return UserService.GetById(auditEvent.CreatedUserId).Result.Name;
+    // }
+
+    /// <summary>
+    /// Get parameters for display.
+    /// </summary>
+    /// <param name="auditEvent"></param>
+    /// <returns></returns>
+    private async Task<List<NameAndValue>> GetParametersAsync(AuditEvent auditEvent)
+    {
+        var parameters = new List<NameAndValue>();
+        foreach (var parameter in auditevent.Parameters)
+        {
+            // Get list of display items
+            var displayItems = await SystemValueDisplayService.GetDisplayItemsAsync(parameter.ToSystemValue());
+
+            // Add display items
+            foreach (var displayItem in displayItems)
+            {
+                if (!parameters.Any(p => p.Name == displayItem[0])) // Sanity check, don't add same value twice
+                {
+                    parameters.Add(new NameAndValue()
+                        {
+                            Name = displayItem[0],
+                            Value = displayItem[1]
+                        });
+                }
+            }
+        }
+
+        return parameters;
+    }
+}

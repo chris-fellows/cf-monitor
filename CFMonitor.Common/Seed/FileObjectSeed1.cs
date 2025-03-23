@@ -1,4 +1,5 @@
-﻿using CFMonitor.Interfaces;
+﻿using CFMonitor.EntityReader;
+using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace CFMonitor.Seed
 {
     public class FileObjectSeed1 : IEntityReader<FileObject>
     {
-        public Task<List<FileObject>> ReadAllAsync()
+        public IEnumerable<FileObject> Read()
         {
             var list = new List<FileObject>()
             {
@@ -22,7 +23,7 @@ namespace CFMonitor.Seed
                 }
             };
 
-            return Task.FromResult(list);
+            return list;
         }
     }
 }

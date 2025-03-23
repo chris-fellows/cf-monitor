@@ -15,8 +15,11 @@ namespace CFMonitor.Checkers
     {
         
 
-        public CheckerPOP(IEventItemService eventItemService,
-            ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerPOP(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService, 
+            IEventItemService eventItemService,
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
             
         }
@@ -25,20 +28,22 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.POP;
 
-        public  Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 //MonitorPOP monitorPOP = (MonitorPOP)monitorItem;
                 Exception exception = null;
-                ActionParameters actionParameters = new ActionParameters();
+                var actionItemParameters = new List<ActionItemParameter>();
 
                 try
                 {
@@ -52,10 +57,13 @@ namespace CFMonitor.Checkers
                 try
                 {
                     // Check events
-                    actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking POP server");
+                    //actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking POP server");
                     foreach (var eventItem in eventItems)
                     {
-                        CheckEventAsync(eventItem, actionerList, monitorItem, actionParameters, exception);
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (System.Exception ex)
@@ -63,11 +71,11 @@ namespace CFMonitor.Checkers
 
                 }
 
-                return;
+                return monitorItemOutput;
             });
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorPOP, ActionParameters actionParameters, Exception exception)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorPOP, List<ActionItemParameter> actionItemParameters, Exception exception)
         {            
                 bool meetsCondition = false;
 
@@ -81,13 +89,15 @@ namespace CFMonitor.Checkers
                         break;
                 }
 
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorPOP, actionItem, actionParameters);
-                    }
-                }            
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorPOP, actionItem, actionParameters);
+            //    }
+            //}            
+
+            return meetsCondition;
         }
 
         public bool CanCheck(MonitorItem monitorItem)

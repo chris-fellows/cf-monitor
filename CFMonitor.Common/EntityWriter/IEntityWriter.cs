@@ -1,4 +1,4 @@
-﻿namespace CFMonitor.Interfaces
+﻿namespace CFMonitor.EntityWriter
 {
     /// <summary>
     /// Writes entities
@@ -6,6 +6,6 @@
     /// <typeparam name="TEntity"></typeparam>
     public interface IEntityWriter<TEntity>
     {
-        Task WriteAllAsync(List<TEntity> entities);
+        void Write(IEnumerable<TEntity> entities);
     }
 }

@@ -12,8 +12,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerJSON : CheckerBase, IChecker
     {        
-        public CheckerJSON(IEventItemService eventItemService,
-            ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerJSON(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService, 
+            IEventItemService eventItemService,
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
             
         }
@@ -22,20 +25,22 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.JSON;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return Task.CompletedTask;
+                    return monitorItemOutput;
                 }
 
                 //MonitorJSON monitorJSON = (MonitorJSON)monitorItem;
                 Exception exception = null;
-                ActionParameters actionParameters = new ActionParameters();
+                var actionItemParameters = new List<ActionItemParameter>();
 
                 try
                 {
@@ -50,13 +55,18 @@ namespace CFMonitor.Checkers
                 {
                     foreach (var eventItem in eventItems)
                     {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionParameters, exception);
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
 
                 }
+
+                return monitorItemOutput;
             });
         }
 
@@ -65,7 +75,7 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.JSON;
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorJSON, ActionParameters actionParameters, Exception exception)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorJSON, List<ActionItemParameter> actionItemParameters, Exception exception)
         {
                 bool meetsCondition = false;
 
@@ -74,15 +84,17 @@ namespace CFMonitor.Checkers
                     case SystemValueTypes.ECS_Exception:
                         meetsCondition = eventItem.EventCondition.IsValid(exception != null);
                         break;
-                }            
+                }
 
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorJSON, actionItem, actionParameters);
-                    }
-                }            
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorJSON, actionItem, actionParameters);
+            //    }
+            //}
+            //
+            return meetsCondition;
         }
 
         //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

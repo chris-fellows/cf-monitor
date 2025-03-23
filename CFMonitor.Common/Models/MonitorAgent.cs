@@ -7,7 +7,7 @@ namespace CFMonitor.Models
     /// </summary>
     public class MonitorAgent
     {
-        public string ID { get; set; } = String.Empty;
+        public string Id { get; set; } = String.Empty;
 
         public string MachineName { get; set; } = String.Empty;
 

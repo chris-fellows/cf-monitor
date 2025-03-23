@@ -12,6 +12,9 @@ namespace CFMonitor.Models
         [XmlAttribute("Name")]
         public string Name { get; set; } = String.Empty;
 
+        //[XmlAttribute("MonitorItemTypeId")]
+        //public string MonitorItemTypeId { get; set; } = String.Empty;
+
         [XmlAttribute("MonitorItemType")]
         public MonitorItemTypes MonitorItemType { get; set; }
 

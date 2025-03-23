@@ -6,6 +6,7 @@ using CFMonitor.Services;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using CFMonitor.AgentManager.Models;
 
 internal static class Program
 {
@@ -16,8 +17,11 @@ internal static class Program
         var serviceProvider = CreateServiceProvider();
 
         // Start worker
-        int localPort = 1000;
-        var worker = new Worker(localPort);
+        var systemConfig = new SystemConfig()
+        {
+            LocalPort = 10000
+        };
+        var worker = new Worker(serviceProvider, systemConfig);
         worker.Start();
 
         // Wait for requrest to stop            
@@ -47,24 +51,58 @@ internal static class Program
             .Build();
 
         var serviceProvider = new ServiceCollection()
-            // Add data services
-            .AddScoped<IMonitorAgentService, XmlMonitorAgentService>()
-            .AddScoped<IMonitorItemService, XmlMonitorItemService>()
-            .AddScoped<IUserService, XmlUserService>()
-            .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()
-            .AddScoped<ISystemValueTypeService, XmlSystemValueTypeService>()
+                // Add data services
+                .AddScoped<IActionItemTypeService>((scope) =>
+                {
+                    return new XmlActionItemTypeService(Path.Combine(configFolder, "ActionItemType"));
+                })
+                .AddScoped<IAuditEventService>((scope) =>
+                {
+                    return new XmlAuditEventService(Path.Combine(configFolder, "AuditEvent"));
+                })
+                .AddScoped<IAuditEventTypeService>((scope) =>
+                {
+                    return new XmlAuditEventTypeService(Path.Combine(configFolder, "AuditEventType"));
+                })
+                .AddScoped<IEventItemService>((scope) =>
+                {
+                    return new XmlEventItemService(Path.Combine(configFolder, "EventItem"));
+                })
+                .AddScoped<IFileObjectService>((scope) =>
+                {
+                    return new XmlFileObjectService(Path.Combine(configFolder, "FileObject"));
+                })
+                .AddScoped<IMonitorAgentService>((scope) =>
+                {
+                    return new XmlMonitorAgentService(Path.Combine(configFolder, "MonitorAgent"));
+                })
+                .AddScoped<IMonitorItemService>((scope) =>
+                {
+                    return new XmlMonitorItemService(Path.Combine(configFolder, "MonitorItem"));
+                })
+                .AddScoped<ISystemValueTypeService>((scope) =>
+                {
+                    return new XmlSystemValueTypeService(Path.Combine(configFolder, "SystemValueType"));
+                })
+                .AddScoped<IUserService>((scope) =>
+                {
+                    return new XmlUserService(Path.Combine(configFolder, "User"));
+                })
 
-            //.AddScoped<IActionersService, ActionersService>()
-            //.AddScoped<ICheckersService, CheckersService>()
+            .AddScoped<IAuditEventFactory, AuditEventFactory>()
+            .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()
 
             .RegisterAllTypes<IChecker>(new[] { typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
             .RegisterAllTypes<IActioner>(new[] { typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
 
-            // Seed
-            .AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed1")
-            .AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed1")
-            .AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed1")
-            .AddKeyedScoped<IEntityReader<User>, UserSeed1>("UserSeed1")
+            //  // Seed
+            //.AddKeyedScoped<IEntityReader<ActionItemType>, ActionItemTypeSeed1>("ActionItemTypeSeed1")
+            //.AddKeyedScoped<IEntityReader<AuditEventType>, AuditEventTypeSeed1>("AuditEventTypeSeed1")
+            //.AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed1")
+            //.AddKeyedScoped<IEntityReader<MonitorAgent>, MonitorAgentSeed1>("MonitorAgentSeed1")
+            //.AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed1")
+            //.AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed1")
+            //.AddKeyedScoped<IEntityReader<User>, UserSeed1>("UserSeed1")
 
             .BuildServiceProvider();
 

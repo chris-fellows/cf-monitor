@@ -13,8 +13,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerURL : CheckerBase, IChecker
     {        
-        public CheckerURL(IEventItemService eventItemService,
-                            ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerURL(IAuditEventFactory auditEventFactory,
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService, 
+            IEventItemService eventItemService,
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
      
         }
@@ -23,15 +26,17 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.URL;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 //MonitorURL monitorURL = (MonitorURL)monitorItem;
@@ -39,7 +44,7 @@ namespace CFMonitor.Checkers
                 HttpWebRequest request = null;
                 HttpWebResponse response = null;
                 Exception exception = null;
-                ActionParameters actionParameters = new ActionParameters();
+                var actionItemParameters = new List<ActionItemParameter>();
 
                 try
                 {
@@ -57,16 +62,21 @@ namespace CFMonitor.Checkers
                 try
                 {
                     // Check events
-                    actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking URL");
+                    //actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking URL");
                     foreach (var eventItem in eventItems)
                     {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionParameters, exception, request, response);
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, request, response))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (System.Exception ex)
                 {
 
                 }
+
+                return monitorItemOutput;
             });
         }
 
@@ -108,7 +118,7 @@ namespace CFMonitor.Checkers
             return request;
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorURL, ActionParameters actionParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorURL, List<ActionItemParameter> actionItemParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
         {            
             int webExceptionStatus = -1;
             if (exception is WebException)
@@ -136,15 +146,17 @@ namespace CFMonitor.Checkers
                         meetsCondition = eventItem.EventCondition.IsValid(webExceptionStatus);
                         break;
                     */
-                }          
-
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorURL, actionItem, actionParameters);
-                    }
                 }
+
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorURL, actionItem, actionParameters);
+            //    }
+            //}
+
+            return meetsCondition;
         }
 
         public bool CanCheck(MonitorItem monitorItem)

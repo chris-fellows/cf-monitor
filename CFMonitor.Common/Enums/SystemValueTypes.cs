@@ -6,6 +6,13 @@
     public enum SystemValueTypes
     {
         // -----------------------------------------------------------------------------------------------------
+        // Audit event parameter types        
+        AEP_ActionItemId,
+        AEP_MonitorAgentId,
+        AEP_MonitorItemId,
+        AEP_UserId,
+
+        // -----------------------------------------------------------------------------------------------------
         // Event condition sources
         ECS_Exception,
 

@@ -9,13 +9,14 @@ namespace CFMonitor.Actioners
     /// <summary>
     /// Actions sending SMS text
     /// </summary>
-    public class ActionerSMS : IActioner
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public ActionerSMS(ISystemValueTypeService systemValueTypeService)
+    public class ActionerSMS : ActionerBase, IActioner
+    {        
+        public ActionerSMS(IAuditEventFactory auditEventFactory, 
+                            IAuditEventService auditEventService,
+                            IAuditEventTypeService auditEventTypeService, 
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+     
         }
 
         public string Name => "Send SMS text";

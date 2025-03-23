@@ -13,8 +13,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerActiveProcess : CheckerBase, IChecker
     {        
-        public CheckerActiveProcess(IEventItemService eventItemService,
-            ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerActiveProcess(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService,
+            IEventItemService eventItemService,
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
      
         }
@@ -23,16 +26,18 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.ActiveProcess;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
-                if (!eventItems.Any())
-                {
-                    return;
-                }
+                //if (!eventItems.Any())
+                //{
+                //    return Task.FromResult(monitorItemOutput);
+                //}
 
                 var systemValueTypes = _systemValueTypeService.GetAll();
 
@@ -75,17 +80,22 @@ namespace CFMonitor.Checkers
                     // Check events                
                     foreach (var eventItem in eventItems)
                     {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionItemParameters, exception, processesFound);
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, processesFound))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (System.Exception ex)
                 {
 
                 }
+
+                return monitorItemOutput;
             });
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorProcess, List<ActionItemParameter> actionItemParameters, Exception exception, List<Process> processesFound)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorProcess, List<ActionItemParameter> actionItemParameters, Exception exception, List<Process> processesFound)
         {            
                 bool meetsCondition = false;
 
@@ -97,15 +107,17 @@ namespace CFMonitor.Checkers
                     case SystemValueTypes.ECS_ActiveProcessRunning:
                         meetsCondition = eventItem.EventCondition.IsValid(processesFound.Count > 0);
                         break;
-                }          
+                }
 
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorProcess, actionItem, actionItemParameters);
-                    }
-                }            
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorProcess, actionItem, actionItemParameters);
+            //    }
+            //}            
+
+            return meetsCondition;
         }
 
         public bool CanCheck(MonitorItem monitorItem)

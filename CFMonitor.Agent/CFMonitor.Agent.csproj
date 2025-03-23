@@ -17,8 +17,4 @@
     <ProjectReference Include="..\CFMonitor.Common\CFMonitor.Common.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Models\" />
-  </ItemGroup>
-
 </Project>

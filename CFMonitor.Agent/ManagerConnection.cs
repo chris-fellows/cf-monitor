@@ -23,6 +23,7 @@ namespace CFMonitor.Agent
         private IExternalMessageConverter<GetMonitorItemsRequest> _getMonitorItemsRequestConverter = new GetMonitorItemsRequestConverter();
         private IExternalMessageConverter<GetMonitorItemsResponse> _getMonitorItemsResponseConverter = new GetMonitorItemsResponseConverter();
         private IExternalMessageConverter<Heartbeat> _heartbeatConverter = new HeartbeatConverter();
+        private IExternalMessageConverter<MonitorItemResult> _monitorItemResultConverter = new MonitorItemResultConverter();
         private IExternalMessageConverter<MonitorItemUpdated> _monitorItemUpdatedConverter = new MonitorItemUpdatedConverter();
 
         //public delegate void GetMonitorItemsResponseReceived(GetMonitorItemsResponse response);
@@ -86,9 +87,20 @@ namespace CFMonitor.Agent
         /// Send heartbeat
         /// </summary>
         /// <param name="heartbeat"></param>
+        /// <param name="remoteEndpointInfo"></param>
         public void SendHeartbeat(Heartbeat heartbeat, EndpointInfo remoteEndpointInfo)
         {
             _connection.SendMessage(_heartbeatConverter.GetConnectionMessage(heartbeat), remoteEndpointInfo);
+        }
+
+        /// <summary>
+        /// Sends monitor item result
+        /// </summary>
+        /// <param name="monitorItemResult"></param>
+        /// <param name="remoteEndpointInfo"></param>
+        public void SendMonitorItemResult(MonitorItemResult monitorItemResult, EndpointInfo remoteEndpointInfo)
+        {
+            _connection.SendMessage(_monitorItemResultConverter.GetConnectionMessage(monitorItemResult), remoteEndpointInfo);
         }
 
         /// <summary>

@@ -13,8 +13,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerDiskSpace : CheckerBase, IChecker
     {        
-        public CheckerDiskSpace(IEventItemService eventItemService,
-                                ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerDiskSpace(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService,
+            IEventItemService eventItemService,
+                                ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
      
         }
@@ -23,15 +26,17 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.DiskSpace;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 var systemValueTypes = _systemValueTypeService.GetAll();
@@ -61,14 +66,19 @@ namespace CFMonitor.Checkers
                 try
                 {
                     foreach (var eventItem in eventItems)
-                    {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionItemParameters, exception, driveInfo);
+                    {                        
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, driveInfo))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
 
                 }
+
+                return monitorItemOutput;
             });
         }
 
@@ -77,7 +87,7 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.DiskSpace;
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorDiskSpace, List<ActionItemParameter> actionItemParameters, Exception exception, DriveInfo driveInfo)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorDiskSpace, List<ActionItemParameter> actionItemParameters, Exception exception, DriveInfo driveInfo)
         {            
                 bool meetsCondition = false;
 
@@ -90,14 +100,16 @@ namespace CFMonitor.Checkers
                         meetsCondition = eventItem.EventCondition.IsValid(driveInfo.AvailableFreeSpace);
                         break;
                 }
-           
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorDiskSpace, actionItem, actionItemParameters);
-                    }
-                }            
+
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorDiskSpace, actionItem, actionItemParameters);
+            //    }
+            //}
+            //
+            return meetsCondition;
         }
 
         //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> actionItemParameters)

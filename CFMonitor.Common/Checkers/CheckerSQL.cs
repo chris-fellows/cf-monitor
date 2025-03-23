@@ -16,8 +16,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerSQL : CheckerBase, IChecker
     {        
-        public CheckerSQL(IEventItemService eventItemService,
-                        ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerSQL(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService, 
+                    IEventItemService eventItemService,
+                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
             
         }
@@ -26,16 +29,17 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.SQL;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem,  bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 ////MonitorSQL monitorSQL = (MonitorSQL)monitorItem;
@@ -65,7 +69,10 @@ namespace CFMonitor.Checkers
                 //    actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking SQL");
                 //    foreach(var eventItem in eventItems)
                 //    {
-                //      CheckEvent(eventItem, actionerList, monitorItem, actionParameters, exception, reader);
+                //          if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, reader))
+                //          {
+                //              monitorItemOutput.EventItemIdsForAction(eventItem.Id);
+                //          }
                 //     }
                 //}
                 //catch (System.Exception ex)
@@ -83,10 +90,12 @@ namespace CFMonitor.Checkers
                 //        database.Close();
                 //    }
                 //}
+
+                return monitorItemOutput;
             });
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorSQL, ActionParameters actionParameters, Exception exception)      //, OleDbDataReader reader)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSQL, List<ActionItemParameter> actionItemParameters, Exception exception)      //, OleDbDataReader reader)
         {            
             bool readerHasRows = true;  // (reader != null && reader.Read());
             
@@ -102,13 +111,15 @@ namespace CFMonitor.Checkers
                         break;
                 }
 
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorSQL, actionItem, actionParameters);
-                    }
-                }
+                //if (meetsCondition)
+                //{
+                //    foreach (ActionItem actionItem in eventItem.ActionItems)
+                //    {
+                //        await ExecuteActionAsync(actionerList, monitorSQL, actionItem, actionParameters);
+                //    }
+                //}
+
+            return meetsCondition;
         }
 
         public bool CanCheck(MonitorItem monitorItem)

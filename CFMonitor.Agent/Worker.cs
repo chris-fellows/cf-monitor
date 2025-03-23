@@ -1,5 +1,8 @@
-﻿using CFMonitor.Models;
+﻿using CFMonitor.Agent.Models;
+using CFMonitor.Interfaces;
+using CFMonitor.Models;
 using CFMonitor.Models.Messages;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,18 +17,33 @@ namespace CFMonitor.Agent
     public class Worker
     {
         private readonly System.Timers.Timer _timer;
-
-        private readonly int _port;
+        
         private ManagerConnection _managerConnection = new ManagerConnection();
+
+        private MonitorAgent? _monitorAgent;
 
         private List<MonitorItem> _monitorItems = new List<MonitorItem>();
         
         private DateTimeOffset _lastHeartbeatTime = DateTimeOffset.MinValue;
 
-        public Worker(int port)
+        private readonly IServiceProvider _serviceProvider;
+
+        private List<ActiveMonitorItemTask> _activeMonitorItemTasks = new();
+
+        private readonly SystemConfig _systemConfig;
+
+        private class ActiveMonitorItemTask
         {
-            _port = port;
-                
+            public MonitorItem? MonitorItem { get; set; } = new();
+
+            public Task<MonitorItemOutput>? Task { get; set; }
+        }
+
+        public Worker(IServiceProvider serviceProvider, SystemConfig systemConfig)
+        {
+            _serviceProvider = serviceProvider; 
+            _systemConfig = systemConfig;
+            
             _timer = new System.Timers.Timer();
             _timer.Elapsed += _timer_Elapsed;
             _timer.Interval = 5000;
@@ -42,7 +60,7 @@ namespace CFMonitor.Agent
         {
             _timer.Enabled = true;
 
-            _managerConnection.StartListening(_port);            
+            _managerConnection.StartListening(_systemConfig.LocalPort);          
         }
 
         public void Stop()
@@ -63,11 +81,12 @@ namespace CFMonitor.Agent
                 {
                     GetMonitorItems();
                 }
-
-                // Heartneat
+                
                 UpdateHeartbeat(false);
 
                 CheckMonitorItems();
+                
+                CheckMonitorItemsCompleted();
             }
             catch
             {
@@ -97,10 +116,81 @@ namespace CFMonitor.Agent
         /// </summary>
         private void CheckMonitorItems()
         {
-            foreach(var monitorItem in _monitorItems)
+            // Check monitor items not active            
+            foreach(var monitorItem in _monitorItems.Where(mi => !_activeMonitorItemTasks.Any(t => t.MonitorItem.Id == mi.Id)))
             {
-                
+                if (_activeMonitorItemTasks.Count < _systemConfig.MaxConcurrentChecks)
+                {
+                    if (monitorItem.MonitorItemSchedule.IsTime(DateTime.UtcNow))   // Overdue
+                    {
+                        var activeTask = new ActiveMonitorItemTask()
+                        {
+                            MonitorItem = monitorItem,
+                            Task = CheckMonitorItemAsync(_monitorAgent, monitorItem)
+                        };
+                        _activeMonitorItemTasks.Add(activeTask);
+                    }
+                }
             }
+        }
+
+        /// <summary>
+        /// Checks monitor item checks completed
+        /// </summary>
+        private void CheckMonitorItemsCompleted()
+        {
+            // Get completed tasks
+            var completedTasks = _activeMonitorItemTasks.Where(t => t.Task != null && t.Task.IsCompleted).ToList();
+
+            // Process completed tasks
+            while (completedTasks.Any())
+            {
+                var task = completedTasks.First();
+                completedTasks.Remove(task);
+
+                ProcessCompletedMonitorItem(task);
+            }
+        }
+
+        /// <summary>
+        /// Processes completed monitor item task
+        /// </summary>
+        /// <param name="activeMonitorItemTask"></param>
+        private void ProcessCompletedMonitorItem(ActiveMonitorItemTask activeMonitorItemTask)
+        {
+            if (activeMonitorItemTask.Task.Exception != null)
+            {
+
+            }
+            else
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// Checks monitor item
+        /// </summary>
+        /// <param name="monitorAgent"></param>
+        /// <param name="monitorItem"></param>
+        /// <returns></returns>
+        private Task<MonitorItemOutput> CheckMonitorItemAsync(MonitorAgent monitorAgent, MonitorItem monitorItem)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var monitorItemOutput = new MonitorItemOutput();
+
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var checker = _serviceProvider.GetServices<IChecker>().FirstOrDefault(c => c.CanCheck(monitorItem));
+                    if (checker != null)
+                    {
+                        monitorItemOutput = checker.CheckAsync(monitorAgent, monitorItem, false).Result;
+                    }
+                }
+                
+                return monitorItemOutput;
+            });
         }
 
         /// <summary>

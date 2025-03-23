@@ -13,8 +13,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerDNS : CheckerBase, IChecker
     {        
-        public CheckerDNS(IEventItemService eventItemService,
-            ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerDNS(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService,
+            IEventItemService eventItemService,
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
      
         }
@@ -23,15 +26,17 @@ namespace CFMonitor.Checkers
 
        // public CheckerTypes CheckerType => CheckerTypes.DNS;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew( () =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 var systemValueTypes = _systemValueTypeService.GetAll();
@@ -41,7 +46,7 @@ namespace CFMonitor.Checkers
 
                 Exception exception = null;
                 IPHostEntry hostEntry = null;
-                ActionParameters actionParameters = new ActionParameters();
+                var actionItemParameters = new List<ActionItemParameter>();
 
                 try
                 {
@@ -56,7 +61,10 @@ namespace CFMonitor.Checkers
                 {
                     foreach (var eventItem in eventItems)
                     {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionParameters, exception, hostEntry);
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, hostEntry))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -64,7 +72,7 @@ namespace CFMonitor.Checkers
 
                 }
 
-                return Task.CompletedTask;
+                return monitorItemOutput;
             });
         }
 
@@ -73,7 +81,7 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.DNS;
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorDNS, ActionParameters actionParameters, Exception exception, IPHostEntry hostEntry)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorDNS, List<ActionItemParameter> actionItemParameters, Exception exception, IPHostEntry hostEntry)
         {            
                 bool meetsCondition = false;
 
@@ -85,15 +93,18 @@ namespace CFMonitor.Checkers
                     case SystemValueTypes.ECS_DNSHostExists:
                         meetsCondition = eventItem.EventCondition.IsValid(hostEntry != null);
                         break;
-                }        
-         
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorDNS, actionItem, actionParameters);
-                    }
-                }            
+                }
+
+
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorDNS, actionItem, actionParameters);
+            //    }
+            //}            
+
+            return meetsCondition;
         }
 
         //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

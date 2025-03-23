@@ -1,4 +1,4 @@
-﻿using CFMonitor.Interfaces;
+﻿using CFMonitor.EntityWriter;
 using CFMonitor.Models;
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ namespace CFMonitor.Services
     /// </summary>
     public class MonitorItemsStatusWebPage : IEntityWriter<MonitorItem>
     {
-        public Task WriteAllAsync(List<MonitorItem> monitorItems)
+        public void Write(IEnumerable<MonitorItem> monitorItems)
         {
             var html = new StringBuilder("<html>" +
                             "<head>" +
@@ -37,8 +37,7 @@ namespace CFMonitor.Services
             html.Append("</table>");
 
 
-            html.Append("</body></html>");
-            return Task.CompletedTask;
+            html.Append("</body></html>");         
         }
     }
 }

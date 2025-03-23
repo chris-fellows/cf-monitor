@@ -12,16 +12,17 @@ namespace CFMonitor.Actioners
     /// <summary>
     /// Actions sending an email
     /// </summary>
-    public class ActionerEmail : IActioner
+    public class ActionerEmail : ActionerBase, IActioner
     {
-        private readonly IPlaceholderService _placeholderService;
-        private readonly ISystemValueTypeService _systemValueTypeService;
+        private readonly IPlaceholderService _placeholderService;        
 
-        public ActionerEmail(IPlaceholderService placeholderService,
-                            ISystemValueTypeService systemValueTypeService)
+        public ActionerEmail(IAuditEventFactory auditEventFactory,
+                            IAuditEventService auditEventService,
+                            IAuditEventTypeService auditEventTypeService, 
+                            IPlaceholderService placeholderService,
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, systemValueTypeService)
         {
-            _placeholderService = placeholderService;
-            _systemValueTypeService = systemValueTypeService;
+            _placeholderService = placeholderService;            
         }
 
         public string Name => "Send an email";

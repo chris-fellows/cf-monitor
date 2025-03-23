@@ -1,4 +1,5 @@
-﻿using CFMonitor.Constants;
+﻿using CFMonitor.EntityReader;
+using CFMonitor.Constants;
 using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
@@ -9,10 +10,43 @@ namespace CFMonitor.Seed
 {
     public class SystemValueTypeSeed1 : IEntityReader<SystemValueType>
     {
-        public Task<List<SystemValueType>> ReadAllAsync()
+        public IEnumerable<SystemValueType> Read()
         {
             var list = new List<SystemValueType>()
             {
+                // -----------------------------------------------------------------------------------------------------------------
+                // Audit event parameters
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Action Item Id",
+                    ValueType = SystemValueTypes.AEP_ActionItemId,
+                    DataType = SystemValueDataTypes.String,                 
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Monitor Agent Id",
+                    ValueType = SystemValueTypes.AEP_MonitorAgentId,
+                    DataType = SystemValueDataTypes.String,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Monitor Item Id",
+                    ValueType = SystemValueTypes.AEP_MonitorItemId,
+                    DataType = SystemValueDataTypes.String,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "User Id",
+                    ValueType = SystemValueTypes.AEP_UserId,
+                    DataType = SystemValueDataTypes.String,
+                },
+
+                // -----------------------------------------------------------------------------------------------------------------
+                // Event condition sources
                 new SystemValueType()
                 {
                     Id= Guid.NewGuid().ToString(),
@@ -251,6 +285,7 @@ namespace CFMonitor.Seed
                     }
                 },                
 
+                // -----------------------------------------------------------------------------------------------------------------
                 // Monitor item parameters
                 new SystemValueType()
                 {
@@ -490,7 +525,7 @@ namespace CFMonitor.Seed
                 }
             };
 
-            return Task.FromResult(list);
+            return list;
         }
     }
 }

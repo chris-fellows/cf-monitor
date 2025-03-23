@@ -9,13 +9,14 @@ namespace CFMonitor.Actioners
     /// <summary>
     /// Actions sending Datadog warning
     /// </summary>
-    public class ActionerDatadogWarning : IActioner
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public ActionerDatadogWarning(ISystemValueTypeService systemValueTypeService)
+    public class ActionerDatadogWarning : ActionerBase, IActioner
+    {        
+        public ActionerDatadogWarning(IAuditEventFactory auditEventFactory, 
+                            IAuditEventService auditEventService,
+                            IAuditEventTypeService auditEventTypeService, 
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+     
         }
 
         public string Name => "Create Datadog warning";

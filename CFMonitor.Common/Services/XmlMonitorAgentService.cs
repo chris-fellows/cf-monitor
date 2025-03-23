@@ -11,7 +11,7 @@ namespace CFMonitor.Services
     {
         public XmlMonitorAgentService(string folder) : base(folder,
                                                 "MonitorAgent.*.xml",
-                                              (monitorAgent) => $"MonitorAgent.{monitorAgent.ID}.xml",
+                                              (monitorAgent) => $"MonitorAgent.{monitorAgent.Id}.xml",
                                             (monitorAgentId) => $"MonitorAgent.{monitorAgentId}.xml")
         {
 

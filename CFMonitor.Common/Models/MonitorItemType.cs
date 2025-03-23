@@ -33,5 +33,9 @@ namespace CFMonitor.Models
         //public CheckerTypes CheckerType { get; set; }
 
         public List<MonitorItemParameter> DefaultParameters = new List<MonitorItemParameter>();
+
+        public string Color { get; set; } = String.Empty;
+
+        public string ImageSource { get; set; } = String.Empty;
     }
 }

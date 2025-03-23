@@ -1,5 +1,4 @@
-﻿using CFMonitor.Enums;
-using CFMonitor.Models;
+﻿using CFMonitor.Models;
 
 namespace CFMonitor.Interfaces
 {
@@ -13,22 +12,17 @@ namespace CFMonitor.Interfaces
         /// Name
         /// </summary>
         string Name { get; }
-
-        ///// <summary>
-        ///// Internal name
-        ///// </summary>
-        //CheckerTypes CheckerType { get; }
-
+        
         /// <summary>
         /// Checks monitor item
         /// </summary>
         /// <param name="monitorItem"></param>
         /// <param name="actionerList"></param>
         /// <param name="testMode">Whether test mode enabled (Testing without executing actions)</param>
-        Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode);
+        Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode);
 
         /// <summary>
-        /// Determines if this instance can check
+        /// Determines if this instance can check monitor item
         /// </summary>
         /// <param name="monitorItem"></param>
         /// <returns></returns>

@@ -1,9 +1,7 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
-using System;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
+using System.Drawing;
 
 namespace CFMonitor.Services
 {
@@ -23,7 +21,7 @@ namespace CFMonitor.Services
             var list = new List<MonitorItemType>();
             list.Add(new MonitorItemType()
             {                 
-                Name = "Active Process",
+                Name = "Active Process",               
                 Description = "Checks an active process",
                 ItemType = MonitorItemTypes.ActiveProcess,
                 //CheckerType = CheckerTypes.ActiveProcess,
@@ -43,9 +41,9 @@ namespace CFMonitor.Services
                     {
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_ActiveProcessMachineName).Id
                     }
-                }
-                //CreateMonitorItem = () => new MonitorActiveProcess() { ID = Guid.NewGuid().ToString(), 
-                //            Name = "Active Process [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
             });
             list.Add(new MonitorItemType()
             {
@@ -61,15 +59,10 @@ namespace CFMonitor.Services
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
-                }                    
-                //CreateMonitorItem = () => new MonitorCPU()
-                //{
-                //    ID = Guid.NewGuid().ToString(),
-                //    Name = "CPU [New]",                   
-                //    Enabled = true,
-                //    EventItems = new List<EventItem>(),
-                //    MonitorItemSchedule = new MonitorItemSchedule()
-                //}
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
+
             });
             list.Add(new MonitorItemType()
             {
@@ -84,9 +77,9 @@ namespace CFMonitor.Services
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
-                }
-                //CreateMonitorItem = () => new MonitorDHCP() { ID = Guid.NewGuid().ToString(), 
-                //            Name = "DHCP [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
             });
             list.Add(new MonitorItemType()
             {
@@ -106,9 +99,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_DiskSpaceDrive).Id,
                         Value = "D:\\"
                     }
-                }
-                //CreateMonitorItem = () => new MonitorDiskSpace() { ID = Guid.NewGuid().ToString(),
-                //            Name = "Disk space [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
             });
             list.Add(new MonitorItemType()
             {
@@ -127,9 +120,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_DNSHost).Id,
                         Value = "Host"
                     }
-                }
-                //CreateMonitorItem = () => new MonitorDNS() { ID = Guid.NewGuid().ToString(), 
-                //            Name = "DNS [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
             });
             list.Add(new MonitorItemType()
             {
@@ -154,7 +147,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_FileSizeMaxFileSizeBytes).Id,
                         Value = "1000000"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
 
                 //CreateMonitorItem = () => new MonitorFileSize()
                 //{
@@ -188,7 +183,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes).Id,
                          Value = "1000000"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorFolderSize()
                 //{
                 //    ID = Guid.NewGuid().ToString(),
@@ -212,7 +209,9 @@ namespace CFMonitor.Services
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorIMAP()
                 //{
                 //    ID = Guid.NewGuid().ToString(),
@@ -246,7 +245,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_LocalFileFindText).Id,
                         Value = "FindThis"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorLocalFile() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "Local file [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -263,7 +264,9 @@ namespace CFMonitor.Services
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorJSON() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "JSON [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -280,7 +283,9 @@ namespace CFMonitor.Services
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorLDAP() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "LDAP [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -298,7 +303,9 @@ namespace CFMonitor.Services
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorMemory() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "Memory [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -325,7 +332,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_NTPMaxToleranceSecs).Id,
                         Value = "60"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorNTP()
                 //{
                 //    ID = Guid.NewGuid().ToString(),
@@ -353,7 +362,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_PingServer).Id,
                         Value = "Server"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorPing() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "Ping [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -371,7 +382,9 @@ namespace CFMonitor.Services
                 DefaultParameters = new List<MonitorItemParameter>()
                 {
 
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorPOP()
                 //{
                 //    ID = Guid.NewGuid().ToString(),
@@ -421,7 +434,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_RESTURL).Id,
                         Value = "http://myrestapi.com/test"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorREST() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "REST API [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -443,7 +458,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId =systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_RunProcessFileName).Id,
                         Value = "File.exe"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorRunProcess() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "Run Process [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -491,7 +508,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId =systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SMTPServer).Id,
                         Value = "Server"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorSMTP() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "SMTP [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -518,7 +537,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SOAPXML).Id,
                         Value = "test"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorSOAP() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "SOAP [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -550,7 +571,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SocketProtocol).Id,
                         Value = "TCP"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorSocket() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "TCP or UDP socket [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -577,7 +600,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId  = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SQLSQL).Id,
                         Value = "select * from Test"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorSQL() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "SQL Query [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });
@@ -624,7 +649,9 @@ namespace CFMonitor.Services
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType ==SystemValueTypes.MIP_URLUsername).Id,
                         Value = "username"
                     }
-                }
+                },
+                Color = Color.Blue.ToArgb().ToString(),
+                ImageSource = "monitor_item_type.png"
                 //CreateMonitorItem = () => new MonitorURL() { ID = Guid.NewGuid().ToString(), 
                 //            Name = "HTTP/HTTPS endpoint [New]", Enabled = true, EventItems = new List<EventItem>(), MonitorItemSchedule = new MonitorItemSchedule() }
             });

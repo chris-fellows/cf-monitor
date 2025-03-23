@@ -12,8 +12,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerDHCP : CheckerBase, IChecker
     {        
-        public CheckerDHCP(IEventItemService eventItemService,
-            ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerDHCP(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService, 
+            IEventItemService eventItemService,
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
             
         }
@@ -22,15 +25,17 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.DHCP;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 var systemValueTypes = _systemValueTypeService.GetAll();
@@ -58,13 +63,18 @@ namespace CFMonitor.Checkers
                 {
                     foreach (var eventItem in eventItems)
                     {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionItemParameters, exception);
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
 
                 }
+
+                return monitorItemOutput;
             });
         }
 
@@ -73,7 +83,7 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.DHCP;
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorDHCP, List<ActionItemParameter> actionItemParameters, Exception exception)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorDHCP, List<ActionItemParameter> actionItemParameters, Exception exception)
         {            
                 bool meetsCondition = false;
                 switch(eventItem.EventCondition.SourceValueType)
@@ -81,15 +91,17 @@ namespace CFMonitor.Checkers
                     case SystemValueTypes.ECS_Exception:
                         meetsCondition = eventItem.EventCondition.IsValid(exception != null);
                         break;
-                }            
+                }
 
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorDHCP, actionItem, actionItemParameters);
-                    }
-                }         
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorDHCP, actionItem, actionItemParameters);
+            //    }
+            //}         
+
+            return meetsCondition;
         }
 
         //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, List<ActionItemParameter> actionItemParameters)

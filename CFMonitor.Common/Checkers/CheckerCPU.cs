@@ -12,8 +12,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerCPU : CheckerBase, IChecker
     {        
-        public CheckerCPU(IEventItemService eventItemService,
-            ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerCPU(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService, 
+            IEventItemService eventItemService,
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
             
         }
@@ -22,15 +25,17 @@ namespace CFMonitor.Checkers
 
        // public CheckerTypes CheckerType => CheckerTypes.CPU;
 
-        public Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 var systemValueTypes = _systemValueTypeService.GetAll();
@@ -57,18 +62,23 @@ namespace CFMonitor.Checkers
                 {
                     // Check events                
                     foreach (var eventItem in eventItems)
-                    {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionItemParameters, exception);
+                    {                        
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (System.Exception ex)
                 {
 
                 }
+
+                return monitorItemOutput;
             });
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorCPU, List<ActionItemParameter> actionItemParameters, Exception exception)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorCPU, List<ActionItemParameter> actionItemParameters, Exception exception)
         {                        
                 bool meetsCondition = false;
 
@@ -82,13 +92,15 @@ namespace CFMonitor.Checkers
                         break;                    
                 }
 
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorCPU, actionItem, actionItemParameters);
-                    }
-                }            
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorCPU, actionItem, actionItemParameters);
+            //    }
+            //}            
+
+            return meetsCondition;
         }
 
         public bool CanCheck(MonitorItem monitorItem)

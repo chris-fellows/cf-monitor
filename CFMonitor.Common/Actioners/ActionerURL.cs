@@ -10,13 +10,14 @@ namespace CFMonitor.Actioners
     /// <summary>
     /// Actions opening a URL
     /// </summary>
-    public class ActionerURL : IActioner
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public ActionerURL(ISystemValueTypeService systemValueTypeService)
+    public class ActionerURL : ActionerBase, IActioner
+    {        
+        public ActionerURL(IAuditEventFactory auditEventFactory, 
+                            IAuditEventService auditEventService,
+                            IAuditEventTypeService auditEventTypeService, 
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+     
         }
 
         public string Name => "Opens URL";

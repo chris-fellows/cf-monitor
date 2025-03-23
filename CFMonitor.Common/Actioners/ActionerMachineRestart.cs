@@ -9,13 +9,14 @@ namespace CFMonitor.Actioners
     /// <summary>
     /// Actions restart of machine
     /// </summary>
-    public class ActionerMachineRestart : IActioner
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public ActionerMachineRestart(ISystemValueTypeService systemValueTypeService)
+    public class ActionerMachineRestart : ActionerBase, IActioner
+    {        
+        public ActionerMachineRestart(IAuditEventFactory auditEventFactory, 
+                            IAuditEventService auditEventService,
+                            IAuditEventTypeService auditEventTypeService, 
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+          
         }
 
         public string Name => "Restart machine";

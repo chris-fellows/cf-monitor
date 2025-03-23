@@ -9,13 +9,14 @@ namespace CFMonitor.Actioners
     /// <summary>
     /// Actions starting a process
     /// </summary>
-    public class ActionerProcess : IActioner
-    {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public ActionerProcess(ISystemValueTypeService systemValueTypeService)
-        {
-            _systemValueTypeService = systemValueTypeService;
+    public class ActionerProcess : ActionerBase, IActioner
+    {        
+        public ActionerProcess(IAuditEventFactory auditEventFactory, 
+                            IAuditEventService auditEventService,
+                            IAuditEventTypeService auditEventTypeService, 
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, systemValueTypeService)
+        { 
+            
         }
 
         public string Name => "Run process";

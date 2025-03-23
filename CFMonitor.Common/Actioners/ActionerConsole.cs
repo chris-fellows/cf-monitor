@@ -9,13 +9,14 @@ namespace CFMonitor.Actioners
     /// <summary>
     /// Actions writing to console
     /// </summary>
-    public class ActionerConsole : IActioner
+    public class ActionerConsole : ActionerBase, IActioner
     {
-        private readonly ISystemValueTypeService _systemValueTypeService;
-
-        public ActionerConsole(ISystemValueTypeService systemValueTypeService)
+        public ActionerConsole(IAuditEventFactory auditEventFactory,
+                            IAuditEventService auditEventService,
+                            IAuditEventTypeService auditEventTypeService,
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, systemValueTypeService)
         {
-            _systemValueTypeService = systemValueTypeService;
+     
         }
 
         public string Name => "Write to console";

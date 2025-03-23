@@ -1,4 +1,5 @@
-﻿using CFMonitor.Interfaces;
+﻿using CFMonitor.EntityReader;
+using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -9,6 +10,10 @@ namespace CFMonitor.UI.Data
         public async Task LoadAsync(IServiceScope scope)
         {
             // Get data services
+            var actionItemTypeService = scope.ServiceProvider.GetRequiredService<IActionItemTypeService>();
+            var auditEventFactory = scope.ServiceProvider.GetRequiredService<IAuditEventFactory>();
+            var auditEventService = scope.ServiceProvider.GetRequiredService<IAuditEventService>();
+            var auditEventTypeService = scope.ServiceProvider.GetRequiredService<IAuditEventTypeService>();
             var eventItemService = scope.ServiceProvider.GetRequiredService<IEventItemService>();
             var monitorAgentService = scope.ServiceProvider.GetRequiredService<IMonitorAgentService>();
             var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
@@ -16,6 +21,8 @@ namespace CFMonitor.UI.Data
             var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
 
             // Get seed serviced
+            var actionItemTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<ActionItemType>>("ActionItemTypeSeed");
+            var auditEventTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<AuditEventType>>("AuditEventTypeSeed");
             var eventItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<EventItem>>("EventItemSeed");
             var monitorAgentSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorAgent>>("MonitorAgentSeed");
             var monitorItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorItem>>("MonitorItemSeed");
@@ -23,35 +30,58 @@ namespace CFMonitor.UI.Data
             var userSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<User>>("UserSeed");
 
             // Add system value types
-            var systemValueTypesNew = await systemValueTypeSeed.ReadAllAsync();
+            var systemValueTypesNew = systemValueTypeSeed.Read();
             foreach(var systemValueType in systemValueTypesNew)
             {
                 systemValueTypeService.Add(systemValueType);
             }
 
+            // Add action item types
+            var actionItemTypesNew = actionItemTypeSeed.Read();
+            foreach(var actionItemType in actionItemTypesNew)
+            {
+                actionItemTypeService.Add(actionItemType);
+            }
+
+            // Add audit event types
+            var auditEventTypesNew = auditEventTypeSeed.Read();
+            foreach (var auditEventType in auditEventTypesNew)
+            {
+                auditEventTypeService.Add(auditEventType);
+            }
+
             // Add users
-            var usersNew = await userSeed.ReadAllAsync();
+            var usersNew = userSeed.Read();
             foreach(var user in usersNew)
             {
                 userService.Add(user);
+
+                // Add audit event
+                auditEventService.Add(auditEventFactory.CreateUserAdded(user.Id));
             }
 
             // Add monitor agents
-            var monitorAgentsNew = await monitorAgentSeed.ReadAllAsync();
+            var monitorAgentsNew =  monitorAgentSeed.Read();
             foreach (var monitorAgent in monitorAgentsNew)
             {
                 monitorAgentService.Add(monitorAgent);
+
+                // Add audit event
+                auditEventService.Add(auditEventFactory.CreateMonitorAgentAdded(monitorAgent.Id));
             }
 
             // Add monitor items
-            var monitorItemsNew = await monitorItemSeed.ReadAllAsync();
+            var monitorItemsNew = monitorItemSeed.Read();
             foreach(var monitorItem in monitorItemsNew)
             {
                 monitorItemService.Add(monitorItem);
+
+                // Add audit event
+                auditEventService.Add(auditEventFactory.CreateMonitorItemAdded(monitorItem.Id, usersNew.ToList()[0].Id));
             }
 
             // Add event items. Depends on monitor items
-            var eventItemsNew = await eventItemSeed.ReadAllAsync();
+            var eventItemsNew = eventItemSeed.Read();
             foreach(var eventItem in eventItemsNew)
             {
                 eventItemService.Add(eventItem);

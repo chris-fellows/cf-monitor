@@ -15,8 +15,11 @@ namespace CFMonitor.Checkers
     /// </summary>
     public class CheckerSOAP : CheckerBase, IChecker
     {        
-        public CheckerSOAP(IEventItemService eventItemService,
-                        ISystemValueTypeService systemValueTypeService) : base(eventItemService, systemValueTypeService)
+        public CheckerSOAP(IAuditEventFactory auditEventFactory, 
+            IAuditEventService auditEventService,
+            IAuditEventTypeService auditEventTypeService, 
+                IEventItemService eventItemService,
+                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
         {
      
         }
@@ -25,15 +28,17 @@ namespace CFMonitor.Checkers
 
        // public CheckerTypes CheckerType => CheckerTypes.SOAP;
 
-        public async Task CheckAsync(MonitorItem monitorItem, List<IActioner> actionerList, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem,  bool testMode)
         {
-            return Task.Factory.StartNew(async () =>
+            return Task.Factory.StartNew(() =>
             {
+                var monitorItemOutput = new MonitorItemOutput();
+
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
                 if (!eventItems.Any())
                 {
-                    return;
+                    return monitorItemOutput;
                 }
 
                 var systemValueTypes = _systemValueTypeService.GetAll();
@@ -43,7 +48,7 @@ namespace CFMonitor.Checkers
                 string result = "";
                 HttpWebRequest webRequest = null;
                 HttpWebResponse webResponse = null;
-                ActionParameters actionParameters = new ActionParameters();
+                var actionItemParameters = new List<ActionItemParameter>();
 
                 try
                 {
@@ -67,13 +72,18 @@ namespace CFMonitor.Checkers
                 {
                     foreach (var eventItem in eventItems)
                     {
-                        await CheckEventAsync(eventItem, actionerList, monitorItem, actionParameters, exception, webRequest, webResponse);
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, webRequest, webResponse))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
 
                 }
+
+                return monitorItemOutput;
             });
         }
 
@@ -82,7 +92,7 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.SOAP;
         }
 
-        private async Task CheckEventAsync(EventItem eventItem, List<IActioner> actionerList, MonitorItem monitorSOAP, ActionParameters actionParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSOAP, List<ActionItemParameter> actionItemParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
         {            
             int webExceptionStatus = -1;
             if (exception is WebException)
@@ -111,14 +121,16 @@ namespace CFMonitor.Checkers
                         break;
                     */
                 }
-          
-                if (meetsCondition)
-                {
-                    foreach (ActionItem actionItem in eventItem.ActionItems)
-                    {
-                        await ExecuteActionAsync(actionerList, monitorSOAP, actionItem, actionParameters);
-                    }
-                }            
+
+            //if (meetsCondition)
+            //{
+            //    foreach (ActionItem actionItem in eventItem.ActionItems)
+            //    {
+            //        await ExecuteActionAsync(actionerList, monitorSOAP, actionItem, actionParameters);
+            //    }
+            //}            
+
+            return meetsCondition;
         }
 
         private HttpWebRequest CreateWebRequest(MonitorItem monitorSOAP, List<SystemValueType> systemValueTypes)

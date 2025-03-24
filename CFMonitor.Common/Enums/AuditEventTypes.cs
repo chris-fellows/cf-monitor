@@ -3,6 +3,7 @@
     public enum AuditEventTypes
     {
         ActionExecuted,
+        Error,
         CheckedMonitorItem,
         CheckingMonitorItem,
         MonitorAgentAdded,

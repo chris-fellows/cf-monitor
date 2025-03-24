@@ -1,6 +1,7 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
+using CFUtilities.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Data.OleDb;
@@ -20,7 +21,8 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService, 
                     IEventItemService eventItemService,
-                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
+                    IPlaceholderService placeholderService,
+                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
             
         }
@@ -29,10 +31,12 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.SQL;
 
-        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem,  bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
             return Task.Factory.StartNew(() =>
             {
+                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items
@@ -43,8 +47,11 @@ namespace CFMonitor.Checkers
                 }
 
                 ////MonitorSQL monitorSQL = (MonitorSQL)monitorItem;
-                //var connectionStringParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLConnectionString);
+                //var connectionStringParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLConnectionString);                
+                //var connectionString = GetValueWithPlaceholdersReplaced(connectionStringParam);
+
                 //var queryParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLQuery);
+                // var query = GetValueWithPlaceholdersReplaced(queryParam)
 
                 //Exception exception = null;
                 //OleDbDatabase database = null;
@@ -53,9 +60,9 @@ namespace CFMonitor.Checkers
 
                 //try
                 //{
-                //    database = new OleDbDatabase(connectionStringParam.Value);
+                //    database = new OleDbDatabase(connectionString);
                 //    database.Open();
-                //    string sql = System.IO.File.ReadAllText(queryParam.Value);
+                //    string sql = System.IO.File.ReadAllText(query);
                 //    reader = database.ExecuteReader(System.Data.CommandType.Text, sql, System.Data.CommandBehavior.Default, null);                
                 //}
                 //catch (System.Exception ex)

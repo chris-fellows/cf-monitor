@@ -1,6 +1,7 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
+using CFUtilities.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -16,7 +17,8 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService, 
             IEventItemService eventItemService,
-                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
+            IPlaceholderService placeholderService,
+                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
             
         }
@@ -25,10 +27,12 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.Socket;
 
-        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
             return Task.Factory.StartNew(() =>
             {
+                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items
@@ -42,12 +46,15 @@ namespace CFMonitor.Checkers
 
                 var svtProtocol = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SocketProtocol);
                 var protocolParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtProtocol.Id);
+                var protocol = GetValueWithPlaceholdersReplaced(protocolParam);
 
                 var svtPort = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SocketPort);
                 var portParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtPort.Id);
+                var port = GetValueWithPlaceholdersReplaced(portParam); 
 
                 var svtHost = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SocketHost);
                 var hostParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtHost.Id);
+                var host = GetValueWithPlaceholdersReplaced(hostParam);
 
                 Exception exception = null;
                 bool connected = false;
@@ -59,7 +66,7 @@ namespace CFMonitor.Checkers
                     //{
                     //    case "TCP":
                     //        TcpSocket tcpSocket = new TcpSocket();
-                    //        tcpSocket.Connect(hostParam.Value, Convert.ToInt32(portParam.Value));
+                    //        tcpSocket.Connect(host, Convert.ToInt32(port));
                     //        connected = tcpSocket.IsConnected;
                     //        tcpSocket.Disconnect();
                     //        break;

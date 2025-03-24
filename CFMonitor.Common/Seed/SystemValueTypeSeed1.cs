@@ -23,6 +23,13 @@ namespace CFMonitor.Seed
                     ValueType = SystemValueTypes.AEP_ActionItemId,
                     DataType = SystemValueDataTypes.String,                 
                 },
+                   new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Error message",
+                    ValueType = SystemValueTypes.AEP_ErrorMessage,
+                    DataType = SystemValueDataTypes.String,
+                },
                 new SystemValueType()
                 {
                     Id= Guid.NewGuid().ToString(),
@@ -35,6 +42,13 @@ namespace CFMonitor.Seed
                     Id= Guid.NewGuid().ToString(),
                     Name = "Monitor Item Id",
                     ValueType = SystemValueTypes.AEP_MonitorItemId,
+                    DataType = SystemValueDataTypes.String,
+                },
+                 new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Monitor Item Output Id",
+                    ValueType = SystemValueTypes.AEP_MonitorItemOutputId,
                     DataType = SystemValueDataTypes.String,
                 },
                 new SystemValueType()

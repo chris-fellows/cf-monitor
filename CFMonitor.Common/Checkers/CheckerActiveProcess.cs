@@ -1,6 +1,7 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
+using CFUtilities.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,7 +18,8 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService,
             IEventItemService eventItemService,
-            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
+            IPlaceholderService placeholderService,
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
      
         }
@@ -26,10 +28,12 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.ActiveProcess;
 
-        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
             return Task.Factory.StartNew(() =>
             {
+                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items
@@ -43,9 +47,11 @@ namespace CFMonitor.Checkers
 
                 var svtFileName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_ActiveProcessFileName);
                 var fileNameParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFileName.Id);
+                var fileName = GetValueWithPlaceholdersReplaced(fileNameParam);
 
                 var svtMachineName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_ActiveProcessMachineName);
                 var machineNameParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtMachineName.Id);
+                var machineName = GetValueWithPlaceholdersReplaced(machineNameParam);
 
                 Exception exception = null;
                 var actionItemParameters = new List<ActionItemParameter>();
@@ -53,12 +59,12 @@ namespace CFMonitor.Checkers
 
                 try
                 {
-                    Process[] processes = String.IsNullOrEmpty(machineNameParam.Value) ?
-                            Process.GetProcesses() : Process.GetProcesses(machineNameParam.Value);
+                    Process[] processes = String.IsNullOrEmpty(machineName) ?
+                            Process.GetProcesses() : Process.GetProcesses(machineName);
                     foreach (Process process in processes)
                     {
                         string filePath = process.MainModule.FileName;
-                        if (filePath.Equals(fileNameParam.Value, StringComparison.InvariantCultureIgnoreCase))
+                        if (filePath.Equals(fileName, StringComparison.InvariantCultureIgnoreCase))
                         {
                             processesFound.Add(process);
                         }

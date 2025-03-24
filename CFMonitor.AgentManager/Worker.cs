@@ -2,6 +2,7 @@
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.Models.Messages;
+using CFMonitor.SystemTask;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -21,16 +22,24 @@ namespace CFMonitor.AgentManager
         private readonly IServiceProvider _serviceProvider;
         private readonly SystemConfig _systemConfig;
         private readonly AgentConnection _agentConnection;   // = new AgentConnection()
+        private readonly ISystemTaskList _systemTaskList;
         
         public Worker(IServiceProvider serviceProvider,
                       SystemConfig systemConfig)
         {
             _serviceProvider = serviceProvider;
             _systemConfig = systemConfig;
+            _systemTaskList = serviceProvider.GetRequiredService<ISystemTaskList>();
 
+            var auditEventFactory = _serviceProvider.GetRequiredService<IAuditEventFactory>();
+            var auditEventService = _serviceProvider.GetRequiredService<IAuditEventService>();
+            var eventItemService = _serviceProvider.GetRequiredService<IEventItemService>();
             var monitorAgentService = _serviceProvider.GetRequiredService<IMonitorAgentService>();
+            var monitorItemOutputService = _serviceProvider.GetRequiredService<IMonitorItemOutputService>();
             var monitorItemService = _serviceProvider.GetRequiredService<IMonitorItemService>();
-            _agentConnection = new AgentConnection(monitorAgentService, monitorItemService);
+            _agentConnection = new AgentConnection(auditEventFactory, auditEventService, eventItemService, 
+                            monitorAgentService, monitorItemOutputService, monitorItemService,
+                            _serviceProvider);
 
             _timer = new System.Timers.Timer();
             _timer.Elapsed += _timer_Elapsed;

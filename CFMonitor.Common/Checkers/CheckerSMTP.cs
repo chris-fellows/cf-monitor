@@ -7,6 +7,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Net.Security;
 using System.Threading.Tasks;
+using CFUtilities.Interfaces;
 
 namespace CFMonitor.Checkers
 {
@@ -19,7 +20,8 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService, 
             IEventItemService eventItemService,
-                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
+            IPlaceholderService placeholderService,
+                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
             
         }
@@ -28,10 +30,12 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.SMTP;
 
-        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
             return Task.Factory.StartNew(() =>
             {
+                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items
@@ -45,9 +49,11 @@ namespace CFMonitor.Checkers
 
                 var svtServer = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SMTPServer);
                 var serverParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtServer.Id);
+                var server = GetValueWithPlaceholdersReplaced(serverParam);
 
                 var svtPort = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SMTPPort);
                 var portParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtPort.Id);
+                var port = GetValueWithPlaceholdersReplaced(portParam);
 
                 Exception exception = null;
                 var actionItemParameters = new List<ActionItemParameter>();
@@ -55,22 +61,19 @@ namespace CFMonitor.Checkers
                 try
                 {
                     using (var client = new TcpClient())
-                    {
-
-                        //var server = "smtp.gmail.com";
-                        //var port = 465;
-                        client.Connect(serverParam.Value, Convert.ToInt32(portParam.Value));
+                    {                     
+                        client.Connect(server, Convert.ToInt32(port));
                         // As GMail requires SSL we should use SslStream
                         // If your SMTP server doesn't support SSL you can
                         // work directly with the underlying stream
                         using (var stream = client.GetStream())
                         using (var sslStream = new SslStream(stream))
                         {
-                            sslStream.AuthenticateAsClient(serverParam.Value);
+                            sslStream.AuthenticateAsClient(server);
                             using (var writer = new StreamWriter(sslStream))
                             using (var reader = new StreamReader(sslStream))
                             {
-                                writer.WriteLine("EHLO " + serverParam.Value);
+                                writer.WriteLine("EHLO " + server);
                                 writer.Flush();
                                 Console.WriteLine(reader.ReadLine());
                                 // GMail responds with: 220 mx.google.com ESMTP

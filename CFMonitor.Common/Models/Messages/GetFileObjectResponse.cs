@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CFMonitor.Constants;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,5 +12,11 @@ namespace CFMonitor.Models.Messages
         public byte[] Content { get; set; } = new byte[0];
 
         public string Name { get; set; } = String.Empty;
+
+        public GetFileObjectResponse()
+        {
+            Id = Guid.NewGuid().ToString();
+            TypeId = MessageTypeIds.GetFileObjectResponse;
+        }
     }
 }

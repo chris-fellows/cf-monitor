@@ -5,6 +5,7 @@ using CFMonitor.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using CFUtilities.Interfaces;
 
 namespace CFMonitor.Checkers
 {
@@ -19,7 +20,8 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService, 
             IEventItemService eventItemService,
-            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
+            IPlaceholderService placeholderService,
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
             
         }
@@ -28,10 +30,12 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.POP;
 
-        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
             return Task.Factory.StartNew(() =>
             {
+                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items

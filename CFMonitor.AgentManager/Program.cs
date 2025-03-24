@@ -7,6 +7,7 @@ using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CFMonitor.AgentManager.Models;
+using CFMonitor.SystemTask;
 
 internal static class Program
 {
@@ -76,6 +77,14 @@ internal static class Program
                 {
                     return new XmlMonitorAgentService(Path.Combine(configFolder, "MonitorAgent"));
                 })
+                .AddScoped<IMonitorAgentGroupService>((scope) =>
+                {
+                    return new XmlMonitorAgentGroupService(Path.Combine(configFolder, "MonitorAgentGroup"));
+                })
+                .AddScoped<IMonitorItemOutputService>((scope) =>                
+                {
+                    return new XmlMonitorItemOutputService(Path.Combine(configFolder, "MonitorItemOutput"));
+                })
                 .AddScoped<IMonitorItemService>((scope) =>
                 {
                     return new XmlMonitorItemService(Path.Combine(configFolder, "MonitorItem"));
@@ -90,10 +99,21 @@ internal static class Program
                 })
 
             .AddScoped<IAuditEventFactory, AuditEventFactory>()
-            .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()
+            .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()           
+            
+            .RegisterAllTypes<IChecker>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
+            .RegisterAllTypes<IActioner>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
+            .RegisterAllTypes<ISystemTask>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
 
-            .RegisterAllTypes<IChecker>(new[] { typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
-            .RegisterAllTypes<IActioner>(new[] { typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
+            // Add system tasks
+            .AddSingleton<ISystemTaskList>((scope) =>
+            {
+                var systemTaskConfigs = new List<SystemTaskConfig>()
+                {
+
+                };
+                return new SystemTaskList(4, systemTaskConfigs);
+            })
 
             //  // Seed
             //.AddKeyedScoped<IEntityReader<ActionItemType>, ActionItemTypeSeed1>("ActionItemTypeSeed1")

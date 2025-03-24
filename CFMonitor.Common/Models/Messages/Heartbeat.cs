@@ -1,13 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CFMonitor.Constants;
 
 namespace CFMonitor.Models.Messages
 {
+    /// <summary>
+    /// Heartbeat from Monitor Agent
+    /// </summary>
     public class Heartbeat : MessageBase
-    {
-        
+    {       
+        public string MachineName { get; set; } = String.Empty;
+
+        public string UserName { get; set; } = String.Empty;
+
+        public Heartbeat()
+        {
+            Id = Guid.NewGuid().ToString();
+            TypeId = MessageTypeIds.Heartbeat;                
+        }
     }
 }

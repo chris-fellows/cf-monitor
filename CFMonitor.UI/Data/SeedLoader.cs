@@ -16,6 +16,7 @@ namespace CFMonitor.UI.Data
             var auditEventTypeService = scope.ServiceProvider.GetRequiredService<IAuditEventTypeService>();
             var eventItemService = scope.ServiceProvider.GetRequiredService<IEventItemService>();
             var monitorAgentService = scope.ServiceProvider.GetRequiredService<IMonitorAgentService>();
+            var monitorAgentGroupService = scope.ServiceProvider.GetRequiredService<IMonitorAgentGroupService>();
             var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
             var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
             var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
@@ -24,6 +25,7 @@ namespace CFMonitor.UI.Data
             var actionItemTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<ActionItemType>>("ActionItemTypeSeed");
             var auditEventTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<AuditEventType>>("AuditEventTypeSeed");
             var eventItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<EventItem>>("EventItemSeed");
+            var monitorAgentGroupSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorAgentGroup>>("MonitorAgentGroupSeed");
             var monitorAgentSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorAgent>>("MonitorAgentSeed");
             var monitorItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorItem>>("MonitorItemSeed");
             var systemValueTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<SystemValueType>>("SystemValueTypeSeed");
@@ -60,7 +62,14 @@ namespace CFMonitor.UI.Data
                 auditEventService.Add(auditEventFactory.CreateUserAdded(user.Id));
             }
 
-            // Add monitor agents
+            // Add monitor agent groups
+            var monitorAgentGroupsNew = monitorAgentGroupSeed.Read();
+            foreach (var monitorAgentGroup in monitorAgentGroupsNew)
+            {
+                monitorAgentGroupService.Add(monitorAgentGroup);
+            }
+
+            // Add monitor agents. Depends on monitor agent groups
             var monitorAgentsNew =  monitorAgentSeed.Read();
             foreach (var monitorAgent in monitorAgentsNew)
             {

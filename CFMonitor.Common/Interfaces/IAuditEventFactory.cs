@@ -7,11 +7,13 @@ namespace CFMonitor.Interfaces
     /// </summary>
     public interface IAuditEventFactory
     {
-        AuditEvent CreateActionExecuted(string monitorAgentId, string monitorItemId, string actionItemId);
+        AuditEvent CreateActionExecuted(string monitorItemOutputId, string actionItemId);
 
-        AuditEvent CreateCheckedMonitorItem(string monitorAgentId, string monitorItemId);
+        AuditEvent CreateCheckedMonitorItem(string monitorItemOutputId);
 
         AuditEvent CreateCheckingMonitorItem(string monitorAgentId, string monitorItemId);
+
+        AuditEvent CreateError(string errorMessage, List<AuditEventParameter> parameters);
 
         AuditEvent CreateUserAdded(string userId);
 

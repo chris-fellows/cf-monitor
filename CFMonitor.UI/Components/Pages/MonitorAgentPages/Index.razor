@@ -4,6 +4,7 @@
 @using CFMonitor.Models
 @using CFMonitor.Utilities
 @using CFUtilities
+@inject IMonitorAgentGroupService MonitorAgentGroupService
 @inject IMonitorAgentService MonitorAgentService
 
 @using System.IO
@@ -42,9 +43,17 @@
 else
 {
     <QuickGrid Class="table" Items="@MonitorAgentsQueryable" Pagination="@Pagination">
-        <PropertyColumn Property="monitorAgent => monitorAgent.MachineName" />
-        <PropertyColumn Property="monitorAgent => monitorAgent.UserName" />
-        <PropertyColumn Property="monitorAgent => monitorAgent.HeartbeatDateTime" />        
+        <PropertyColumn Title="Id" Property="monitorAgent => monitorAgent.Id" />
+
+        <TemplateColumn Title="Type" Context="monitorAgent">
+            <ImageAndText ImageSource="@(GetMonitorAgentGroupImageSource(monitorAgent))" Text="@(GetMonitorAgentGroupName(monitorAgent))" />
+        </TemplateColumn>
+
+        <PropertyColumn Title="Machine" Property="monitorAgent => monitorAgent.MachineName" />
+        <PropertyColumn Title="User" Property="monitorAgent => monitorAgent.UserName" />
+        <PropertyColumn Title="IP" Property="monitorAgent => monitorAgent.IP" />
+        <PropertyColumn Title="Port" Property="monitorAgent => monitorAgent.IP" />
+        <PropertyColumn Title="Heartbeat" Property="monitorAgent => monitorAgent.HeartbeatDateTime" />        
     </QuickGrid>
 
     <Paginator State="@Pagination" />
@@ -53,15 +62,17 @@ else
 @code {
     private IQueryable<MonitorAgent>? MonitorAgentsQueryable;
 
+    private List<MonitorAgentGroup> MonitorAgentGroups = new();
+
     private PaginationState Pagination = new PaginationState() { ItemsPerPage = 25 };
 
     private bool IsBusy { get; set; }
 
-    private string SelectedTabId { get; set; } = "2";
-
     protected override async Task OnInitializedAsync()
     {
         IsBusy = true;
+
+        MonitorAgentGroups = MonitorAgentGroupService.GetAll();
 
         await RefreshMonitorAgentsAsync();
     }
@@ -69,15 +80,25 @@ else
     private async Task RefreshMonitorAgentsAsync()
     {
         IsBusy = true;
-
-        MonitorAgentsQueryable = MonitorAgentService.GetAll().AsQueryable();
+        
+        MonitorAgentsQueryable = MonitorAgentService.GetAll().AsQueryable();        
 
         IsBusy = false;
     }
 
-    private string GetUserColor(User user)
+    // private string GetUserColor(User user)
+    // {
+    //     return HTMLUtilities.GetHTMLColor(user.Color);
+    // }
+
+    private string GetMonitorAgentGroupName(MonitorAgent monitorAgent)
     {
-        return HTMLUtilities.GetHTMLColor(user.Color);
+        return MonitorAgentGroups.First(t => t.Id == monitorAgent.MonitorAgentGroupId).Name;
+    }
+    
+    private string GetMonitorAgentGroupImageSource(MonitorAgent monitorAgent)
+    {
+        return $"../images/monitor_agent_groups/{MonitorAgentGroups.First(t => t.Id == monitorAgent.MonitorAgentGroupId).ImageSource}";
     }
 
     private async Task DownloadCSVAsync()

@@ -20,6 +20,7 @@
     <Folder Include="wwwroot\images\audit_event_types\" />
     <Folder Include="wwwroot\images\action_item_types\" />
     <Folder Include="wwwroot\images\monitor_item_types\" />
+    <Folder Include="wwwroot\images\monitor_agent_groups\" />
     <Folder Include="wwwroot\images\users\" />
   </ItemGroup>
 

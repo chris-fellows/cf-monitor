@@ -1,6 +1,7 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
+using CFUtilities.Interfaces;
 using CFUtilities.Utilities;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,8 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService,
             IEventItemService eventItemService,
-            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
+            IPlaceholderService placeholderService,
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
      
         }
@@ -27,10 +29,12 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.FolderSize;
 
-        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem,  bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
             return Task.Factory.StartNew(() =>
             {
+                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items
@@ -44,6 +48,7 @@ namespace CFMonitor.Checkers
 
                 var svtFolder = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_FolderSizeFolder);
                 var folderParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFolder.Id);
+                var folder = GetValueWithPlaceholdersReplaced(folderParam);
 
                 Exception exception = null;
                 var actionItemParameters = new List<ActionItemParameter>();
@@ -51,9 +56,9 @@ namespace CFMonitor.Checkers
 
                 try
                 {
-                    if (Directory.Exists(folderParam.Value))
+                    if (Directory.Exists(folder))
                     {
-                        folderSize = IOUtilities.GetDirectorySize(folderParam.Value);
+                        folderSize = IOUtilities.GetDirectorySize(folder);
                     }
                 }
                 catch (System.Exception ex)

@@ -10,13 +10,13 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.MessageConverters
 {
-    public class MonitorItemResultConverter : IExternalMessageConverter<MonitorItemResult>
+    public class MonitorItemResultMessageConverter : IExternalMessageConverter<MonitorItemResultMessage>
     {
-        public ConnectionMessage GetConnectionMessage(MonitorItemResult monitorItemResult)
+        public ConnectionMessage GetConnectionMessage(MonitorItemResultMessage monitorItemResultMessage)
         {
             var connectionMessage = new ConnectionMessage()
             {
-                Id = monitorItemResult.Id,
+                Id = monitorItemResultMessage.Id,
                 TypeId = MessageTypeIds.MonitorItemUpdated,
                 Parameters = new List<ConnectionMessageParameter>()
                 {
@@ -26,14 +26,14 @@ namespace CFMonitor.MessageConverters
             return connectionMessage;
         }
 
-        public MonitorItemResult GetExternalMessage(ConnectionMessage connectionMessage)
+        public MonitorItemResultMessage GetExternalMessage(ConnectionMessage connectionMessage)
         {
-            var monitorItemResult = new MonitorItemResult()
+            var monitorItemResultMessage = new MonitorItemResultMessage()
             {
                 Id = connectionMessage.Id,
             };
 
-            return monitorItemResult;
+            return monitorItemResultMessage;
         }
     }
 }

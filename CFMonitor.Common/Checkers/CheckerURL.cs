@@ -1,6 +1,7 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
+using CFUtilities.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -17,7 +18,8 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService, 
             IEventItemService eventItemService,
-                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
+            IPlaceholderService placeholderService,
+                            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
      
         }
@@ -26,10 +28,12 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.URL;
 
-        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
             return Task.Factory.StartNew(() =>
             {
+                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items
@@ -86,32 +90,38 @@ namespace CFMonitor.Checkers
 
             var svtParam = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLURL);
             var urlParam = monitorURL.Parameters.First(p => p.SystemValueTypeId == svtParam.Id);
+            var url = GetValueWithPlaceholdersReplaced(urlParam);
 
             var svtMethod = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLMethod);
             var methodParam = monitorURL.Parameters.First(p => p.SystemValueTypeId == svtMethod.Id);
+            var method = GetValueWithPlaceholdersReplaced(methodParam);
 
             var svtUsername = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLUsername);
             var usernameParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtUsername.Id);
+            var username = GetValueWithPlaceholdersReplaced(usernameParam);
 
             var svtPassword = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLPassword);
             var passwordParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtPassword.Id);
+            var password = GetValueWithPlaceholdersReplaced(passwordParam);
 
             var svtProxyName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLProxyName);
             var proxyNameParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtProxyName.Id);
+            var proxyName = GetValueWithPlaceholdersReplaced(proxyNameParam);
 
             var svtProxyPort = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_URLProxyPort);
             var proxyPortParam = monitorURL.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtProxyPort.Id);
+            var proxyPort = GetValueWithPlaceholdersReplaced(proxyPortParam);
 
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(urlParam.Value);
             request.Method = methodParam.Value;
             request.KeepAlive = true;            
-            if (proxyNameParam != null && !String.IsNullOrEmpty(proxyNameParam.Value))
+            if (proxyNameParam != null && !String.IsNullOrEmpty(proxyName))
             {
-                WebProxy proxy = new WebProxy(proxyNameParam.Value, Convert.ToInt32(proxyPortParam.Value));
+                WebProxy proxy = new WebProxy(proxyName, Convert.ToInt32(proxyPort));
                 //if (!String.IsNullOrEmpty(monitorURL.UserName))
-                if (usernameParam != null && !String.IsNullOrWhiteSpace(usernameParam.Value))
+                if (usernameParam != null && !String.IsNullOrWhiteSpace(username))
                 {
-                    proxy.Credentials = new NetworkCredential(usernameParam.Value, passwordParam.Value);
+                    proxy.Credentials = new NetworkCredential(username, password);
                 }
                 request.Proxy = proxy;
             }

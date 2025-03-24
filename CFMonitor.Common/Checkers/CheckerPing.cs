@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
+using CFUtilities.Interfaces;
 
 namespace CFMonitor.Checkers
 {
@@ -18,7 +19,8 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService, 
                 IEventItemService eventItemService,
-                    ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
+                IPlaceholderService placeholderService,
+                    ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
      
         }
@@ -27,10 +29,12 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.Ping;
 
-        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem,bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
             return Task.Factory.StartNew(() =>
             {
+                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items
@@ -44,6 +48,7 @@ namespace CFMonitor.Checkers
 
                 var svtServer = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_PingServer);
                 var serverParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtServer.Id);
+                var server = GetValueWithPlaceholdersReplaced(serverParam);
 
                 Exception exception = null;
                 PingReply pingReply = null;
@@ -60,7 +65,7 @@ namespace CFMonitor.Checkers
                     string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
                     byte[] buffer = Encoding.ASCII.GetBytes(data);
                     int timeout = 120;
-                    pingReply = ping.Send(serverParam.Value, timeout, buffer, pingOptions);
+                    pingReply = ping.Send(server, timeout, buffer, pingOptions);
                     /*
                     if (reply.Status == IPStatus.Success)
                     {                    

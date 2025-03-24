@@ -9,6 +9,8 @@ using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CFMonitor.Agent.Models;
+using CFMonitor.SystemTask;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CFMonitor.Agent
 {
@@ -24,7 +26,8 @@ namespace CFMonitor.Agent
             var systemConfig = new SystemConfig()
             {
                 LocalPort = 10001,
-                MaxConcurrentChecks = 3
+                MaxConcurrentChecks = 3,
+                MonitorItemFilesRootFolder = "D:\\Data\\Dev\\C#\\cf-monitor-local\\MonitorAgent-1"                
             };
 
             // Start worker
@@ -83,6 +86,14 @@ namespace CFMonitor.Agent
                 {
                     return new XmlMonitorAgentService(Path.Combine(configFolder, "MonitorAgent"));
                 })
+                .AddScoped<IMonitorAgentGroupService>((scope) =>
+                {
+                    return new XmlMonitorAgentGroupService(Path.Combine(configFolder, "MonitorAgentGroup"));
+                })
+                   .AddScoped<IMonitorItemOutputService>((scope) =>
+                   {
+                       return new XmlMonitorItemOutputService(Path.Combine(configFolder, "MonitorItemOutput"));
+                   })
                 .AddScoped<IMonitorItemService>((scope) =>
                 {
                     return new XmlMonitorItemService(Path.Combine(configFolder, "MonitorItem"));
@@ -99,8 +110,22 @@ namespace CFMonitor.Agent
                 .AddScoped<IAuditEventFactory, AuditEventFactory>()
                 .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()
 
-                .RegisterAllTypes<IChecker>(new[] { typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
-                .RegisterAllTypes<IActioner>(new[] { typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
+                .RegisterAllTypes<IChecker>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
+                .RegisterAllTypes<IActioner>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
+                .RegisterAllTypes<ISystemTask>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
+
+                // Add system tasks
+                .AddSingleton<ISystemTaskList>((scope) =>
+                {
+                    var systemTaskConfigs = new List<SystemTaskConfig>()
+                    {
+                        new SystemTaskConfig()
+                        {
+                            
+                        }
+                    };
+                    return new SystemTaskList(4, systemTaskConfigs);
+                })
 
                 //// Seed                
                 //.AddKeyedScoped<IEntityReader<ActionItemType>, ActionItemTypeSeed1>("ActionItemTypeSeed1")

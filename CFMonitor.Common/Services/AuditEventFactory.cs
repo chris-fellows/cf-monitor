@@ -24,7 +24,7 @@ namespace CFMonitor.Services
             _systemValueTypeService = systemValueTypeService;
         }
 
-        public AuditEvent CreateActionExecuted(string monitorAgentId, string monitorItemId, string actionItemId)
+        public AuditEvent CreateActionExecuted(string monitorItemOutputId, string actionItemId)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.ActionExecuted);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -38,14 +38,9 @@ namespace CFMonitor.Services
                 {
                     new AuditEventParameter()
                     {
-                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorAgentId).Id,
-                        Value = monitorAgentId
-                    },
-                    new AuditEventParameter()
-                    {
-                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorItemId).Id,
-                        Value = monitorItemId
-                    },
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorItemOutputId).Id,
+                        Value = monitorItemOutputId
+                    },                   
                     new AuditEventParameter()
                     {
                         SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_ActionItemId).Id,
@@ -57,7 +52,31 @@ namespace CFMonitor.Services
             return auditEvent;
         }
 
-        public AuditEvent CreateCheckedMonitorItem(string monitorAgentId, string monitorItemId)
+        public AuditEvent CreateError(string errorMessage, List<AuditEventParameter> parameters)
+        {
+            var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.Error);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var auditEvent = new AuditEvent()
+            {
+                Id = Guid.NewGuid().ToString(),
+                TypeId = auditEventType.Id,
+                CreatedDateTime = DateTimeOffset.UtcNow,
+                Parameters = new List<AuditEventParameter>()
+                {
+                    new AuditEventParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_ErrorMessage).Id,
+                        Value = errorMessage
+                    },                   
+                }
+            };
+            auditEvent.Parameters.AddRange(parameters);
+
+            return auditEvent;
+        }
+
+        public AuditEvent CreateCheckedMonitorItem(string monitorItemOutputId)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.CheckedMonitorItem);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -71,14 +90,9 @@ namespace CFMonitor.Services
                 {
                     new AuditEventParameter()
                     {
-                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorAgentId).Id,
-                        Value = monitorAgentId
-                    },
-                    new AuditEventParameter()
-                    {
-                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorItemId).Id,
-                        Value = monitorItemId
-                    }
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorItemOutputId).Id,
+                        Value = monitorItemOutputId
+                    }                    
                 }
             };
 

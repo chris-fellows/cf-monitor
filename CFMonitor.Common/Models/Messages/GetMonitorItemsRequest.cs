@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CFMonitor.Constants;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,5 +12,10 @@ namespace CFMonitor.Models.Messages
     /// </summary>
     public class GetMonitorItemsRequest : MessageBase
     {
+        public GetMonitorItemsRequest()
+        {
+            Id = Guid.NewGuid().ToString();
+            TypeId = MessageTypeIds.GetMonitorItemsRequest;
+        }
     }
 }

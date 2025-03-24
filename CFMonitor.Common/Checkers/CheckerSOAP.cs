@@ -1,6 +1,7 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
+using CFUtilities.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +20,8 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService, 
                 IEventItemService eventItemService,
-                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
+                IPlaceholderService placeholderService,
+                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
      
         }
@@ -28,10 +30,12 @@ namespace CFMonitor.Checkers
 
        // public CheckerTypes CheckerType => CheckerTypes.SOAP;
 
-        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem,  bool testMode)
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
             return Task.Factory.StartNew(() =>
             {
+                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items
@@ -137,11 +141,13 @@ namespace CFMonitor.Checkers
         {
             var svtUrl = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SOAPURL);
             var urlParam = monitorSOAP.Parameters.First(p => p.SystemValueTypeId == svtUrl.Id);
+            var url = GetValueWithPlaceholdersReplaced(urlParam);
 
             var svtXml = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SOAPXML);
             var xmlParam = monitorSOAP.Parameters.First(p => p.SystemValueTypeId == svtXml.Id);
+            var xml = GetValueWithPlaceholdersReplaced(xmlParam);
 
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(urlParam.Value);
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
             webRequest.Headers.Add(@"SOAP:Action");
             webRequest.ContentType = "text/xml;charset=\"utf-8\"";
             webRequest.Accept = "text/xml";
@@ -149,7 +155,7 @@ namespace CFMonitor.Checkers
 
             // Set SOAP envelope
             XmlDocument envelopeDocument = new XmlDocument();
-            envelopeDocument.LoadXml(xmlParam.Value);
+            envelopeDocument.LoadXml(xml);
             using (Stream stream = webRequest.GetRequestStream())
             {
                 envelopeDocument.Save(stream);

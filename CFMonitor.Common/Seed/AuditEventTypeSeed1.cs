@@ -29,9 +29,17 @@ namespace CFMonitor.Seed
                },
                new AuditEventType()
                {
-                   Id =Guid.NewGuid().ToString(),
+                   Id = Guid.NewGuid().ToString(),
                    EventType = AuditEventTypes.CheckingMonitorItem,
                    Name = "Checking monitor item",
+                   Color = Color.Blue.ToArgb().ToString(),
+                    ImageSource = "audit_event_type.png",
+               },
+               new AuditEventType()
+               {
+                   Id = Guid.NewGuid().ToString(),
+                   EventType = AuditEventTypes.Error,
+                   Name = "Error",
                    Color = Color.Blue.ToArgb().ToString(),
                     ImageSource = "audit_event_type.png",
                },

@@ -29,8 +29,8 @@ namespace CFMonitor.Actioners
 
         protected void AddAuditEventActionExecuted(MonitorAgent monitorAgent, MonitorItem monitorItem, ActionItem actionItem)
         {
-            var auditEvent = _auditEventFactory.CreateActionExecuted(monitorAgent.Id, monitorItem.Id, actionItem.Id);
-            _auditEventService.Add(auditEvent);
+            //var auditEvent = _auditEventFactory.CreateActionExecuted(monitorAgent.Id, monitorItem.Id, actionItem.Id);
+            //_auditEventService.Add(auditEvent);
         }
     }
 }

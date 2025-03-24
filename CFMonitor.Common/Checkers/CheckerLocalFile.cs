@@ -1,6 +1,8 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
+using CFUtilities.Interfaces;
+using CFUtilities.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,7 +23,8 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService, 
             IEventItemService eventItemService,
-                ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, systemValueTypeService)
+            IPlaceholderService placeholderService,
+                ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
      
         }
@@ -30,10 +33,12 @@ namespace CFMonitor.Checkers
 
         //public CheckerTypes CheckerType => CheckerTypes.LocalFile;
 
-        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode)
-        {
+        public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
+        {            
             return Task.Factory.StartNew(() =>
             {
+                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 // Get event items
@@ -47,9 +52,11 @@ namespace CFMonitor.Checkers
 
                 var svtFileName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_LocalFileFileName);
                 var fileNameParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFileName.Id);
+                var fileName = GetValueWithPlaceholdersReplaced(fileNameParam);
 
                 var svtFindText = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_LocalFileFindText);
                 var findTextParam = monitorItem.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtFindText.Id);
+                var findText = GetValueWithPlaceholdersReplaced(findTextParam);
 
                 Exception exception = null;
                 var actionItemParameters = new List<ActionItemParameter>();
@@ -58,10 +65,10 @@ namespace CFMonitor.Checkers
 
                 try
                 {
-                    fileInfo = new FileInfo(fileNameParam.Value);
-                    if (fileInfo.Exists && findTextParam != null && !String.IsNullOrEmpty(findTextParam.Value))
+                    fileInfo = new FileInfo(fileName);
+                    if (fileInfo.Exists && findTextParam != null && !String.IsNullOrEmpty(findText))
                     {
-                        textFound = File.ReadAllText(fileNameParam.Value).Contains(findTextParam.Value);
+                        textFound = File.ReadAllText(fileName).Contains(findText);
                     }
                 }
                 catch (Exception ex)

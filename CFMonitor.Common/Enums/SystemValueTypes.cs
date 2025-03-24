@@ -8,8 +8,10 @@
         // -----------------------------------------------------------------------------------------------------
         // Audit event parameter types        
         AEP_ActionItemId,
+        AEP_ErrorMessage,
         AEP_MonitorAgentId,
         AEP_MonitorItemId,
+        AEP_MonitorItemOutputId,
         AEP_UserId,
 
         // -----------------------------------------------------------------------------------------------------

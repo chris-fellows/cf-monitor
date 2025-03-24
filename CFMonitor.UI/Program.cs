@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using System.Reflection;
 using CFUtilities.Interfaces;
 using CFUtilities.Services;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,14 @@ builder.Services.AddScoped<IMonitorAgentService>((scope) =>
 {
     return new XmlMonitorAgentService(Path.Combine(configFolder, "MonitorAgent"));
 });
+builder.Services.AddScoped<IMonitorAgentGroupService>((scope) =>
+{
+    return new XmlMonitorAgentGroupService(Path.Combine(configFolder, "MonitorAgentGroup"));
+});
+builder.Services.AddScoped<IMonitorItemOutputService>((scope) =>
+{
+    return new XmlMonitorItemOutputService(Path.Combine(configFolder, "MonitorItemOutput"));
+});
 builder.Services.AddScoped<IMonitorItemService>((scope) =>
 {
     return new XmlMonitorItemService(Path.Combine(configFolder, "MonitorItem"));
@@ -73,6 +82,9 @@ builder.Services.AddScoped<IFileSecurityCheckerService, FileSecurityCheckerServi
 // Add event item factory
 builder.Services.AddScoped<IEventItemFactoryService, EventItemFactoryService>();
 
+// Add toast service
+builder.Services.AddSingleton<IToastService, ToastService>();
+
 // Add placeholder service. E.g. Replacing error message placeholder in email body
 builder.Services.AddScoped<IPlaceholderService, PlaceholderService>();
 
@@ -83,6 +95,7 @@ builder.Services.AddScoped<IPasswordService, PBKDF2PasswordService>();
 builder.Services.AddKeyedScoped<IEntityReader<ActionItemType>, ActionItemTypeSeed1>("ActionItemTypeSeed");
 builder.Services.AddKeyedScoped<IEntityReader<AuditEventType>, AuditEventTypeSeed1>("AuditEventTypeSeed");
 builder.Services.AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed");
+builder.Services.AddKeyedScoped<IEntityReader<MonitorAgentGroup>, MonitorAgentGroupSeed1>("MonitorAgentGroupSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorAgent>, MonitorAgentSeed1>("MonitorAgentSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed");
 builder.Services.AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed");
@@ -106,20 +119,32 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-//// Load data
-//using (var scope = app.Services.CreateScope())
-//{
-//    //// Check for data
-//    //var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
-//    //var systemValuesTypes = systemValueTypeService.GetAll();
-//    //if (!systemValuesTypes.Any())
-//    //{
-//    //    throw new ArgumentException("System contains no data");
-//    //}
+using (var scope = app.Services.CreateScope())
+{
+    var placeholderService = scope.ServiceProvider.GetService<IPlaceholderService>();
 
-//    // Enable this to load seed data
-//    //new SeedLoader().DeleteAsync(scope).Wait();
-//    new SeedLoader().LoadAsync(scope).Wait();
-//}
+    //environment - variable
+    //var result = placeholderService.GetWithPlaceholdersReplaced("Test:{environment-variable:IIS_SITES_HOME}XXX", new Dictionary<string, object>());
 
-app.Run();
+    var result = placeholderService.GetWithPlaceholdersReplaced("Test:##process-id#####machine## ajuhahss", new Dictionary<string, object>());
+
+    int xxx = 1000;
+}
+
+    //// Load data
+    //using (var scope = app.Services.CreateScope())
+    //{
+    //    //// Check for data
+    //    //var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
+    //    //var systemValuesTypes = systemValueTypeService.GetAll();
+    //    //if (!systemValuesTypes.Any())
+    //    //{
+    //    //    throw new ArgumentException("System contains no data");
+    //    //}
+
+    //    // Enable this to load seed data
+    //    //new SeedLoader().DeleteAsync(scope).Wait();
+    //    new SeedLoader().LoadAsync(scope).Wait();
+    //}
+
+    app.Run();

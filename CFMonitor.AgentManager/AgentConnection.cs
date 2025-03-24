@@ -3,6 +3,9 @@ using CFConnectionMessaging.Models;
 using CFConnectionMessaging;
 using CFMonitor.Common.MessageConverters;
 using CFMonitor.Constants;
+using CFMonitor.Enums;
+using CFMonitor.Interfaces;
+using CFMonitor.Models;
 using CFMonitor.MessageConverters;
 using CFMonitor.Models.Messages;
 using System;
@@ -12,7 +15,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Windows.Markup;
-using CFMonitor.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using System.ComponentModel.DataAnnotations;
 
 namespace CFMonitor.AgentManager
 {
@@ -29,7 +33,7 @@ namespace CFMonitor.AgentManager
         private IExternalMessageConverter<GetMonitorItemsRequest> _getMonitorItemsRequestConverter = new GetMonitorItemsRequestConverter();
         private IExternalMessageConverter<GetMonitorItemsResponse> _getMonitorItemsResponseConverter = new GetMonitorItemsResponseConverter();
         private IExternalMessageConverter<Heartbeat> _heartbeatConverter = new HeartbeatConverter();
-        private IExternalMessageConverter<MonitorItemResult> _monitorItemResultConverter = new MonitorItemResultConverter();
+        private IExternalMessageConverter<MonitorItemResultMessage> _monitorItemResultMessageConverter = new MonitorItemResultMessageConverter();
         private IExternalMessageConverter<MonitorItemUpdated> _monitorItemUpdatedConverter = new MonitorItemUpdatedConverter();
         
         //public delegate void GetMonitorItemsRequestReceived(GetMonitorItemsRequest request);
@@ -42,15 +46,30 @@ namespace CFMonitor.AgentManager
 
         public string LocalUserName { get; set; } = String.Empty;
 
+        private readonly IAuditEventFactory _auditEventFactory;
+        private readonly IAuditEventService _auditEventService;
+        private readonly IEventItemService _eventItemService;        
         private readonly IMonitorAgentService _monitorAgentService;
+        private readonly IMonitorItemOutputService _monitorItemOutputService;
         private readonly IMonitorItemService _monitorItemService;
+        private readonly IServiceProvider _serviceProvider;
 
-        public AgentConnection(IMonitorAgentService monitorAgentService,
-                    IMonitorItemService monitorItemService)
+        public AgentConnection(IAuditEventFactory auditEventFactory,
+                                IAuditEventService auditEventService,
+                                IEventItemService eventItemService,
+                                IMonitorAgentService monitorAgentService,
+                               IMonitorItemOutputService monitorItemOutputService,
+                               IMonitorItemService monitorItemService,
+                               IServiceProvider serviceProvider)
             
         {
+            _auditEventFactory = auditEventFactory;
+            _auditEventService = auditEventService;
+            _eventItemService = eventItemService;
             _monitorAgentService = monitorAgentService;
+            _monitorItemOutputService = monitorItemOutputService;
             _monitorItemService = monitorItemService;
+            _serviceProvider = serviceProvider;
 
             _connection = new ConnectionTcp();
             _connection.OnConnectionMessageReceived += _connection_OnConnectionMessageReceived;
@@ -106,10 +125,10 @@ namespace CFMonitor.AgentManager
                     ProcessHeartbeatAsync(heartbeat, messageReceivedInfo);          
                     break;
 
-                case MessageTypeIds.MonitorItemResult:
-                    var monitorItemResult = _monitorItemResultConverter.GetExternalMessage(connectionMessage);
+                case MessageTypeIds.MonitorItemResultMessage:
+                    var monitorItemResultMessage = _monitorItemResultMessageConverter.GetExternalMessage(connectionMessage);
 
-                    ProcessMonitorItemResultAsync(monitorItemResult, messageReceivedInfo);
+                    ProcessMonitorItemResultAsync(monitorItemResultMessage, messageReceivedInfo);
                     break;
             }
         }
@@ -118,46 +137,182 @@ namespace CFMonitor.AgentManager
         {
             return Task.Factory.StartNew(() =>
             {
-                var monitorItems = _monitorItemService.GetAll();
-
-                var getMonitorItemsResponse = new GetMonitorItemsResponse()
+                using (var scope = _serviceProvider.CreateScope())
                 {
-                    Id = Guid.NewGuid().ToString(),
-                    MonitorItems = monitorItems,
-                    Response = new MessageResponse()
+                    var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
+
+                    var monitorItems = monitorItemService.GetAll();
+
+                    var getMonitorItemsResponse = new GetMonitorItemsResponse()
                     {
-                        IsMore = false,
-                        MessageId = getMonitorItemsRequest.Id,
-                        Sequence = 1
-                    }
-                };
+                        Id = Guid.NewGuid().ToString(),
+                        MonitorItems = monitorItems,
+                        Response = new MessageResponse()
+                        {
+                            IsMore = false,
+                            MessageId = getMonitorItemsRequest.Id,
+                            Sequence = 1
+                        }
+                    };
 
-                // Send response
-                _connection.SendMessage(_getMonitorItemsResponseConverter.GetConnectionMessage(getMonitorItemsResponse), messageReceivedInfo.RemoteEndpointInfo);
-            });
-        }
-
-        private Task ProcessHeartbeatAsync(Heartbeat heartbeat, MessageReceivedInfo messageReceivedInfo)
-        {
-            return Task.Factory.StartNew(() =>
-            {
-                // Get monitor agent
-                var monitorAgent = _monitorAgentService.GetById(heartbeat.SenderAgentId);
-                if (monitorAgent != null)       // Known monitor agent
-                {
-                    monitorAgent.HeartbeatDateTime = DateTimeOffset.UtcNow;
-                    _monitorAgentService.Update(monitorAgent);
+                    // Send response
+                    _connection.SendMessage(_getMonitorItemsResponseConverter.GetConnectionMessage(getMonitorItemsResponse), messageReceivedInfo.RemoteEndpointInfo);
                 }
             });
         }
 
-        private Task ProcessMonitorItemResultAsync(MonitorItemResult monitorItemResult, MessageReceivedInfo messageReceivedInfo)
+        /// <summary>
+        /// Processes Monitor Agent heartbeat. If first heartbeat then creates MonitorAgent in DB.
+        /// </summary>
+        /// <param name="heartbeat"></param>
+        /// <param name="messageReceivedInfo"></param>
+        /// <returns></returns>
+        private Task ProcessHeartbeatAsync(Heartbeat heartbeat, MessageReceivedInfo messageReceivedInfo)
         {
-            // TODO: Implement
-            // We need to decide how we execute the action(s).
-            // Possibly we need a queue.
             return Task.Factory.StartNew(() =>
             {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var monitorAgentGroupService = scope.ServiceProvider.GetRequiredService<IMonitorAgentGroupService>();
+                    var monitorAgentService = scope.ServiceProvider.GetRequiredService<IMonitorAgentService>();
+
+                    // Get monitor agent                
+                    var monitorAgent = monitorAgentService.GetById(heartbeat.SenderAgentId);
+                    if (monitorAgent != null)       // Known monitor agent
+                    {
+                        monitorAgent.HeartbeatDateTime = DateTimeOffset.UtcNow;
+                        monitorAgent.MachineName = heartbeat.MachineName;
+                        monitorAgent.UserName = heartbeat.UserName;
+                        monitorAgent.IP = messageReceivedInfo.RemoteEndpointInfo.Ip;
+                        monitorAgent.Port = messageReceivedInfo.RemoteEndpointInfo.Port;
+
+                        monitorAgentService.Update(monitorAgent);
+                    }
+                    else if (heartbeat.SenderAgentId.Length != Guid.Empty.ToString().Length)    // New agent (Ignore if Id is unexpected format)
+                    {
+                        // Default to first group, user can change later
+                        var monitorAgentGroup = monitorAgentGroupService.GetAll().OrderBy(g => g.Name).First();
+
+                        monitorAgent = new MonitorAgent()
+                        {
+                            Id = heartbeat.SenderAgentId,
+                            MonitorAgentGroupId = monitorAgentGroup.Id,
+                            HeartbeatDateTime = DateTimeOffset.UtcNow,
+                            MachineName = heartbeat.MachineName,
+                            UserName = heartbeat.UserName,
+                            IP = messageReceivedInfo.RemoteEndpointInfo.Ip,
+                            Port = messageReceivedInfo.RemoteEndpointInfo.Port,
+                        };
+
+                        monitorAgentService.Add(monitorAgent);
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// Processes monitor item result. Saves MonitorItemOutput and then executes action(s)
+        /// </summary>
+        /// <param name="monitorItemResultMessage"></param>
+        /// <param name="messageReceivedInfo"></param>
+        /// <returns></returns>
+        private Task ProcessMonitorItemResultAsync(MonitorItemResultMessage monitorItemResultMessage, MessageReceivedInfo messageReceivedInfo)
+        {
+            return Task.Factory.StartNew(() =>
+            {                                
+                if (monitorItemResultMessage.MonitorItemOutput != null)
+                {
+                    // Save monitor item output
+                    var monitorItemOutput = monitorItemResultMessage.MonitorItemOutput;
+                    _monitorItemOutputService.Add(monitorItemOutput);
+
+                    // Add "Checked monitor item" audit event
+                    _auditEventService.Add(_auditEventFactory.CreateCheckedMonitorItem(monitorItemOutput.Id));
+
+                    // Execute action(s)
+                    if (monitorItemOutput.EventItemIdsForAction != null &&
+                        monitorItemOutput.EventItemIdsForAction.Any())
+                    {                        
+                        using (var scope = _serviceProvider.CreateScope())
+                        {
+                            // Get services
+                            var auditEventFactory = scope.ServiceProvider.GetRequiredService<IAuditEventFactory>();
+                            var auditEventService = scope.ServiceProvider.GetRequiredService<IAuditEventService>();
+                            var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
+                            var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
+
+                            // Get monitor item
+                            var monitorItem = monitorItemService.GetById(monitorItemOutput.MonitorItemId);
+
+                            foreach (var eventItemId in monitorItemOutput.EventItemIdsForAction)
+                            {
+                                // Get event item
+                                var eventItem = _eventItemService.GetById(eventItemId);
+
+                                // Execute actions
+                                // TODO: Limit concurrent actions
+                                if (eventItem != null && eventItem.ActionItems.Any())
+                                {
+                                    var actionTasksNByActionItemId = new Dictionary<string, Task>();
+                                    foreach (var actionItem in eventItem.ActionItems)
+                                    {
+                                        // Create action scope to ensure that we don't use shared resources unless intended
+                                        using (var actionScope = _serviceProvider.CreateScope())
+                                        {
+                                            // Get actioner
+                                            var actioner = actionScope.ServiceProvider.GetServices<IActioner>().First(a => a.CanExecute(actionItem));
+
+                                            // Start action execute
+                                            actionTasksNByActionItemId.Add(actionItem.Id, actioner.ExecuteAsync(monitorItem, actionItem, monitorItemOutput.ActionItemParameters));
+                                        }
+                                    }
+
+                                    // Wait for actions to complete
+                                    // TODO: Check errors
+                                    Task.WhenAll(actionTasksNByActionItemId.Select(k => k.Value).ToArray());
+
+                                    // Add "Action executed" (or "Error") audit event
+                                    var systemValueTypes = systemValueTypeService.GetAll();
+                                    foreach (var actionItemId in actionTasksNByActionItemId.Keys)
+                                    {
+                                        if (actionTasksNByActionItemId[actionItemId].Exception == null)    // Action executed
+                                        {
+                                            auditEventService.Add(auditEventFactory.CreateActionExecuted(monitorItemOutput.Id, actionItemId));                                            
+                                        }
+                                        else    // Add error audit event
+                                        {
+                                            // Note: MonitorItemOutput indicates MonitorItemId & MonitorAgentId
+                                            auditEventService.Add(auditEventFactory.CreateError($"Error executing action item: {actionTasksNByActionItemId[actionItemId].Exception.Message}",
+                                                            new List<AuditEventParameter>()
+                                                            {
+                                                                //new AuditEventParameter()
+                                                                //{
+                                                                //    SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorItemId).Id,
+                                                                //    Value = monitorItem.Id,
+                                                                //},
+                                                                 new AuditEventParameter()
+                                                                {
+                                                                    SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorItemOutputId).Id,
+                                                                    Value = monitorItemOutput.Id,
+                                                                },
+                                                                new AuditEventParameter()
+                                                                {
+                                                                    SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_ActionItemId).Id,
+                                                                    Value = actionItemId,
+                                                                },
+                                                                //   new AuditEventParameter()
+                                                                //{
+                                                                //    SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorAgentId).Id,
+                                                                //    Value = monitorItemOutput.MonitorAgentId,
+                                                                //}
+                                                            }));                                                    
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             });
         }
 

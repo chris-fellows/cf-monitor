@@ -19,7 +19,7 @@ namespace CFMonitor.Interfaces
         /// <param name="monitorItem"></param>
         /// <param name="actionerList"></param>
         /// <param name="testMode">Whether test mode enabled (Testing without executing actions)</param>
-        Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, bool testMode);
+        Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig);
 
         /// <summary>
         /// Determines if this instance can check monitor item

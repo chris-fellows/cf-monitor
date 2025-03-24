@@ -7,7 +7,7 @@
         public const string GetMonitorItemsRequest = "GetMonitorItemRequest";
         public const string GetMonitorItemsResponse = "GetMonitorItemResponse";
         public const string Heartbeat = "Heartbeat";
-        public const string MonitorItemResult = "MonitorItemResult";
+        public const string MonitorItemResultMessage = "MonitorItemResultMessage";
         public const string MonitorItemUpdated = "MonitorItemUpdated";        
     }
 }

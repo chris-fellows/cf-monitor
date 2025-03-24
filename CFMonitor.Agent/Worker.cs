@@ -1,13 +1,10 @@
 ﻿using CFMonitor.Agent.Models;
+using CFMonitor.Constants;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.Models.Messages;
+using CFMonitor.SystemTask;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CFMonitor.Agent
 {
@@ -32,6 +29,9 @@ namespace CFMonitor.Agent
 
         private readonly SystemConfig _systemConfig;
 
+        private readonly ISystemTaskList _systemTaskList;
+             
+
         private class ActiveMonitorItemTask
         {
             public MonitorItem? MonitorItem { get; set; } = new();
@@ -43,6 +43,7 @@ namespace CFMonitor.Agent
         {
             _serviceProvider = serviceProvider; 
             _systemConfig = systemConfig;
+            _systemTaskList = serviceProvider.GetRequiredService<ISystemTaskList>();
             
             _timer = new System.Timers.Timer();
             _timer.Elapsed += _timer_Elapsed;
@@ -102,9 +103,13 @@ namespace CFMonitor.Agent
         /// Gets monitor item list from Agent Manager
         /// </summary>
         private void GetMonitorItems()
-        {            
+        {
             // Send request, wait for response
-            var request = new GetMonitorItemsRequest() { Id = Guid.NewGuid().ToString() };
+            var request = new GetMonitorItemsRequest()
+            { 
+                SenderAgentId = _monitorAgent.Id,
+                SecurityKey = _systemConfig.SecurityKey
+            };
             var response = _managerConnection.SendGetMonitorItems(request, null);
 
             // Store monitor items
@@ -116,6 +121,13 @@ namespace CFMonitor.Agent
         /// </summary>
         private void CheckMonitorItems()
         {
+            // Set checker config
+            var checkerConfig = new CheckerConfig()
+            {
+                TestMode = false,
+                FilesRootFolder = _systemConfig.MonitorItemFilesRootFolder
+            };
+
             // Check monitor items not active            
             foreach(var monitorItem in _monitorItems.Where(mi => !_activeMonitorItemTasks.Any(t => t.MonitorItem.Id == mi.Id)))
             {
@@ -126,7 +138,7 @@ namespace CFMonitor.Agent
                         var activeTask = new ActiveMonitorItemTask()
                         {
                             MonitorItem = monitorItem,
-                            Task = CheckMonitorItemAsync(_monitorAgent, monitorItem)
+                            Task = CheckMonitorItemAsync(_monitorAgent, monitorItem, checkerConfig)
                         };
                         _activeMonitorItemTasks.Add(activeTask);
                     }
@@ -158,11 +170,23 @@ namespace CFMonitor.Agent
         /// <param name="activeMonitorItemTask"></param>
         private void ProcessCompletedMonitorItem(ActiveMonitorItemTask activeMonitorItemTask)
         {
-            if (activeMonitorItemTask.Task.Exception != null)
+            if (activeMonitorItemTask.Task.Exception == null)       // Success
             {
+                var monitorItemOutput = activeMonitorItemTask.Task.Result;
 
+                // Set Monitor Agent Id as IChecker isn't aware of Monitor Agent
+                monitorItemOutput.MonitorAgentId = _monitorAgent.Id;
+
+                var monitorItemResultMessage = new MonitorItemResultMessage()
+                {                                        
+                    SenderAgentId = _monitorAgent.Id,
+                    SecurityKey = _systemConfig.SecurityKey,
+                    MonitorItemOutput = activeMonitorItemTask.Task.Result,
+                };                
+
+                _managerConnection.SendMonitorItemResultMessage(monitorItemResultMessage, null);  // TODO: Send endpoint
             }
-            else
+            else    // Failed
             {
 
             }
@@ -174,7 +198,7 @@ namespace CFMonitor.Agent
         /// <param name="monitorAgent"></param>
         /// <param name="monitorItem"></param>
         /// <returns></returns>
-        private Task<MonitorItemOutput> CheckMonitorItemAsync(MonitorAgent monitorAgent, MonitorItem monitorItem)
+        private Task<MonitorItemOutput> CheckMonitorItemAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
             return Task.Factory.StartNew(() =>
             {
@@ -185,7 +209,7 @@ namespace CFMonitor.Agent
                     var checker = _serviceProvider.GetServices<IChecker>().FirstOrDefault(c => c.CanCheck(monitorItem));
                     if (checker != null)
                     {
-                        monitorItemOutput = checker.CheckAsync(monitorAgent, monitorItem, false).Result;
+                        monitorItemOutput = checker.CheckAsync(monitorAgent, monitorItem, checkerConfig).Result;
                     }
                 }
                 
@@ -202,7 +226,13 @@ namespace CFMonitor.Agent
             {
                 _lastHeartbeatTime = DateTimeOffset.UtcNow;
 
-                var heartbeat = new Heartbeat() { Id = Guid.NewGuid().ToString() };
+                var heartbeat = new Heartbeat() 
+                {                                         
+                    SenderAgentId = _monitorAgent.Id,
+                    SecurityKey = _systemConfig.SecurityKey,
+                    MachineName = Environment.MachineName,
+                    UserName = Environment.UserName
+                };
                 _managerConnection.SendHeartbeat(heartbeat, null);
             }  
         }

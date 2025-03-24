@@ -4,8 +4,10 @@ using CFMonitor.Models;
 using CFUtilities.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.OleDb;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace CFMonitor.Checkers
 {
@@ -33,6 +35,8 @@ namespace CFMonitor.Checkers
 
         public Task<MonitorItemOutput> CheckAsync(MonitorAgent monitorAgent, MonitorItem monitorItem, CheckerConfig checkerConfig)
         {
+            
+
             return Task.Factory.StartNew(() =>
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
@@ -47,65 +51,68 @@ namespace CFMonitor.Checkers
                 }
 
                 ////MonitorSQL monitorSQL = (MonitorSQL)monitorItem;
-                //var connectionStringParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLConnectionString);                
-                //var connectionString = GetValueWithPlaceholdersReplaced(connectionStringParam);
+                var connectionStringParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == "");               // TODO: Fix this    
+                var connectionString = GetValueWithPlaceholdersReplaced(connectionStringParam);
 
-                //var queryParam = monitorItem.Parameters.First(p => p.SystemValueType == SystemValueTypes.MIP_SQLQuery);
-                // var query = GetValueWithPlaceholdersReplaced(queryParam)
+                var queryParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == "");      // TODO: Fix this
+                var query = GetValueWithPlaceholdersReplaced(queryParam);
 
-                //Exception exception = null;
+                Exception exception = null;
                 //OleDbDatabase database = null;
-                //OleDbDataReader reader = null;
+
+                OleDbConnection? connection = null;
+                OleDbDataReader? reader = null;
                 //ActionParameters actionParameters = new ActionParameters();
+                var actionItemParameters = new List<ActionItemParameter>();
 
-                //try
-                //{
-                //    database = new OleDbDatabase(connectionString);
-                //    database.Open();
-                //    string sql = System.IO.File.ReadAllText(query);
-                //    reader = database.ExecuteReader(System.Data.CommandType.Text, sql, System.Data.CommandBehavior.Default, null);                
-                //}
-                //catch (System.Exception ex)
-                //{
-                //    exception = ex;
-                //}
+                try
+                {
+                    connection = new OleDbConnection(connectionString);
+                    connection.Open();
 
-                //try
-                //{
-                //    // Check events
-                //    actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking SQL");
-                //    foreach(var eventItem in eventItems)
-                //    {
-                //          if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, reader))
-                //          {
-                //              monitorItemOutput.EventItemIdsForAction(eventItem.Id);
-                //          }
-                //     }
-                //}
-                //catch (System.Exception ex)
-                //{
+                    var command = new OleDbCommand(query, connection);
+                    reader = command.ExecuteReader();                    
+                }
+                catch(System.Exception ex)
+                {
+                    exception = ex;
+                }
+                
+                try
+                {
+                    // Check events                    
+                    foreach (var eventItem in eventItems)
+                    {
+                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, reader.HasRows))
+                        {
+                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
 
-                //}
-                //finally
-                //{
-                //    if (reader != null && !reader.IsClosed)
-                //    {
-                //        reader.Close();
-                //    }
-                //    if (database != null && database.IsOpen)
-                //    {
-                //        database.Close();
-                //    }
-                //}
+                }
+                finally
+                {
+                    if (reader != null && !reader.IsClosed)
+                    {
+                        reader.Close();
+                    }
+                    
+                    if (connection != null && connection.State != ConnectionState.Closed)
+                    {
+                        connection.Close();
+                        connection.Dispose();
+                    }
+                }
 
                 return monitorItemOutput;
             });
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSQL, List<ActionItemParameter> actionItemParameters, Exception exception)      //, OleDbDataReader reader)
-        {            
-            bool readerHasRows = true;  // (reader != null && reader.Read());
-            
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSQL, List<ActionItemParameter> actionItemParameters, Exception exception, bool hasRows)
+        {                        
                 bool meetsCondition = false;
 
                 switch (eventItem.EventCondition.SourceValueType)
@@ -114,7 +121,7 @@ namespace CFMonitor.Checkers
                         meetsCondition = eventItem.EventCondition.IsValid(exception != null);
                         break;
                     case SystemValueTypes.ECS_SQLReturnsRows:
-                        meetsCondition = eventItem.EventCondition.IsValid(readerHasRows);
+                        meetsCondition = eventItem.EventCondition.IsValid(hasRows);
                         break;
                 }
 

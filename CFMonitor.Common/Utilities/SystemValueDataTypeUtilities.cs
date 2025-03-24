@@ -16,6 +16,7 @@ namespace CFMonitor.Utilities
                 SystemValueDataTypes.HttpMethod => new List<string>() { "DELETE", "GET", "PATCH", "POST", "PUT" },
                 SystemValueDataTypes.HttpStatusCode => Enum.GetValues(typeof(System.Net.HttpStatusCode)).Cast<int>().Select(i => i.ToString()).ToList(),
                 SystemValueDataTypes.PingReplyStatus => Enum.GetValues(typeof(System.Net.NetworkInformation.IPStatus)).Cast<string>().ToList(),
+                SystemValueDataTypes.TimeServerType => new List<string>() { "NIST", "NTP", "HTTP" },
                 _ => new List<string>()
             };
         }

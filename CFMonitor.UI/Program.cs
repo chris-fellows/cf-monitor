@@ -10,6 +10,12 @@ using System.Reflection;
 using CFUtilities.Interfaces;
 using CFUtilities.Services;
 using System;
+using CFUtilities.Utilities;
+
+//var ntpTime = TimeUtilities.GetNTPTime("uk.pool.ntp.org").Result;
+//var nistTIme = TimeUtilities.GetNISTTime("time.nist.gov").Result;
+//var httpTime = TimeUtilities.GetHTTPTime("https://www.google.co.uk").Result;
+var httpTime = TimeUtilities.GetHTTPTime("https://www.microsoft.com").Result;
 
 var builder = WebApplication.CreateBuilder(args);
 

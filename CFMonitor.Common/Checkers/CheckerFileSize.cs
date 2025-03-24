@@ -19,7 +19,7 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService,
             IEventItemService eventItemService,
-            IPlaceholderService placeholderService
+            IPlaceholderService placeholderService,
             ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
         {
             

@@ -11,6 +11,8 @@ namespace CFMonitor.Models.Messages
 
         public string UserName { get; set; } = String.Empty;
 
+        public string Version { get; set; } = String.Empty;
+
         public Heartbeat()
         {
             Id = Guid.NewGuid().ToString();

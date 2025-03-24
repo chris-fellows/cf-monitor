@@ -185,6 +185,7 @@ namespace CFMonitor.AgentManager
                         monitorAgent.UserName = heartbeat.UserName;
                         monitorAgent.IP = messageReceivedInfo.RemoteEndpointInfo.Ip;
                         monitorAgent.Port = messageReceivedInfo.RemoteEndpointInfo.Port;
+                        monitorAgent.Version = heartbeat.Version;
 
                         monitorAgentService.Update(monitorAgent);
                     }
@@ -202,6 +203,7 @@ namespace CFMonitor.AgentManager
                             UserName = heartbeat.UserName,
                             IP = messageReceivedInfo.RemoteEndpointInfo.Ip,
                             Port = messageReceivedInfo.RemoteEndpointInfo.Port,
+                            Version = heartbeat.Version
                         };
 
                         monitorAgentService.Add(monitorAgent);

@@ -109,9 +109,10 @@
 
         MIP_LocalFileFileName,
         MIP_LocalFileFindText,
-
-        MIP_NTPServer,
-        MIP_NTPMaxToleranceSecs,
+        
+        MIP_TimeServerType,
+        MIP_TimeServer,
+        MIP_TimeMaxToleranceSecs,
 
         MIP_PingServer,
 

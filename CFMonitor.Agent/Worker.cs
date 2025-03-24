@@ -5,6 +5,7 @@ using CFMonitor.Models;
 using CFMonitor.Models.Messages;
 using CFMonitor.SystemTask;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace CFMonitor.Agent
 {
@@ -226,12 +227,13 @@ namespace CFMonitor.Agent
             {
                 _lastHeartbeatTime = DateTimeOffset.UtcNow;
 
-                var heartbeat = new Heartbeat() 
-                {                                         
+                var heartbeat = new Heartbeat()
+                {
                     SenderAgentId = _monitorAgent.Id,
                     SecurityKey = _systemConfig.SecurityKey,
                     MachineName = Environment.MachineName,
-                    UserName = Environment.UserName
+                    UserName = Environment.UserName,
+                    Version = Assembly.GetExecutingAssembly().GetName().Version.ToString()
                 };
                 _managerConnection.SendHeartbeat(heartbeat, null);
             }  

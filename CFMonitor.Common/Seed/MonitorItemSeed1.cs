@@ -439,12 +439,12 @@ namespace CFMonitor.Seed
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_NTPServer).Id,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_TimeServer).Id,
                         Value = Environment.MachineName
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType ==SystemValueTypes.MIP_NTPMaxToleranceSecs).Id,
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType ==SystemValueTypes.MIP_TimeMaxToleranceSecs).Id,
                         Value = "30"
                     }
                 }                

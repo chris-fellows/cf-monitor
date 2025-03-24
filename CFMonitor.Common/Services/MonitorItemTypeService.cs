@@ -324,12 +324,12 @@ namespace CFMonitor.Services
                 {
                     new MonitorItemParameter()
                     {
-                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_NTPServer).Id,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_TimeServer).Id,
                         Value = "Server"
                     },
                     new MonitorItemParameter()
                     {
-                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_NTPMaxToleranceSecs).Id,
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_TimeMaxToleranceSecs).Id,
                         Value = "60"
                     }
                 },

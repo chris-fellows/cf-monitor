@@ -14,6 +14,7 @@
         HttpMethod,
         HttpStatusCode,
         PingReplyStatus,
+        TimeServerType,
         Integer,
         Url
     }

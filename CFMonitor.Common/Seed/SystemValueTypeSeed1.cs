@@ -389,21 +389,7 @@ namespace CFMonitor.Seed
                     Name = "Find text",
                     ValueType = SystemValueTypes.MIP_LocalFileFindText,
                     DataType = SystemValueDataTypes.String
-                },
-                new SystemValueType()
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Name = "NTP max time tolerance (Secs)",
-                    ValueType = SystemValueTypes.MIP_NTPMaxToleranceSecs,
-                    DataType = SystemValueDataTypes.Integer
-                },
-                new SystemValueType()
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Name = "NTP server",
-                    ValueType = SystemValueTypes.MIP_NTPServer,
-                    DataType = SystemValueDataTypes.String
-                },
+                },                               
                 new SystemValueType()
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -491,6 +477,27 @@ namespace CFMonitor.Seed
                     Name = "SQL",
                     ValueType = SystemValueTypes.MIP_SQLSQL,
                     DataType = SystemValueDataTypes.String
+                },
+                new SystemValueType()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = "Max time tolerance (Secs)",
+                    ValueType = SystemValueTypes.MIP_TimeMaxToleranceSecs,
+                    DataType = SystemValueDataTypes.Integer
+                },
+                new SystemValueType()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = "Time server",
+                    ValueType = SystemValueTypes.MIP_TimeServer,
+                    DataType = SystemValueDataTypes.String
+                },
+                new SystemValueType()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = "Time server type",
+                    ValueType = SystemValueTypes.MIP_TimeServerType,
+                    DataType = SystemValueDataTypes.TimeServerType
                 },
                 new SystemValueType()
                 {

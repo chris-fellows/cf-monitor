@@ -32,7 +32,12 @@ namespace CFMonitor.Models
         /// <summary>
         /// Port for communications
         /// </summary>
-        public int Port { get; set; } 
+        public int Port { get; set; }
+
+        /// <summary>
+        /// Version of Monitor Agent software
+        /// </summary>
+        public string Version { get; set; } = String.Empty;
 
         /// <summary>
         /// Last heartbeat

@@ -14,8 +14,7 @@ namespace CFMonitor.Checkers
     /// Checks file
     /// 
     /// Examples of use:
-    /// - Checking that a scheduled task ran and created a log for today and it contained the text 
-    ///   "PROCESSING COMPLETED SUCCESSFULLY".
+    /// - Checking that a scheduled task ran and created a log for today and it contained the text "PROCESSING COMPLETED SUCCESSFULLY".
     /// </summary>
     public class CheckerLocalFile : CheckerBase, IChecker
     {        

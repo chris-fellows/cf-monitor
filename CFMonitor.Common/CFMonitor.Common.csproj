@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Data.OleDb" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\cf-connection-messaging\CFConnectionMessaging.Common\CFConnectionMessaging.Common.csproj" />
     <ProjectReference Include="..\..\cf-utilities-core\CFUtilities\CFUtilities.csproj" />
   </ItemGroup>

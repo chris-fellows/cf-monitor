@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.Interfaces
 {
-    public interface IEventItemService : IEntityWithIdStoreService<EventItem, string>
+    public interface IEventItemService : IEntityWithIdService<EventItem, string>
     {
         List<EventItem> GetByMonitorItemId(string monitorItemId);
     }

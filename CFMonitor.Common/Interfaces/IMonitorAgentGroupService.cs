@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.Interfaces
 {
-    public interface IMonitorAgentGroupService : IEntityWithIdStoreService<MonitorAgentGroup, string>
+    public interface IMonitorAgentGroupService : IEntityWithIdAndNameStoreService<MonitorAgentGroup, string>
     {
     }
 }

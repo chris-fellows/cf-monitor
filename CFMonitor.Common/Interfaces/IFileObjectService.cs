@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.Interfaces
 {
-    public interface IFileObjectService : IEntityWithIdStoreService<FileObject, string>
+    public interface IFileObjectService : IEntityWithIdService<FileObject, string>
     {
     }
 }

@@ -86,6 +86,22 @@ namespace CFMonitor.Seed
                new AuditEventType()
                {
                    Id =Guid.NewGuid().ToString(),
+                   EventType = AuditEventTypes.PasswordResetCreated,
+                   Name = "Password reset created",
+                   Color = Color.Blue.ToArgb().ToString(),
+                    ImageSource = "audit_event_type.png",
+               },
+                  new AuditEventType()
+               {
+                   Id =Guid.NewGuid().ToString(),
+                   EventType = AuditEventTypes.PasswordUpdated,
+                   Name = "Password updated",
+                   Color = Color.Blue.ToArgb().ToString(),
+                    ImageSource = "audit_event_type.png",
+               },
+               new AuditEventType()
+               {
+                   Id =Guid.NewGuid().ToString(),
                    EventType = AuditEventTypes.UserAdded,
                    Name = "User added",
                    Color = Color.Blue.ToArgb().ToString(),
@@ -96,6 +112,30 @@ namespace CFMonitor.Seed
                    Id =Guid.NewGuid().ToString(),
                    EventType = AuditEventTypes.UserDeleted,
                    Name = "User deleted",
+                   Color = Color.Blue.ToArgb().ToString(),
+                    ImageSource = "audit_event_type.png",
+               },
+                 new AuditEventType()
+               {
+                   Id =Guid.NewGuid().ToString(),
+                   EventType = AuditEventTypes.UserLogInSuccess,
+                   Name = "User logged in",
+                   Color = Color.Blue.ToArgb().ToString(),
+                    ImageSource = "audit_event_type.png",
+               },
+                   new AuditEventType()
+               {
+                   Id =Guid.NewGuid().ToString(),
+                   EventType = AuditEventTypes.UserLogOut,
+                   Name = "User logged out",
+                   Color = Color.Blue.ToArgb().ToString(),
+                    ImageSource = "audit_event_type.png",
+               },
+               new AuditEventType()
+               {
+                   Id =Guid.NewGuid().ToString(),
+                   EventType = AuditEventTypes.UserLogInError,
+                   Name = "User login error",
                    Color = Color.Blue.ToArgb().ToString(),
                     ImageSource = "audit_event_type.png",
                },

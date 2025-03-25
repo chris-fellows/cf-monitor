@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.Services
 {
-    public class XmlMonitorItemOutputService : XmlEntityWithIdStoreService<MonitorItemOutput, string>, IMonitorItemOutputService
+    public class XmlMonitorItemOutputService : XmlEntityWithIdService<MonitorItemOutput, string>, IMonitorItemOutputService
     {
         public XmlMonitorItemOutputService(string folder) : base(folder,
                                                 "MonitorItemOutput.*.xml",

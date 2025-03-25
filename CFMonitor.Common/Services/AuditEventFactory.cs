@@ -24,7 +24,7 @@ namespace CFMonitor.Services
             _systemValueTypeService = systemValueTypeService;
         }
 
-        public AuditEvent CreateActionExecuted(string monitorItemOutputId, string actionItemId)
+        public AuditEvent CreateActionExecuted(string createdUserId, string monitorItemOutputId, string actionItemId)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.ActionExecuted);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -34,6 +34,7 @@ namespace CFMonitor.Services
                 Id = Guid.NewGuid().ToString(),
                 TypeId = auditEventType.Id,
                 CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
                 Parameters = new List<AuditEventParameter>()
                 {
                     new AuditEventParameter()
@@ -52,7 +53,7 @@ namespace CFMonitor.Services
             return auditEvent;
         }
 
-        public AuditEvent CreateError(string errorMessage, List<AuditEventParameter> parameters)
+        public AuditEvent CreateError(string createdUserId, string errorMessage, List<AuditEventParameter> parameters)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.Error);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -62,6 +63,7 @@ namespace CFMonitor.Services
                 Id = Guid.NewGuid().ToString(),
                 TypeId = auditEventType.Id,
                 CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
                 Parameters = new List<AuditEventParameter>()
                 {
                     new AuditEventParameter()
@@ -76,7 +78,7 @@ namespace CFMonitor.Services
             return auditEvent;
         }
 
-        public AuditEvent CreateCheckedMonitorItem(string monitorItemOutputId)
+        public AuditEvent CreateCheckedMonitorItem(string createdUserId, string monitorItemOutputId)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.CheckedMonitorItem);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -86,6 +88,7 @@ namespace CFMonitor.Services
                 Id = Guid.NewGuid().ToString(),
                 TypeId = auditEventType.Id,
                 CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
                 Parameters = new List<AuditEventParameter>()
                 {
                     new AuditEventParameter()
@@ -99,7 +102,7 @@ namespace CFMonitor.Services
             return auditEvent;
         }
 
-        public AuditEvent CreateCheckingMonitorItem(string monitorAgentId, string monitorItemId)
+        public AuditEvent CreateCheckingMonitorItem(string createdUserId, string monitorAgentId, string monitorItemId)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.CheckingMonitorItem);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -109,6 +112,7 @@ namespace CFMonitor.Services
                 Id = Guid.NewGuid().ToString(),
                 TypeId = auditEventType.Id,
                 CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
                 Parameters = new List<AuditEventParameter>()
                 {
                     new AuditEventParameter()
@@ -127,7 +131,7 @@ namespace CFMonitor.Services
             return auditEvent;
         }
 
-        public AuditEvent CreateUserAdded(string userId)
+        public AuditEvent CreateUserAdded(string createdUserId, string userId)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.UserAdded);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -137,6 +141,7 @@ namespace CFMonitor.Services
                 Id = Guid.NewGuid().ToString(),
                 TypeId = auditEventType.Id,
                 CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
                 Parameters = new List<AuditEventParameter>()
                 {
                     new AuditEventParameter()
@@ -150,7 +155,7 @@ namespace CFMonitor.Services
             return auditEvent;
         }
 
-        public AuditEvent CreateMonitorItemAdded(string monitorItemId, string userId)
+        public AuditEvent CreateMonitorItemAdded(string createdUserId, string monitorItemId, string userId)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.MonitorItemAdded);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -160,6 +165,7 @@ namespace CFMonitor.Services
                 Id = Guid.NewGuid().ToString(),
                 TypeId = auditEventType.Id,
                 CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
                 Parameters = new List<AuditEventParameter>()
                 {
                     new AuditEventParameter()
@@ -182,7 +188,7 @@ namespace CFMonitor.Services
             return auditEvent;
         }
 
-        public AuditEvent CreateMonitorItemUpdated(string monitorItemId, string userId)
+        public AuditEvent CreateMonitorItemUpdated(string createdUserId, string monitorItemId, string userId)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.MonitorItemUpdated);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -192,6 +198,7 @@ namespace CFMonitor.Services
                 Id = Guid.NewGuid().ToString(),
                 TypeId = auditEventType.Id,
                 CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
                 Parameters = new List<AuditEventParameter>()
                 {
                     new AuditEventParameter()
@@ -214,7 +221,7 @@ namespace CFMonitor.Services
             return auditEvent;
         }
 
-        public AuditEvent CreateMonitorAgentHeartbeat(string monitorAgentId)
+        public AuditEvent CreateMonitorAgentHeartbeat(string createdUserId, string monitorAgentId)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.MonitorAgentHeartbeat);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -224,6 +231,7 @@ namespace CFMonitor.Services
                 Id = Guid.NewGuid().ToString(),
                 TypeId = auditEventType.Id,
                 CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
                 Parameters = new List<AuditEventParameter>()
                 {
                     new AuditEventParameter()
@@ -237,7 +245,7 @@ namespace CFMonitor.Services
             return auditEvent;
         }
 
-        public AuditEvent CreateMonitorAgentAdded(string monitorAgentId)
+        public AuditEvent CreateMonitorAgentAdded(string createdUserId, string monitorAgentId)
         {
             var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.MonitorAgentAdded);
             var systemValueTypes = _systemValueTypeService.GetAll();
@@ -247,12 +255,133 @@ namespace CFMonitor.Services
                 Id = Guid.NewGuid().ToString(),
                 TypeId = auditEventType.Id,
                 CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
                 Parameters = new List<AuditEventParameter>()
                 {
                     new AuditEventParameter()
                     {
                         SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorAgentId).Id,
                         Value = monitorAgentId
+                    }
+                }
+            };
+
+            return auditEvent;
+        }
+
+        public AuditEvent CreatePasswordResetAdded(string createdUserId, string passwordResetId)
+        {
+            var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.PasswordResetCreated);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var auditEvent = new AuditEvent()
+            {
+                Id = Guid.NewGuid().ToString(),
+                TypeId = auditEventType.Id,
+                CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
+                Parameters = new List<AuditEventParameter>()
+                {
+                    new AuditEventParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_PasswordResetId).Id,
+                        Value = passwordResetId
+                    }
+                }
+            };
+
+            return auditEvent;
+        }
+
+        public AuditEvent CreateUserLogInSuccess(string createdUserId, string userId)
+        {
+            var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.UserLogInSuccess);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var auditEvent = new AuditEvent()
+            {
+                Id = Guid.NewGuid().ToString(),
+                TypeId = auditEventType.Id,
+                CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
+                Parameters = new List<AuditEventParameter>()
+                {
+                    new AuditEventParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_UserId).Id,
+                        Value = userId
+                    }
+                }
+            };
+
+            return auditEvent;
+        }
+
+        public AuditEvent CreateUserLogOut(string createdUserId, string userId)
+        {
+            var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.UserLogOut);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var auditEvent = new AuditEvent()
+            {
+                Id = Guid.NewGuid().ToString(),
+                TypeId = auditEventType.Id,
+                CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
+                Parameters = new List<AuditEventParameter>()
+                {
+                    new AuditEventParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_UserId).Id,
+                        Value = userId
+                    }
+                }
+            };
+
+            return auditEvent;
+        }
+
+        public AuditEvent CreateUserLogInError(string createdUserId, string username)
+        {
+            var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.UserLogInError);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var auditEvent = new AuditEvent()
+            {
+                Id = Guid.NewGuid().ToString(),
+                TypeId = auditEventType.Id,
+                CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
+                Parameters = new List<AuditEventParameter>()
+                {
+                    new AuditEventParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_Notes).Id,
+                        Value = username
+                    }
+                }
+            };
+
+            return auditEvent;
+        }
+
+        public AuditEvent CreatePasswordUpdated(string createdUserId, string userId)
+        {
+            var auditEventType = _auditEventTypeService.GetAll().First(aet => aet.EventType == AuditEventTypes.PasswordUpdated);
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            var auditEvent = new AuditEvent()
+            {
+                Id = Guid.NewGuid().ToString(),
+                TypeId = auditEventType.Id,
+                CreatedDateTime = DateTimeOffset.UtcNow,
+                CreatedUserId = createdUserId,
+                Parameters = new List<AuditEventParameter>()
+                {
+                    new AuditEventParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_UserId).Id,
+                        Value = userId
                     }
                 }
             };

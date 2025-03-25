@@ -311,9 +311,9 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
-                Name = "NTP time",
-                Description = "Checks time with NTP server",
-                ItemType = MonitorItemTypes.NTP,
+                Name = "Time",
+                Description = "Checks time with remote server",
+                ItemType = MonitorItemTypes.Time,
                 //CheckerType = CheckerTypes.NTP,
                 EventConditionValueTypes = new List<SystemValueTypes>()
                 {
@@ -325,7 +325,12 @@ namespace CFMonitor.Services
                     new MonitorItemParameter()
                     {
                         SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_TimeServer).Id,
-                        Value = "Server"
+                        Value = "HTTP"       // HTTP/NIST/NTP
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_TimeServer).Id,
+                        Value = "https://www.google.co.uk"
                     },
                     new MonitorItemParameter()
                     {

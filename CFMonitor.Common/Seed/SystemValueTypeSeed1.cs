@@ -51,6 +51,20 @@ namespace CFMonitor.Seed
                     ValueType = SystemValueTypes.AEP_MonitorItemOutputId,
                     DataType = SystemValueDataTypes.String,
                 },
+                    new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Notes",
+                    ValueType = SystemValueTypes.AEP_Notes,
+                    DataType = SystemValueDataTypes.String,
+                },
+                     new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Password Reset Id",
+                    ValueType = SystemValueTypes.AEP_PasswordResetId,
+                    DataType = SystemValueDataTypes.String,
+                },
                 new SystemValueType()
                 {
                     Id= Guid.NewGuid().ToString(),

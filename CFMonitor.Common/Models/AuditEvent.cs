@@ -21,6 +21,11 @@
         public List<AuditEventParameter> Parameters { get; set; } = new();
 
         /// <summary>
+        /// Created user
+        /// </summary>
+        public string CreatedUserId { get; set; } = String.Empty;
+
+        /// <summary>
         /// Created date 
         /// </summary>
         public DateTimeOffset CreatedDateTime { get; set; } 

@@ -7,22 +7,32 @@ namespace CFMonitor.Interfaces
     /// </summary>
     public interface IAuditEventFactory
     {
-        AuditEvent CreateActionExecuted(string monitorItemOutputId, string actionItemId);
+        AuditEvent CreateActionExecuted(string createdUserId, string monitorItemOutputId, string actionItemId);
 
-        AuditEvent CreateCheckedMonitorItem(string monitorItemOutputId);
+        AuditEvent CreateCheckedMonitorItem(string createdUserId, string monitorItemOutputId);
 
-        AuditEvent CreateCheckingMonitorItem(string monitorAgentId, string monitorItemId);
+        AuditEvent CreateCheckingMonitorItem(string createdUserId, string monitorAgentId, string monitorItemId);
 
-        AuditEvent CreateError(string errorMessage, List<AuditEventParameter> parameters);
+        AuditEvent CreateError(string createdUserId, string errorMessage, List<AuditEventParameter> parameters);
 
-        AuditEvent CreateUserAdded(string userId);
+        AuditEvent CreateUserAdded(string createdUserId, string userId);
 
-        AuditEvent CreateMonitorAgentAdded(string monitorAgentId);
+        AuditEvent CreateMonitorAgentAdded(string createdUserId, string monitorAgentId);
 
-        AuditEvent CreateMonitorAgentHeartbeat(string monitorAgentId);
+        AuditEvent CreateMonitorAgentHeartbeat(string createdUserId, string monitorAgentId);
 
-        AuditEvent CreateMonitorItemAdded(string monitorItemId, string userId);
+        AuditEvent CreateMonitorItemAdded(string createdUserId, string monitorItemId, string userId);
 
-        AuditEvent CreateMonitorItemUpdated(string monitorItemId, string userId);
+        AuditEvent CreateMonitorItemUpdated(string createdUserId, string monitorItemId, string userId);
+
+        AuditEvent CreatePasswordResetAdded(string createdUserId, string passwordResetId);
+
+        AuditEvent CreatePasswordUpdated(string createdUserId, string userId);
+
+        AuditEvent CreateUserLogInSuccess(string createdUserId, string userId);
+
+        AuditEvent CreateUserLogOut(string createdUserId, string userId);
+
+        AuditEvent CreateUserLogInError(string createdUserId, string username);
     }
 }

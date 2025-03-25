@@ -9,12 +9,13 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.Services
 {
-    public class XmlSystemValueTypeService : XmlEntityWithIdStoreService<SystemValueType, string>, ISystemValueTypeService
+    public class XmlSystemValueTypeService : XmlEntityWithIdAndNameService<SystemValueType, string>, ISystemValueTypeService
     {
         public XmlSystemValueTypeService(string folder) : base(folder,
                                                 "SystemValueType.*.xml",
                                               (systemValueType) => $"SystemValueType.{systemValueType.Id}.xml",
-                                                (systemValueTypeId) => $"SystemValueType.{systemValueTypeId}.xml")
+                                                (systemValueTypeId) => $"SystemValueType.{systemValueTypeId}.xml",
+                                                (systemValueType) => systemValueType.Name)
         {
 
         }

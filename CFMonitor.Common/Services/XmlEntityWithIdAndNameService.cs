@@ -1,29 +1,32 @@
 ﻿using CFMonitor.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace CFWebServer.Services
+namespace CFMonitor.Services
 {
-    /// <summary>
-    /// Base service that stores entities with an Id in XML files.
-    /// </summary>
-    /// <typeparam name="TEntityType"></typeparam>
-    /// <typeparam name="TIdType"></typeparam>
-    public abstract class XmlEntityWithIdStoreService<TEntityType, TIdType>
+    public class XmlEntityWithIdAndNameService<TEntityType, TIdType>
     {
         protected readonly string _folder;
         protected readonly string _getAllFilePattern;                                       // E.g. "UserSettings.*.xml"
         protected readonly Func<TEntityType, string> _getEntityFileNameByEntityFunction;    // Returns file name from entity
         protected readonly Func<TIdType, string> _getEntityFileNameByIdFunction;            // Returns file name from id
+        protected readonly Func<TEntityType, string>? _getEntityNameByEntityFunction;        // 
 
-        public XmlEntityWithIdStoreService(string folder,
+        public XmlEntityWithIdAndNameService(string folder,
                                     string getAllFilePattern,
                                     Func<TEntityType, string> getEntityFileNameByEntityFunction,
-                                    Func<TIdType, string> getEntityFileNameByIdFunction)
+                                    Func<TIdType, string> getEntityFileNameByIdFunction,
+                                    Func<TEntityType, string>? getEntityNameByEntityFunction)
 
         {
             _folder = folder;
             _getAllFilePattern = getAllFilePattern;
             _getEntityFileNameByEntityFunction = getEntityFileNameByEntityFunction;
             _getEntityFileNameByIdFunction = getEntityFileNameByIdFunction;
+            _getEntityNameByEntityFunction = getEntityNameByEntityFunction;
 
             Directory.CreateDirectory(folder);
         }
@@ -57,10 +60,28 @@ namespace CFWebServer.Services
             File.WriteAllText(file, XmlUtilities.SerializeToString(entity));
         }
 
-        public void Delete(TIdType id)
+        public void DeleteById(TIdType id)
         {
             var file = Path.Combine(_folder, _getEntityFileNameByIdFunction(id));
             if (File.Exists(file)) File.Delete(file);
+        }
+
+        public List<TEntityType> GetByIds(List<TIdType> ids)
+        {
+            var entities = new List<TEntityType>();
+
+            foreach (var id in ids)
+            {
+                var entity = GetById(id);
+                if (entity != null) entities.Add(entity);
+            }
+
+            return entities;
+        }
+
+        public TEntityType? GetByName(string name)
+        {
+            return GetAll().FirstOrDefault(e => _getEntityNameByEntityFunction!(e) == name);
         }
     }
 }

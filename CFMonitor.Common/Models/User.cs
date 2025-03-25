@@ -1,4 +1,6 @@
-﻿namespace CFMonitor.Models
+﻿using CFMonitor.Enums;
+
+namespace CFMonitor.Models
 {
     public class User
     {
@@ -18,6 +20,9 @@
 
         public string Role { get; set; } = String.Empty;
 
-        public bool Active { get; set; } 
+        public bool Active { get; set; }
+
+        public UserTypes GetUserType() => Name.Equals("System") ?
+               UserTypes.System : UserTypes.Normal;
     }
 }

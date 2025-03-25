@@ -7,7 +7,7 @@ namespace CFMonitor.Services
     /// <summary>
     /// Service for storing MonitorAgent instances in XML format
     /// </summary>
-    public class XmlMonitorAgentService : XmlEntityWithIdStoreService<MonitorAgent, string>, IMonitorAgentService
+    public class XmlMonitorAgentService : XmlEntityWithIdService<MonitorAgent, string>, IMonitorAgentService
     {
         public XmlMonitorAgentService(string folder) : base(folder,
                                                 "MonitorAgent.*.xml",

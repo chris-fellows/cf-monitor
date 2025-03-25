@@ -12,6 +12,8 @@
         AEP_MonitorAgentId,
         AEP_MonitorItemId,
         AEP_MonitorItemOutputId,
+        AEP_Notes,
+        AEP_PasswordResetId,
         AEP_UserId,
 
         // -----------------------------------------------------------------------------------------------------

@@ -10,6 +10,8 @@
 @inject ISystemValueTypeService SystemValueTypeService
 @inject IUserService UserService
 
+@attribute [Authorize(Roles = "Administrator,User")]
+
 <PageTitle>Details</PageTitle>
 
 <h1>Details</h1>

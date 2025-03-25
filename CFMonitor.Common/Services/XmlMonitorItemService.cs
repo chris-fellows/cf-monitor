@@ -7,7 +7,7 @@ namespace CFMonitor.Services
     /// <summary>
     /// Service for storing MonitorItem instances in XML format
     /// </summary>
-    public class XmlMonitorItemService : XmlEntityWithIdStoreService<MonitorItem, string>, IMonitorItemService
+    public class XmlMonitorItemService : XmlEntityWithIdService<MonitorItem, string>, IMonitorItemService
     {
         public XmlMonitorItemService(string folder) : base(folder,
                                                 "MonitorItem.*.xml",

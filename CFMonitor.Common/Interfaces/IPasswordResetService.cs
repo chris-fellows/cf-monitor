@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.Interfaces
 {
-    public interface IMonitorItemOutputService : IEntityWithIdService<MonitorItemOutput, string>
+    public interface IPasswordResetService : IEntityWithIdService<PasswordReset, string>
     {
+        PasswordReset? GetByUserId(string userId);
     }
 }

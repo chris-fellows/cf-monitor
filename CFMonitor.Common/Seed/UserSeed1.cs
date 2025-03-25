@@ -5,9 +5,6 @@ using CFMonitor.Models;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CFMonitor.Seed
 {
@@ -24,6 +21,17 @@ namespace CFMonitor.Seed
         {
             var list = new List<User>()
             {
+                 new User()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = "System",
+                    Email = "",
+                    Color = Color.Green.ToArgb().ToString(),
+                    ImageSource = "user.png",
+                    Password = "",
+                    Role = UserRoleNames.Administrator,
+                    Active = true,
+                },
                 new User()
                 {
                     Id = Guid.NewGuid().ToString(),

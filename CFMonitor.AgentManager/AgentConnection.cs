@@ -51,8 +51,9 @@ namespace CFMonitor.AgentManager
         private readonly IEventItemService _eventItemService;        
         private readonly IMonitorAgentService _monitorAgentService;
         private readonly IMonitorItemOutputService _monitorItemOutputService;
-        private readonly IMonitorItemService _monitorItemService;
+        private readonly IMonitorItemService _monitorItemService;        
         private readonly IServiceProvider _serviceProvider;
+        private readonly IUserService _userService;
 
         public AgentConnection(IAuditEventFactory auditEventFactory,
                                 IAuditEventService auditEventService,
@@ -60,7 +61,8 @@ namespace CFMonitor.AgentManager
                                 IMonitorAgentService monitorAgentService,
                                IMonitorItemOutputService monitorItemOutputService,
                                IMonitorItemService monitorItemService,
-                               IServiceProvider serviceProvider)
+                               IServiceProvider serviceProvider,
+                               IUserService userService)
             
         {
             _auditEventFactory = auditEventFactory;
@@ -70,6 +72,7 @@ namespace CFMonitor.AgentManager
             _monitorItemOutputService = monitorItemOutputService;
             _monitorItemService = monitorItemService;
             _serviceProvider = serviceProvider;
+            _userService = userService;
 
             _connection = new ConnectionTcp();
             _connection.OnConnectionMessageReceived += _connection_OnConnectionMessageReceived;
@@ -228,8 +231,11 @@ namespace CFMonitor.AgentManager
                     var monitorItemOutput = monitorItemResultMessage.MonitorItemOutput;
                     _monitorItemOutputService.Add(monitorItemOutput);
 
+                    // Get system user
+                    var systemUser = _userService.GetAll().First(u => u.GetUserType() == UserTypes.System);
+
                     // Add "Checked monitor item" audit event
-                    _auditEventService.Add(_auditEventFactory.CreateCheckedMonitorItem(monitorItemOutput.Id));
+                    _auditEventService.Add(_auditEventFactory.CreateCheckedMonitorItem(systemUser.Id, monitorItemOutput.Id));
 
                     // Execute action(s)
                     if (monitorItemOutput.EventItemIdsForAction != null &&
@@ -241,8 +247,8 @@ namespace CFMonitor.AgentManager
                             var auditEventFactory = scope.ServiceProvider.GetRequiredService<IAuditEventFactory>();
                             var auditEventService = scope.ServiceProvider.GetRequiredService<IAuditEventService>();
                             var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
-                            var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
-
+                            var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();                            
+                            
                             // Get monitor item
                             var monitorItem = monitorItemService.GetById(monitorItemOutput.MonitorItemId);
 
@@ -279,12 +285,12 @@ namespace CFMonitor.AgentManager
                                     {
                                         if (actionTasksNByActionItemId[actionItemId].Exception == null)    // Action executed
                                         {
-                                            auditEventService.Add(auditEventFactory.CreateActionExecuted(monitorItemOutput.Id, actionItemId));                                            
+                                            auditEventService.Add(auditEventFactory.CreateActionExecuted(systemUser.Id, monitorItemOutput.Id, actionItemId));                                            
                                         }
                                         else    // Add error audit event
                                         {
                                             // Note: MonitorItemOutput indicates MonitorItemId & MonitorAgentId
-                                            auditEventService.Add(auditEventFactory.CreateError($"Error executing action item: {actionTasksNByActionItemId[actionItemId].Exception.Message}",
+                                            auditEventService.Add(auditEventFactory.CreateError(systemUser.Id, $"Error executing action item: {actionTasksNByActionItemId[actionItemId].Exception.Message}",
                                                             new List<AuditEventParameter>()
                                                             {
                                                                 //new AuditEventParameter()

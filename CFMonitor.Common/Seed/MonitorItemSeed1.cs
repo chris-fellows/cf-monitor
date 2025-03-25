@@ -31,7 +31,7 @@ namespace CFMonitor.Seed
             items.Add(CreateTestMonitorFolderSize(systemValueTypes));
             items.Add(CreateTestMonitorURL(systemValueTypes));
             items.Add(CreateTestMonitorMemory(systemValueTypes));
-            items.Add(CreateTestMonitorNTP(systemValueTypes));
+            items.Add(CreateTestMonitorTime(systemValueTypes));
             //items.Add(CreateTestSQLServiceMonitor(systemValueTypes));
             items.Add(CreateTestMonitorPing(systemValueTypes));
             items.Add(CreateTestMonitorSQL(systemValueTypes));
@@ -427,20 +427,25 @@ namespace CFMonitor.Seed
             return monitorMemory;
         }
 
-        private static MonitorItem CreateTestMonitorNTP(List<SystemValueType> systemValueTypes)
+        private static MonitorItem CreateTestMonitorTime(List<SystemValueType> systemValueTypes)
         {
             MonitorItem monitorNTP = new MonitorItem()
             {
                 Id = GetNewMonitorItemID(),
-                MonitorItemType = MonitorItemTypes.NTP,
+                MonitorItemType = MonitorItemTypes.Time,
                 Enabled = true,
-                Name = "Check NTP Time",
+                Name = "Check Time",
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_TimeServerType).Id,
+                        Value = "HTTP"      // HTTP/NIST/NTP
+                    },
+                    new MonitorItemParameter()
+                    {
                         SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_TimeServer).Id,
-                        Value = Environment.MachineName
+                        Value = "https://www.google.co.uk"
                     },
                     new MonitorItemParameter()
                     {

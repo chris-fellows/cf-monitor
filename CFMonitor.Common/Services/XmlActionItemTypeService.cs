@@ -9,12 +9,13 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.Services
 {
-    public class XmlActionItemTypeService : XmlEntityWithIdStoreService<ActionItemType, string>, IActionItemTypeService
+    public class XmlActionItemTypeService : XmlEntityWithIdAndNameService<ActionItemType, string>, IActionItemTypeService
     {
         public XmlActionItemTypeService(string folder) : base(folder,
                                                 "ActionItemType.*.xml",
-                                              (actionItemType) => $"ActionItemType.{actionItemType.Id}.xml",
-                                                (actionItemTypeId) => $"ActionItemType.{actionItemTypeId}.xml")
+                                                (actionItemType) => $"ActionItemType.{actionItemType.Id}.xml",
+                                                (actionItemTypeId) => $"ActionItemType.{actionItemTypeId}.xml",
+                                                (actionItemType) => actionItemType.Name)
         {
 
         }

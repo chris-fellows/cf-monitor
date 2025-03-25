@@ -9,12 +9,13 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.Services
 {
-    public class XmlMonitorAgentGroupService : XmlEntityWithIdStoreService<MonitorAgentGroup, string>, IMonitorAgentGroupService
+    public class XmlMonitorAgentGroupService : XmlEntityWithIdAndNameService<MonitorAgentGroup, string>, IMonitorAgentGroupService
     {
         public XmlMonitorAgentGroupService(string folder) : base(folder,
                                                 "MonitorAgentGroup.*.xml",
                                               (monitorAgentGroup) => $"MonitorAgentGroup.{monitorAgentGroup.Id}.xml",
-                                                (monitorAgentGroupId) => $"MonitorAgentGroup.{monitorAgentGroupId}.xml")
+                                                (monitorAgentGroupId) => $"MonitorAgentGroup.{monitorAgentGroupId}.xml",
+                                                (monitorAgentGroup) => monitorAgentGroup.Name)
         {
 
         }

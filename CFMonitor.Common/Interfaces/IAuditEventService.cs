@@ -2,7 +2,7 @@
 
 namespace CFMonitor.Interfaces
 {
-    public interface IAuditEventService : IEntityWithIdStoreService<AuditEvent, string>
+    public interface IAuditEventService : IEntityWithIdService<AuditEvent, string>
     {
         List<AuditEvent> GetByFilter(AuditEventFilter filter);
     }

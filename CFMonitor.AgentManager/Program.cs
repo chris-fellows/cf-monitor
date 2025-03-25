@@ -89,15 +89,20 @@ internal static class Program
                 {
                     return new XmlMonitorItemService(Path.Combine(configFolder, "MonitorItem"));
                 })
+                 .AddScoped<IPasswordResetService>((scope) =>
+                 {
+                     return new XmlPasswordResetService(Path.Combine(configFolder, "PasswordReset"));
+                 })
                 .AddScoped<ISystemValueTypeService>((scope) =>
                 {
                     return new XmlSystemValueTypeService(Path.Combine(configFolder, "SystemValueType"));
                 })
                 .AddScoped<IUserService>((scope) =>
                 {
-                    return new XmlUserService(Path.Combine(configFolder, "User"));
+                    return new XmlUserService(Path.Combine(configFolder, "User"), scope.GetRequiredService<IPasswordService>());
                 })
 
+            .AddScoped<IPasswordService, PBKDF2PasswordService>()   // Needed for IUserService
             .AddScoped<IAuditEventFactory, AuditEventFactory>()
             .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()           
             

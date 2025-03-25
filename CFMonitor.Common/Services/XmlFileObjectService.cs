@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.Services
 {
-    public class XmlFileObjectService : XmlEntityWithIdStoreService<FileObject, string>, IFileObjectService
+    public class XmlFileObjectService : XmlEntityWithIdService<FileObject, string>, IFileObjectService
     {
         public XmlFileObjectService(string folder) : base(folder,
                                                 "FileObject.*.xml",

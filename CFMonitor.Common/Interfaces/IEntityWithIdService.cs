@@ -5,7 +5,7 @@
     /// </summary>
     /// <typeparam name="TEntityType"></typeparam>
     /// <typeparam name="TIDType"></typeparam>
-    public interface IEntityWithIdStoreService<TEntityType, TIDType>
+    public interface IEntityWithIdService<TEntityType, TIDType>
     {
         /// <summary>
         /// Get all entities
@@ -36,6 +36,8 @@
         /// Delete entity
         /// </summary>
         /// <param name="id"></param>
-        void Delete(TIDType id);
+        void DeleteById(TIDType id);
+
+        List<TEntityType> GetByIds(List<TIDType> ids);
     }
 }

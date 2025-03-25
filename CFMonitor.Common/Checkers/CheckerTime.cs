@@ -134,7 +134,7 @@ namespace CFMonitor.Checkers
 
         public bool CanCheck(MonitorItem monitorItem)
         {
-            return monitorItem.MonitorItemType == MonitorItemTypes.NTP;
+            return monitorItem.MonitorItemType == MonitorItemTypes.Time;
         }
 
         //private void DoAction(List<IActioner> actionerList, MonitorItem monitorItem, ActionItem actionItem, ActionParameters actionParameters)

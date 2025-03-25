@@ -7,7 +7,7 @@ namespace CFMonitor.Services
     /// <summary>
     /// Service for storing EventItem instances in XML format
     /// </summary>
-    public class XmlEventItemService : XmlEntityWithIdStoreService<EventItem, string>, IEventItemService
+    public class XmlEventItemService : XmlEntityWithIdService<EventItem, string>, IEventItemService
     {
         public XmlEventItemService(string folder) : base(folder,
                                                 "EventItem.*.xml",

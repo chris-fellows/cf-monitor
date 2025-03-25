@@ -1,4 +1,5 @@
-﻿using CFMonitor.EntityReader;
+﻿using CFMonitor.Enums;
+using CFMonitor.EntityReader;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -53,13 +54,19 @@ namespace CFMonitor.UI.Data
             }
 
             // Add users
+            // Need to add "User added" audit event afterwards because we need the system user
             var usersNew = userSeed.Read();
             foreach(var user in usersNew)
             {
-                userService.Add(user);
+                userService.Add(user);                
+            }
 
-                // Add audit event
-                auditEventService.Add(auditEventFactory.CreateUserAdded(user.Id));
+            // Add "User added" audit event
+            var users = userService.GetAll();
+            var systemUser = users.First(u => u.GetUserType() == Enums.UserTypes.System);
+            foreach(var user in users)
+            {
+                auditEventService.Add(auditEventFactory.CreateUserAdded(systemUser.Id, user.Id));
             }
 
             // Add monitor agent groups
@@ -76,7 +83,7 @@ namespace CFMonitor.UI.Data
                 monitorAgentService.Add(monitorAgent);
 
                 // Add audit event
-                auditEventService.Add(auditEventFactory.CreateMonitorAgentAdded(monitorAgent.Id));
+                auditEventService.Add(auditEventFactory.CreateMonitorAgentAdded(systemUser.Id, monitorAgent.Id));
             }
 
             // Add monitor items
@@ -86,7 +93,7 @@ namespace CFMonitor.UI.Data
                 monitorItemService.Add(monitorItem);
 
                 // Add audit event
-                auditEventService.Add(auditEventFactory.CreateMonitorItemAdded(monitorItem.Id, usersNew.ToList()[0].Id));
+                auditEventService.Add(auditEventFactory.CreateMonitorItemAdded(systemUser.Id, monitorItem.Id, usersNew.ToList()[0].Id));
             }
 
             // Add event items. Depends on monitor items

@@ -2,7 +2,7 @@
 
 namespace CFMonitor.Interfaces
 {
-    public interface IAuditEventTypeService : IEntityWithIdStoreService<AuditEventType, string>
+    public interface IAuditEventTypeService : IEntityWithIdAndNameStoreService<AuditEventType, string>
     {
     }
 }

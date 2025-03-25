@@ -43,7 +43,7 @@ namespace CFMonitor.Seed
             list.AddRange(CreateEventsFolderSize(monitorItems.First(mi => mi.Name == "Check Temp Folder Size"), monitorItemTypes, systemValueTypes));
             list.AddRange(CreateEventsCPU(monitorItems.First(mi => mi.Name == "Check CPU"), monitorItemTypes, systemValueTypes));
             list.AddRange(CreateEventsMemory(monitorItems.First(mi => mi.Name == "Check Memory"), monitorItemTypes, systemValueTypes));
-            list.AddRange(CreateEventsNTP(monitorItems.First(mi => mi.Name == "Check NTP Time"), monitorItemTypes, systemValueTypes));
+            list.AddRange(CreateEventsNTP(monitorItems.First(mi => mi.Name == "Check Time"), monitorItemTypes, systemValueTypes));
 
             return list;
         }

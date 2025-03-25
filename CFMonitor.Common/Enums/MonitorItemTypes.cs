@@ -13,8 +13,7 @@
         LocalFile,
         JSON,
         LDAP,
-        Memory,
-        NTP,
+        Memory,        
         Ping,
         POP,
         //Registry,
@@ -25,6 +24,7 @@
         SOAP,
         Socket,
         SQL,
+        Time,
         URL
     }
 }

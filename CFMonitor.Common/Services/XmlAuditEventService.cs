@@ -4,7 +4,7 @@ using CFWebServer.Services;
 
 namespace CFMonitor.Services
 {
-    public class XmlAuditEventService : XmlEntityWithIdStoreService<AuditEvent, string>, IAuditEventService
+    public class XmlAuditEventService : XmlEntityWithIdService<AuditEvent, string>, IAuditEventService
     {
         public XmlAuditEventService(string folder) : base(folder,
                                                 "AuditEvent.*.xml",

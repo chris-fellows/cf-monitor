@@ -8,6 +8,8 @@
 @inject IFileSecurityCheckerService FileSecurityCheckerService
 @inject IUserService UserService
 
+@attribute [Authorize(Roles = "Administrator,User")]
+
 @rendermode InteractiveServer
 @attribute [StreamRendering]
 

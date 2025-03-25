@@ -11,13 +11,25 @@ using CFUtilities.Interfaces;
 using CFUtilities.Services;
 using System;
 using CFUtilities.Utilities;
-
-//var ntpTime = TimeUtilities.GetNTPTime("uk.pool.ntp.org").Result;
-//var nistTIme = TimeUtilities.GetNISTTime("time.nist.gov").Result;
-//var httpTime = TimeUtilities.GetHTTPTime("https://www.google.co.uk").Result;
-var httpTime = TimeUtilities.GetHTTPTime("https://www.microsoft.com").Result;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// CMF Added
+// Set authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+        .AddCookie(options =>
+        {
+            options.Cookie.Name = "auth_cookie";
+            options.LoginPath = "/login";
+            options.Cookie.MaxAge = TimeSpan.FromMinutes(120);
+            options.AccessDeniedPath = "/access-denied";
+        });
+
+builder.Services.AddAuthorization();            // CMF Added
+builder.Services.AddCascadingAuthenticationState();     // CMF Added
+
+builder.Services.AddHttpContextAccessor();  // Added for IRequestContextService
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -64,14 +76,24 @@ builder.Services.AddScoped<IMonitorItemService>((scope) =>
 {
     return new XmlMonitorItemService(Path.Combine(configFolder, "MonitorItem"));
 });
+builder.Services.AddScoped<IPasswordResetService>((scope) =>
+{
+    return new XmlPasswordResetService(Path.Combine(configFolder, "PasswordReset"));
+});
 builder.Services.AddScoped<ISystemValueTypeService>((scope) =>
 {
     return new XmlSystemValueTypeService(Path.Combine(configFolder, "SystemValueType"));
 });
 builder.Services.AddScoped<IUserService>((scope) =>
 {
-    return new XmlUserService(Path.Combine(configFolder, "User"));
+    return new XmlUserService(Path.Combine(configFolder, "User"), scope.GetRequiredService<IPasswordService>());
 });
+
+// Add request context service
+builder.Services.AddScoped<IRequestContextService, RequestContextService>();
+
+// Add memory cache
+builder.Services.AddSingleton<ICache, MemoryCache>();
 
 // Add monitor item type service (Static data)
 builder.Services.AddScoped<IMonitorItemTypeService, MonitorItemTypeService>();
@@ -120,37 +142,27 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+app.UseAuthentication();    // CMF Added
+app.UseAuthorization();     // CMF Added
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-using (var scope = app.Services.CreateScope())
-{
-    var placeholderService = scope.ServiceProvider.GetService<IPlaceholderService>();
+//// Load data
+//using (var scope = app.Services.CreateScope())
+//{
+//    //// Check for data
+//    //var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
+//    //var systemValuesTypes = systemValueTypeService.GetAll();
+//    //if (!systemValuesTypes.Any())
+//    //{
+//    //    throw new ArgumentException("System contains no data");
+//    //}
 
-    //environment - variable
-    //var result = placeholderService.GetWithPlaceholdersReplaced("Test:{environment-variable:IIS_SITES_HOME}XXX", new Dictionary<string, object>());
+//    // Enable this to load seed data
+//    //new SeedLoader().DeleteAsync(scope).Wait();
+//    new SeedLoader().LoadAsync(scope).Wait();
+//}
 
-    var result = placeholderService.GetWithPlaceholdersReplaced("Test:##process-id#####machine## ajuhahss", new Dictionary<string, object>());
-
-    int xxx = 1000;
-}
-
-    //// Load data
-    //using (var scope = app.Services.CreateScope())
-    //{
-    //    //// Check for data
-    //    //var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
-    //    //var systemValuesTypes = systemValueTypeService.GetAll();
-    //    //if (!systemValuesTypes.Any())
-    //    //{
-    //    //    throw new ArgumentException("System contains no data");
-    //    //}
-
-    //    // Enable this to load seed data
-    //    //new SeedLoader().DeleteAsync(scope).Wait();
-    //    new SeedLoader().LoadAsync(scope).Wait();
-    //}
-
-    app.Run();
+app.Run();

@@ -2,7 +2,8 @@
 
 namespace CFMonitor.Interfaces
 {
-    public interface IUserService : IEntityWithIdStoreService<User, string>
+    public interface IUserService : IEntityWithIdService<User, string>
     {
+        User? ValidateCredentials(string username, string password);
     }
 }

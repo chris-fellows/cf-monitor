@@ -11,8 +11,13 @@
         MonitorItemAdded,
         MonitorItemDeleted,
         MonitorItemUpdated,
+        PasswordResetCreated,
+        PasswordUpdated,
         UserAdded,
         UserDeleted,
+        UserLogInSuccess,
+        UserLogOut,
+        UserLogInError,
         UserUpdated
     }
 }

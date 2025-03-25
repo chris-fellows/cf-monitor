@@ -12,15 +12,24 @@ namespace CFMonitor.MessageConverters
 {
     public class MonitorItemResultMessageConverter : IExternalMessageConverter<MonitorItemResultMessage>
     {
-        public ConnectionMessage GetConnectionMessage(MonitorItemResultMessage monitorItemResultMessage)
+        public ConnectionMessage GetConnectionMessage(MonitorItemResultMessage externalMessage)
         {
             var connectionMessage = new ConnectionMessage()
             {
-                Id = monitorItemResultMessage.Id,
-                TypeId = MessageTypeIds.MonitorItemUpdated,
+                Id = externalMessage.Id,
+                TypeId = MessageTypeIds.MonitorItemResultMessage,
                 Parameters = new List<ConnectionMessageParameter>()
                 {
-
+                        new ConnectionMessageParameter()
+                    {
+                        Name = "SecurityKey",
+                        Value = externalMessage.SecurityKey
+                    },
+                                new ConnectionMessageParameter()
+                    {
+                        Name = "SenderAgentId",
+                        Value = externalMessage.SenderAgentId
+                    }
                 }
             };
             return connectionMessage;
@@ -28,12 +37,14 @@ namespace CFMonitor.MessageConverters
 
         public MonitorItemResultMessage GetExternalMessage(ConnectionMessage connectionMessage)
         {
-            var monitorItemResultMessage = new MonitorItemResultMessage()
+            var externalMessage = new MonitorItemResultMessage()
             {
                 Id = connectionMessage.Id,
+                SecurityKey = connectionMessage.Parameters.First(p => p.Name == "SecurityKey").Value,
+                SenderAgentId = connectionMessage.Parameters.First(p => p.Name == "SenderAgentId").Value
             };
 
-            return monitorItemResultMessage;
+            return externalMessage;
         }
     }
 }

@@ -1,7 +1,12 @@
-﻿namespace CFMonitor.Enums
+﻿using System.ComponentModel;
+
+namespace CFMonitor.Enums
 {
     public enum ResponseErrorCodes
     {
-        Unknown
+        [Description("Unknown")]
+        Unknown,
+        [Description("Permission denied")]
+        PermissionDenied
     }
 }

@@ -18,19 +18,22 @@ namespace CFMonitor.Seed
             // Default to first group (Same as heartbeat)
             var monitorAgentGroup = _monitorAgentGroupService.GetAll().OrderBy(g => g.Name).First();
             
+            // IP & Port will be set when Monitor Agent sends heartbeat
             var items = new List<MonitorAgent>()
             {
                 new MonitorAgent()
                 {
                     Id = Guid.NewGuid().ToString(),
                     MonitorAgentGroupId = monitorAgentGroup.Id,
-                    MachineName  = Environment.MachineName                    
+                    MachineName  = Environment.MachineName,
+                    SecurityKey = "111111"
                 },
                 new MonitorAgent()
                 {
                     Id = Guid.NewGuid().ToString(),
                     MonitorAgentGroupId = monitorAgentGroup.Id,
-                    MachineName  = Environment.MachineName + "XXX"                                        
+                    MachineName  = Environment.MachineName + "XXX",
+                    SecurityKey = "222222"
                 }
             };
 

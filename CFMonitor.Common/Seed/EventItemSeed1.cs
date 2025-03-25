@@ -35,14 +35,14 @@ namespace CFMonitor.Seed
             var systemValueTypes = _systemValueTypeService.GetAll();
 
             var list = new List<EventItem>();
-            list.AddRange(CreateEventsSQL(monitorItems.First(mi => mi.Name == "Monitor SQL"), monitorItemTypes, systemValueTypes));
-            list.AddRange(CreateEventsActiveProcess(monitorItems.First(mi => mi.Name == "Check Process"), monitorItemTypes, systemValueTypes));
-            list.AddRange(CreateEventsLocalFile(monitorItems.First(mi => mi.Name == "Check Log File Exists"), monitorItemTypes, systemValueTypes));
-            list.AddRange(CreateEventsPing(monitorItems.First(mi => mi.Name == "Ping Google"), monitorItemTypes, systemValueTypes));
-            list.AddRange(CreateEventsURL(monitorItems.First(mi => mi.Name == "Check Google Website"), monitorItemTypes, systemValueTypes));
-            list.AddRange(CreateEventsFolderSize(monitorItems.First(mi => mi.Name == "Check Temp Folder Size"), monitorItemTypes, systemValueTypes));
-            list.AddRange(CreateEventsCPU(monitorItems.First(mi => mi.Name == "Check CPU"), monitorItemTypes, systemValueTypes));
-            list.AddRange(CreateEventsMemory(monitorItems.First(mi => mi.Name == "Check Memory"), monitorItemTypes, systemValueTypes));
+            //list.AddRange(CreateEventsSQL(monitorItems.First(mi => mi.Name == "Monitor SQL"), monitorItemTypes, systemValueTypes));
+            //list.AddRange(CreateEventsActiveProcess(monitorItems.First(mi => mi.Name == "Check Process"), monitorItemTypes, systemValueTypes));
+            //list.AddRange(CreateEventsLocalFile(monitorItems.First(mi => mi.Name == "Check Log File Exists"), monitorItemTypes, systemValueTypes));
+            //list.AddRange(CreateEventsPing(monitorItems.First(mi => mi.Name == "Ping Google"), monitorItemTypes, systemValueTypes));
+            //list.AddRange(CreateEventsURL(monitorItems.First(mi => mi.Name == "Check Google Website"), monitorItemTypes, systemValueTypes));
+            //list.AddRange(CreateEventsFolderSize(monitorItems.First(mi => mi.Name == "Check Temp Folder Size"), monitorItemTypes, systemValueTypes));
+            //list.AddRange(CreateEventsCPU(monitorItems.First(mi => mi.Name == "Check CPU"), monitorItemTypes, systemValueTypes));
+            //list.AddRange(CreateEventsMemory(monitorItems.First(mi => mi.Name == "Check Memory"), monitorItemTypes, systemValueTypes));
             list.AddRange(CreateEventsNTP(monitorItems.First(mi => mi.Name == "Check Time"), monitorItemTypes, systemValueTypes));
 
             return list;

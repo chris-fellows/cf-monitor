@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using CFMonitor.Agent.Models;
 using CFMonitor.SystemTask;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using CFUtilities.Interfaces;
+using CFUtilities.Services;
 
 namespace CFMonitor.Agent
 {
@@ -21,14 +23,10 @@ namespace CFMonitor.Agent
             Console.WriteLine("Starting CF Monitor Agent");
 
             var serviceProvider = CreateServiceProvider();
-
-            // Set agent config
-            var systemConfig = new SystemConfig()
-            {
-                LocalPort = 10001,
-                MaxConcurrentChecks = 3,
-                MonitorItemFilesRootFolder = "D:\\Data\\Dev\\C#\\cf-monitor-local\\MonitorAgent-1"                
-            };
+            
+            // Get system config
+            var placeholderService = serviceProvider.GetRequiredService<IPlaceholderService>();
+            var systemConfig = GetSystemConfig(placeholderService);
 
             // Start worker
             var worker = new Worker(serviceProvider, systemConfig);
@@ -51,11 +49,29 @@ namespace CFMonitor.Agent
             Console.WriteLine("Terminated CF Monitor Agent");
         }
 
+        /// <summary>
+        /// Gets system config. Replaces placeholders in config file. E.g. Environment variable.
+        /// </summary>
+        /// <param name="placeholderService"></param>
+        /// <returns></returns>
+        private static SystemConfig GetSystemConfig(IPlaceholderService placeholderService)
+        {            
+            return new SystemConfig()
+            {
+                AgentManagerIp = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["AgentManagerIp"].ToString(), new()),
+                AgentManagerPort = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["AgentManagerPort"].ToString(), new())),
+                LocalPort = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["LocalPort"].ToString(), new())),
+                MaxConcurrentChecks = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced( System.Configuration.ConfigurationManager.AppSettings["MaxConcurrentChecks"].ToString(), new())),
+                MonitorAgentId = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["MonitorAgentId"].ToString(), new()),
+                MonitorItemFilesRootFolder = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["MonitorItemFilesRootFolder"].ToString(), new()),
+                SecurityKey = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["SecurityKey"].ToString(), new())
+            };            
+        }
 
         private static IServiceProvider CreateServiceProvider()
         {
             var configFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Config");
-            var logFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Log");
+            //var logFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Log");
 
             var configuration = new ConfigurationBuilder()                
                 .Build();
@@ -112,6 +128,7 @@ namespace CFMonitor.Agent
                 })
 
                 .AddScoped<IPasswordService, PBKDF2PasswordService>()   // Needed for IUserService
+                .AddScoped<IPlaceholderService, PlaceholderService>()
                 .AddScoped<IAuditEventFactory, AuditEventFactory>()
                 .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()
 
@@ -130,16 +147,7 @@ namespace CFMonitor.Agent
                         }
                     };
                     return new SystemTaskList(4, systemTaskConfigs);
-                })
-
-                //// Seed                
-                //.AddKeyedScoped<IEntityReader<ActionItemType>, ActionItemTypeSeed1>("ActionItemTypeSeed1")
-                //.AddKeyedScoped<IEntityReader<AuditEventType>, AuditEventTypeSeed1>("AuditEventTypeSeed1")
-                //.AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed1")
-                //.AddKeyedScoped<IEntityReader<MonitorAgent>, MonitorAgentSeed1>("MonitorAgentSeed1")
-                //.AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed1")
-                //.AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed1")
-                //.AddKeyedScoped<IEntityReader<User>, UserSeed1>("UserSeed1")                
+                })      
 
                 .BuildServiceProvider();            
 

@@ -26,17 +26,16 @@ namespace CFMonitor.Seed
 
             var items = new List<MonitorItem>();
 
-            items.Add(CreateTestMonitorCPU(systemValueTypes));
-            items.Add(CreateTestMonitorFileSize(systemValueTypes));
-            items.Add(CreateTestMonitorFolderSize(systemValueTypes));
-            items.Add(CreateTestMonitorURL(systemValueTypes));
-            items.Add(CreateTestMonitorMemory(systemValueTypes));
-            items.Add(CreateTestMonitorTime(systemValueTypes));
-            //items.Add(CreateTestSQLServiceMonitor(systemValueTypes));
-            items.Add(CreateTestMonitorPing(systemValueTypes));
-            items.Add(CreateTestMonitorSQL(systemValueTypes));
-            items.Add(CreateTestMonitorLocalFile(systemValueTypes));
-            items.Add(CreateTestMonitorActiveProcess(systemValueTypes));
+            //items.Add(CreateTestMonitorCPU(systemValueTypes));
+            //items.Add(CreateTestMonitorFileSize(systemValueTypes));
+            //items.Add(CreateTestMonitorFolderSize(systemValueTypes));
+            //items.Add(CreateTestMonitorURL(systemValueTypes));
+            //items.Add(CreateTestMonitorMemory(systemValueTypes));
+            items.Add(CreateTestMonitorTime(systemValueTypes));            
+            //items.Add(CreateTestMonitorPing(systemValueTypes));
+            //items.Add(CreateTestMonitorSQL(systemValueTypes));
+            //items.Add(CreateTestMonitorLocalFile(systemValueTypes));
+            //items.Add(CreateTestMonitorActiveProcess(systemValueTypes));
 
             return items;
         }    
@@ -456,7 +455,7 @@ namespace CFMonitor.Seed
             };
 
             // Set schedule
-            monitorNTP.MonitorItemSchedule.Times = "60sec";
+            monitorNTP.MonitorItemSchedule.Times = "300sec";
 
             // Add event for Status not success
             //EventItem eventItem1 = new EventItem();

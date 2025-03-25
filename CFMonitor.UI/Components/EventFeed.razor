@@ -1,0 +1,150 @@
+﻿@using CFMonitor.Constants
+@using CFMonitor.Enums
+@using CFMonitor.Interfaces
+@using CFMonitor.Models
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject IAuditEventService AuditEventService
+@inject IAuditEventTypeService AuditEventTypeService
+@inject IMonitorAgentService MonitorAgentService
+@inject IMonitorItemOutputService MonitorItemOutputService
+@inject IMonitorItemService MonitorItemService
+@inject ISystemValueDisplayService SystemValueDisplayService
+@inject ISystemValueTypeService SystemValueTypeService
+@inject IUserService UserService
+
+Latest events:
+@foreach (EventInfo eventinfo in EventInfosQueryable)
+{
+    <div>@((MarkupString)@eventinfo.Text)</div>
+}
+@if (!EventInfosQueryable.Any())
+{
+    <div>No events</div>
+}
+
+@code {
+
+    private class EventInfo
+    {
+        public DateTimeOffset CreatedDateTime { get; set; }
+
+        public string Text { get; set; } = String.Empty;
+    }
+
+    private IQueryable<EventInfo> EventInfosQueryable = new List<EventInfo>().AsQueryable();
+
+    protected override async Task OnInitializedAsync()
+    {
+        EventInfosQueryable = await GetEventInfos(TimeSpan.FromHours(12000), 30);
+    }
+
+    /// <summary>
+    /// Gets event infos
+    /// </summary>
+    /// <returns></returns>
+    private async Task<IQueryable<EventInfo>> GetEventInfos(TimeSpan maxAge, int maxCount)
+    {
+        var auditEventTypes = AuditEventTypeService.GetAll();        
+        var users = UserService.GetAll();
+        var monitorAgents = MonitorAgentService.GetAll();
+        var monitorItems = MonitorItemService.GetAll();
+
+        // Set audit event types to display
+        var auditEventTypesToFilter = new List<AuditEventTypes>()
+        {
+            AuditEventTypes.ActionExecuted,     // Parameters=MonitorItemOutput.Id
+            AuditEventTypes.MonitorAgentAdded,  // Parameters=MonitorAgent.Id
+            AuditEventTypes.MonitorItemAdded    // Parameters=MonitorItem.Id
+        };
+
+        // // Get recent audit events
+        var auditEventFilter = new AuditEventFilter()
+            {
+                AuditEventTypeIds = auditEventTypes.Where(t => auditEventTypesToFilter.Contains(t.EventType))
+                                                        .Select(t => t.Id).ToList(),
+                CreatedDateTimeFrom = DateTimeOffset.UtcNow.Subtract(maxAge)
+            };
+        var auditEvents = AuditEventService.GetByFilter(auditEventFilter);
+
+        var systemValueTypes = SystemValueTypeService.GetAll();
+
+        var systemValueTypeActionItemId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_ActionItemId);
+        var systemValueTypeMonitorAgentId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorAgentId);        
+        var systemValueTypeMonitorItemId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorItemId);
+        var systemValueTypeMonitorItemOutputId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorItemOutputId);
+
+        // Get monitor item outputs
+        var monitorItemOutputIds = new List<string>();
+        foreach (var auditEvent in auditEvents.Where(ae => ae.Parameters.Any(p => p.SystemValueTypeId == systemValueTypeMonitorItemOutputId.Id)))
+        {
+            var monitorItemOutputId = auditEvent.Parameters.First(p => p.SystemValueTypeId == systemValueTypeMonitorItemOutputId.Id).Value;
+            if (!monitorItemOutputIds.Contains(monitorItemOutputId))
+            {
+                monitorItemOutputIds.Add(monitorItemOutputId);
+            }
+        }
+        var monitorItemOutputs = monitorItemOutputIds.Any() ?
+                    MonitorItemOutputService.GetByIds(monitorItemOutputIds) : new();
+
+        // Create event info list
+        var eventInfos = auditEvents.OrderByDescending(e => e.CreatedDateTime)
+             .Take(maxCount)
+             .Select(e =>
+             {
+                 var auditEventType = auditEventTypes.First(t => t.Id == e.TypeId);
+                 var createdUser = users.First(u => u.Id == e.CreatedUserId);                 
+
+                 // Get monitor agent if set
+                 var parameterMonitorAgentId = e.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypeMonitorAgentId.Id);
+                 var monitorAgent = parameterMonitorAgentId == null ? null : monitorAgents.First(mi => mi.Id == parameterMonitorAgentId.Value);
+
+                 // Get monitor item if set
+                 var parameterMonitorItemId = e.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypeMonitorItemId.Id);
+                 var monitorItem = parameterMonitorItemId == null ? null : monitorItems.First(mi => mi.Id == parameterMonitorItemId.Value);
+
+                 // Get monitor item output if set
+                 var parameterMonitorItemOutputId = e.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypeMonitorItemOutputId.Id);
+                 var monitorItemOutput = parameterMonitorItemOutputId == null ? null : monitorItemOutputs.First(mio => mio.Id == parameterMonitorItemOutputId.Value);
+
+                 // If monitor item output set then get monitor item
+                 if (monitorItemOutput != null && monitorItem == null)
+                 {
+                     monitorItem = monitorItems.First(mi => mi.Id == monitorItemOutput.MonitorItemId);
+                 }
+
+                 // If monitor item output set then get monitor agent
+                 if (monitorItemOutput != null && monitorAgent == null)
+                 {
+                     monitorAgent = monitorAgents.First(mi => mi.Id == monitorItemOutput.MonitorAgentId);
+                 }
+
+                 var eventInfo = new EventInfo()
+                 {
+                    CreatedDateTime = e.CreatedDateTime
+                 };                 
+                 
+                 // Set text
+                 switch(auditEventType.EventType)
+                 {
+                     case AuditEventTypes.ActionExecuted:
+                        // TODO: Set link
+                         if (monitorItemOutput != null && monitorAgent != null && monitorItem != null)
+                             eventInfo.Text = $"Monitor Agent {monitorAgent.MachineName} checked {monitorItem.Name} at {monitorItemOutput.CheckedDateTime.ToString()} " +
+                                  $"and executed the configured action(s)";
+                         break;
+                     case AuditEventTypes.MonitorAgentAdded:
+                         if (monitorAgent != null)
+                             eventInfo.Text = $"Monitor Agent <a href=\"monitoragents/edit?id={monitorAgent.Id}\">{monitorAgent.MachineName}</a> added at {e.CreatedDateTime.ToString()}";
+                         break;
+                     case AuditEventTypes.MonitorItemAdded:
+                         if (monitorItem != null)
+                             eventInfo.Text = $"Monitor Item <a href=\"monitoritems/edit?id={monitorItem.Id}\">{monitorItem.Name}</a> created by {createdUser.Name} at {e.CreatedDateTime.ToString()}";
+                         break;
+
+                 }                                  
+                 return eventInfo;
+             }).ToList();
+
+        return eventInfos.AsQueryable();
+    }
+}

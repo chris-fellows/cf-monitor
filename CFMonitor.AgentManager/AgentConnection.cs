@@ -8,6 +8,7 @@ using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.MessageConverters;
 using CFMonitor.Models.Messages;
+using CFMonitor.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,24 +28,15 @@ namespace CFMonitor.AgentManager
     {
         private ConnectionTcp _connection;
 
-        // Message converters
-        private IExternalMessageConverter<GetFileObjectRequest> _getFileObjectRequestConverter = new GetFileObjectRequestConverter();
-        private IExternalMessageConverter<GetFileObjectResponse> _getFileObjectResponseConverter = new GetFileObjectResponseConverter();
-        private IExternalMessageConverter<GetMonitorItemsRequest> _getMonitorItemsRequestConverter = new GetMonitorItemsRequestConverter();
-        private IExternalMessageConverter<GetMonitorItemsResponse> _getMonitorItemsResponseConverter = new GetMonitorItemsResponseConverter();
-        private IExternalMessageConverter<Heartbeat> _heartbeatConverter = new HeartbeatConverter();
-        private IExternalMessageConverter<MonitorItemResultMessage> _monitorItemResultMessageConverter = new MonitorItemResultMessageConverter();
-        private IExternalMessageConverter<MonitorItemUpdated> _monitorItemUpdatedConverter = new MonitorItemUpdatedConverter();
-        
+        private readonly MessageConvertersList _messageConverters = new();
+
         //public delegate void GetMonitorItemsRequestReceived(GetMonitorItemsRequest request);
         //public event GetMonitorItemsRequestReceived? OnGetMonitorItemsRequestReceived;
 
         //public delegate void HeartbeatReceived(Heartbeat heartbeat);
         //public event HeartbeatReceived? OnHeartbeatReceived;
 
-        private List<MessageBase> _responseMessages = new List<MessageBase>();
-
-        public string LocalUserName { get; set; } = String.Empty;
+        //private List<MessageBase> _responseMessages = new List<MessageBase>();
 
         private readonly IAuditEventFactory _auditEventFactory;
         private readonly IAuditEventService _auditEventService;
@@ -54,6 +46,9 @@ namespace CFMonitor.AgentManager
         private readonly IMonitorItemService _monitorItemService;        
         private readonly IServiceProvider _serviceProvider;
         private readonly IUserService _userService;
+
+        private DateTimeOffset _monitorAgentsLastRefreshTime = DateTimeOffset.MinValue;
+        private Dictionary<string, MonitorAgent> _monitorAgentsBySecurityKey = new();
 
         public AgentConnection(IAuditEventFactory auditEventFactory,
                                 IAuditEventService auditEventService,
@@ -82,10 +77,13 @@ namespace CFMonitor.AgentManager
         {
             _connection.ReceivePort = port;
             _connection.StartListening();
+
+            Console.WriteLine($"Listening on port {port}");
         }
 
         public void StopListening()
         {
+            Console.WriteLine("Stopping listening");
             _connection.StopListening();
         }
 
@@ -104,7 +102,7 @@ namespace CFMonitor.AgentManager
         /// <param name="heartbeat"></param>
         public void SendMonitorItemUpdated(MonitorItemUpdated monitorItemUpdated, EndpointInfo remoteEndpointInfo)
         {
-            _connection.SendMessage(_monitorItemUpdatedConverter.GetConnectionMessage(monitorItemUpdated), remoteEndpointInfo);
+            _connection.SendMessage(_messageConverters.MonitorItemUpdatedConverter.GetConnectionMessage(monitorItemUpdated), remoteEndpointInfo);
         }
 
         /// <summary>
@@ -116,40 +114,160 @@ namespace CFMonitor.AgentManager
         {
             switch (connectionMessage.TypeId)
             {
-                case MessageTypeIds.GetMonitorItemsRequest:
-                    var getMonitorItemsRequest = _getMonitorItemsRequestConverter.GetExternalMessage(connectionMessage);
+                case MessageTypeIds.GetEventItemsRequest:
+                    var getEventItemsRequest = _messageConverters.GetEventItemsRequestConverter.GetExternalMessage(connectionMessage);
 
-                    ProcessGetMonitorItemsRequestAsync(getMonitorItemsRequest, messageReceivedInfo);
+                    HandleGetEventItemsRequestAsync(getEventItemsRequest, messageReceivedInfo);
+                    break;
+
+                case MessageTypeIds.GetMonitorAgentsRequest:
+                    var getMonitorAgentsRequest = _messageConverters.GetMonitorAgentsRequestConverter.GetExternalMessage(connectionMessage);
+
+                    HandleGetMonitorAgentsRequestAsync(getMonitorAgentsRequest, messageReceivedInfo);
+                    break;
+
+                case MessageTypeIds.GetMonitorItemsRequest:
+                    var getMonitorItemsRequest = _messageConverters.GetMonitorItemsRequestConverter.GetExternalMessage(connectionMessage);
+
+                    HandleGetMonitorItemsRequestAsync(getMonitorItemsRequest, messageReceivedInfo);
+                    break;
+
+                case MessageTypeIds.GetSystemValueTypesRequest:
+                    var getSystemValueTypesRequest = _messageConverters.GetSystemValueTypesRequestConverter.GetExternalMessage(connectionMessage);
+
+                    HandleGetSystemValueTypesRequestAsync(getSystemValueTypesRequest, messageReceivedInfo);
                     break;
 
                 case MessageTypeIds.Heartbeat:
-                    var heartbeat = _heartbeatConverter.GetExternalMessage(connectionMessage);
+                    var heartbeat = _messageConverters.HeartbeatConverter.GetExternalMessage(connectionMessage);
 
-                    ProcessHeartbeatAsync(heartbeat, messageReceivedInfo);          
+                    HandleHeartbeatAsync(heartbeat, messageReceivedInfo);          
                     break;
 
                 case MessageTypeIds.MonitorItemResultMessage:
-                    var monitorItemResultMessage = _monitorItemResultMessageConverter.GetExternalMessage(connectionMessage);
+                    var monitorItemResultMessage = _messageConverters.MonitorItemResultMessageConverter.GetExternalMessage(connectionMessage);
 
-                    ProcessMonitorItemResultAsync(monitorItemResultMessage, messageReceivedInfo);
+                    HandleMonitorItemResultAsync(monitorItemResultMessage, messageReceivedInfo);
                     break;
             }
         }
 
-        private Task ProcessGetMonitorItemsRequestAsync(GetMonitorItemsRequest getMonitorItemsRequest, MessageReceivedInfo messageReceivedInfo)
+        /// <summary>
+        /// Gets monitor agent by security key
+        /// </summary>
+        /// <param name="securityKey"></param>
+        /// <returns></returns>
+        private MonitorAgent? GetMonitorAgentBySecurityKey(string securityKey)
+        {
+            // Periodically clear cache. Doesn't matter too much if we pick up stale data as the user settings won't change
+            // very often.
+            if (_monitorAgentsLastRefreshTime.AddMinutes(5) <= DateTimeOffset.UtcNow)
+            {
+                _monitorAgentsLastRefreshTime = DateTimeOffset.UtcNow;
+                _monitorAgentsBySecurityKey.Clear();
+            }
+            if (!_monitorAgentsBySecurityKey.Any())   // Cache empty, load it
+            {
+                _monitorAgentService.GetAll().ForEach(monitorAgent => _monitorAgentsBySecurityKey.Add(monitorAgent.SecurityKey, monitorAgent));
+            }
+            return _monitorAgentsBySecurityKey.ContainsKey(securityKey) ? _monitorAgentsBySecurityKey[securityKey] : null;
+        }
+
+        private Task HandleGetEventItemsRequestAsync(GetEventItemsRequest getEventItemsRequest, MessageReceivedInfo messageReceivedInfo)
         {
             return Task.Factory.StartNew(() =>
             {
+                Console.WriteLine($"Processing {getEventItemsRequest.TypeId} from Monitor Agent {getEventItemsRequest.SenderAgentId}");
+
                 using (var scope = _serviceProvider.CreateScope())
                 {
-                    var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
+                    var getEventItemsResponse = new GetEventItemsResponse()
+                    {
+                        Id = Guid.NewGuid().ToString(),                      
+                        Response = new MessageResponse()
+                        {
+                            IsMore = false,
+                            MessageId = getEventItemsRequest.Id,
+                            Sequence = 1
+                        }
+                    };
 
-                    var monitorItems = monitorItemService.GetAll();
+                    var monitorAgent = GetMonitorAgentBySecurityKey(getEventItemsRequest.SecurityKey);
 
+                    if (monitorAgent == null)
+                    {
+                        getEventItemsResponse.Response.ErrorCode = ResponseErrorCodes.PermissionDenied;
+                        getEventItemsResponse.Response.ErrorMessage = EnumUtilities.GetEnumDescription(getEventItemsResponse.Response.ErrorCode);
+                    }
+                    else
+                    {
+                        var eventItemService = scope.ServiceProvider.GetRequiredService<IEventItemService>();
+
+                        getEventItemsResponse.EventItems = eventItemService.GetAll();
+                    }
+
+                    // Send response
+                    _connection.SendMessage(_messageConverters.GetEventItemsResponseConverter.GetConnectionMessage(getEventItemsResponse), messageReceivedInfo.RemoteEndpointInfo);
+
+                    var error = getEventItemsResponse.Response.ErrorCode == null ? "Success" : getEventItemsResponse.Response.ErrorMessage;
+                    Console.WriteLine($"Processed {getEventItemsRequest.TypeId} from Monitor Agent {getEventItemsRequest.SenderAgentId}: {error}");
+                }                                
+            });
+        }
+
+        private Task HandleGetMonitorAgentsRequestAsync(GetMonitorAgentsRequest getMonitorAgentsRequest, MessageReceivedInfo messageReceivedInfo)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                Console.WriteLine($"Processing {getMonitorAgentsRequest.TypeId} from Monitor Agent {getMonitorAgentsRequest.SenderAgentId}");
+
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var getMonitorAgentsResponse = new GetMonitorAgentsResponse()
+                    {
+                        Id = Guid.NewGuid().ToString(),                     
+                        Response = new MessageResponse()
+                        {
+                            IsMore = false,
+                            MessageId = getMonitorAgentsRequest.Id,
+                            Sequence = 1
+                        }
+                    };
+
+                    var monitorAgent = GetMonitorAgentBySecurityKey(getMonitorAgentsRequest.SecurityKey);
+
+                    if (monitorAgent == null)
+                    {                        
+                        getMonitorAgentsResponse.Response.ErrorCode = ResponseErrorCodes.PermissionDenied;
+                        getMonitorAgentsResponse.Response.ErrorMessage = EnumUtilities.GetEnumDescription(getMonitorAgentsResponse.Response.ErrorCode);
+                    }
+                    else
+                    {
+                        var monitorAgentService = scope.ServiceProvider.GetRequiredService<IMonitorAgentService>();
+
+                        getMonitorAgentsResponse.MonitorAgents = monitorAgentService.GetAll();
+                    }
+
+                    // Send response
+                    _connection.SendMessage(_messageConverters.GetMonitorAgentsResponseConverter.GetConnectionMessage(getMonitorAgentsResponse), messageReceivedInfo.RemoteEndpointInfo);
+
+                    var error = getMonitorAgentsResponse.Response.ErrorCode == null ? "Success" : getMonitorAgentsResponse.Response.ErrorMessage;
+                    Console.WriteLine($"Processed {getMonitorAgentsRequest.TypeId} from Monitor Agent {getMonitorAgentsRequest.SenderAgentId}: {error}");
+                }                
+            });
+        }
+
+        private Task HandleGetMonitorItemsRequestAsync(GetMonitorItemsRequest getMonitorItemsRequest, MessageReceivedInfo messageReceivedInfo)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                Console.WriteLine($"Processing {getMonitorItemsRequest.TypeId} from Monitor Agent {getMonitorItemsRequest.SenderAgentId}");
+
+                using (var scope = _serviceProvider.CreateScope())
+                {                    
                     var getMonitorItemsResponse = new GetMonitorItemsResponse()
                     {
-                        Id = Guid.NewGuid().ToString(),
-                        MonitorItems = monitorItems,
+                        Id = Guid.NewGuid().ToString(),                        
                         Response = new MessageResponse()
                         {
                             IsMore = false,
@@ -158,9 +276,68 @@ namespace CFMonitor.AgentManager
                         }
                     };
 
+                    var monitorAgent = GetMonitorAgentBySecurityKey(getMonitorItemsRequest.SecurityKey);
+
+                    if (monitorAgent == null)
+                    {
+                        getMonitorItemsResponse.Response.ErrorCode = ResponseErrorCodes.PermissionDenied;
+                        getMonitorItemsResponse.Response.ErrorMessage = EnumUtilities.GetEnumDescription(getMonitorItemsResponse.Response.ErrorCode);
+                    }
+                    else
+                    {
+                        var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
+
+                        getMonitorItemsResponse.MonitorItems = monitorItemService.GetAll();
+                    }
+
                     // Send response
-                    _connection.SendMessage(_getMonitorItemsResponseConverter.GetConnectionMessage(getMonitorItemsResponse), messageReceivedInfo.RemoteEndpointInfo);
-                }
+                    _connection.SendMessage(_messageConverters.GetMonitorItemsResponseConverter.GetConnectionMessage(getMonitorItemsResponse), messageReceivedInfo.RemoteEndpointInfo);
+
+                    var error = getMonitorItemsResponse.Response.ErrorCode == null ? "Success" : getMonitorItemsResponse.Response.ErrorMessage;
+                    Console.WriteLine($"Processed {getMonitorItemsRequest.TypeId} from Monitor Agent {getMonitorItemsRequest.SenderAgentId}: {error}");
+                }                
+            });
+        }
+
+        private Task HandleGetSystemValueTypesRequestAsync(GetSystemValueTypesRequest getSystemValueTypesRequest, MessageReceivedInfo messageReceivedInfo)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                Console.WriteLine($"Processing {getSystemValueTypesRequest.TypeId} from Monitor Agent {getSystemValueTypesRequest.SenderAgentId}");
+
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var getSystemValueTypesResponse = new GetSystemValueTypesResponse()
+                    {
+                        Id = Guid.NewGuid().ToString(),                        
+                        Response = new MessageResponse()
+                        {
+                            IsMore = false,
+                            MessageId = getSystemValueTypesRequest.Id,
+                            Sequence = 1
+                        }
+                    };
+
+                    var monitorAgent = GetMonitorAgentBySecurityKey(getSystemValueTypesRequest.SecurityKey);
+
+                    if (monitorAgent == null)
+                    {
+                        getSystemValueTypesResponse.Response.ErrorCode = ResponseErrorCodes.PermissionDenied;
+                        getSystemValueTypesResponse.Response.ErrorMessage = EnumUtilities.GetEnumDescription(getSystemValueTypesResponse.Response.ErrorCode);
+                    }
+                    else
+                    {
+                        var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
+
+                        getSystemValueTypesResponse.SystemValueTypes = systemValueTypeService.GetAll();
+                    }
+
+                    // Send response
+                    _connection.SendMessage(_messageConverters.GetSystemValueTypesResponseConverter.GetConnectionMessage(getSystemValueTypesResponse), messageReceivedInfo.RemoteEndpointInfo);
+
+                    var error = getSystemValueTypesResponse.Response.ErrorCode == null ? "Success" : getSystemValueTypesResponse.Response.ErrorMessage;
+                    Console.WriteLine($"Processed {getSystemValueTypesRequest.TypeId} from Monitor Agent {getSystemValueTypesRequest.SenderAgentId}: {error}");
+                }                
             });
         }
 
@@ -170,48 +347,62 @@ namespace CFMonitor.AgentManager
         /// <param name="heartbeat"></param>
         /// <param name="messageReceivedInfo"></param>
         /// <returns></returns>
-        private Task ProcessHeartbeatAsync(Heartbeat heartbeat, MessageReceivedInfo messageReceivedInfo)
+        private Task HandleHeartbeatAsync(Heartbeat heartbeat, MessageReceivedInfo messageReceivedInfo)
         {
             return Task.Factory.StartNew(() =>
             {
+                Console.WriteLine($"Processing {heartbeat.TypeId} from Monitor Agent {heartbeat.SenderAgentId}");
+
                 using (var scope = _serviceProvider.CreateScope())
                 {
-                    var monitorAgentGroupService = scope.ServiceProvider.GetRequiredService<IMonitorAgentGroupService>();
-                    var monitorAgentService = scope.ServiceProvider.GetRequiredService<IMonitorAgentService>();
+                    var monitorAgentCheck = GetMonitorAgentBySecurityKey(heartbeat.SecurityKey);
 
-                    // Get monitor agent                
-                    var monitorAgent = monitorAgentService.GetById(heartbeat.SenderAgentId);
-                    if (monitorAgent != null)       // Known monitor agent
+                    if (monitorAgentCheck == null)   // No action, just ignore
                     {
-                        monitorAgent.HeartbeatDateTime = DateTimeOffset.UtcNow;
-                        monitorAgent.MachineName = heartbeat.MachineName;
-                        monitorAgent.UserName = heartbeat.UserName;
-                        monitorAgent.IP = messageReceivedInfo.RemoteEndpointInfo.Ip;
-                        monitorAgent.Port = messageReceivedInfo.RemoteEndpointInfo.Port;
-                        monitorAgent.Version = heartbeat.Version;
-
-                        monitorAgentService.Update(monitorAgent);
+                        //getSystemValueTypesResponse.Response.ErrorCode = ResponseErrorCodes.PermissionDenied;
+                        //getSystemValueTypesResponse.Response.ErrorMessage = EnumUtilities.GetEnumDescription(getSystemValueTypesResponse.Response.ErrorCode);
                     }
-                    else if (heartbeat.SenderAgentId.Length != Guid.Empty.ToString().Length)    // New agent (Ignore if Id is unexpected format)
+                    else
                     {
-                        // Default to first group, user can change later
-                        var monitorAgentGroup = monitorAgentGroupService.GetAll().OrderBy(g => g.Name).First();
+                        var monitorAgentGroupService = scope.ServiceProvider.GetRequiredService<IMonitorAgentGroupService>();
+                        var monitorAgentService = scope.ServiceProvider.GetRequiredService<IMonitorAgentService>();
 
-                        monitorAgent = new MonitorAgent()
+                        // Get monitor agent                
+                        var monitorAgent = monitorAgentService.GetById(heartbeat.SenderAgentId);
+                        if (monitorAgent != null)       // Known monitor agent
                         {
-                            Id = heartbeat.SenderAgentId,
-                            MonitorAgentGroupId = monitorAgentGroup.Id,
-                            HeartbeatDateTime = DateTimeOffset.UtcNow,
-                            MachineName = heartbeat.MachineName,
-                            UserName = heartbeat.UserName,
-                            IP = messageReceivedInfo.RemoteEndpointInfo.Ip,
-                            Port = messageReceivedInfo.RemoteEndpointInfo.Port,
-                            Version = heartbeat.Version
-                        };
+                            monitorAgent.HeartbeatDateTime = DateTimeOffset.UtcNow;
+                            monitorAgent.MachineName = heartbeat.MachineName;
+                            monitorAgent.UserName = heartbeat.UserName;
+                            monitorAgent.IP = messageReceivedInfo.RemoteEndpointInfo.Ip;
+                            monitorAgent.Port = messageReceivedInfo.RemoteEndpointInfo.Port;
+                            monitorAgent.Version = heartbeat.Version;
 
-                        monitorAgentService.Add(monitorAgent);
+                            monitorAgentService.Update(monitorAgent);
+                        }
+                        else if (heartbeat.SenderAgentId.Length != Guid.Empty.ToString().Length)    // New agent (Ignore if Id is unexpected format)
+                        {
+                            // Default to first group, user can change later
+                            var monitorAgentGroup = monitorAgentGroupService.GetAll().OrderBy(g => g.Name).First();
+
+                            monitorAgent = new MonitorAgent()
+                            {
+                                Id = heartbeat.SenderAgentId,
+                                MonitorAgentGroupId = monitorAgentGroup.Id,
+                                HeartbeatDateTime = DateTimeOffset.UtcNow,
+                                MachineName = heartbeat.MachineName,
+                                UserName = heartbeat.UserName,
+                                IP = messageReceivedInfo.RemoteEndpointInfo.Ip,
+                                Port = messageReceivedInfo.RemoteEndpointInfo.Port,
+                                Version = heartbeat.Version
+                            };
+
+                            monitorAgentService.Add(monitorAgent);
+                        }
                     }
                 }
+
+                Console.WriteLine($"Processed {heartbeat.TypeId} from Monitor Agent {heartbeat.SenderAgentId}");
             });
         }
 
@@ -221,78 +412,84 @@ namespace CFMonitor.AgentManager
         /// <param name="monitorItemResultMessage"></param>
         /// <param name="messageReceivedInfo"></param>
         /// <returns></returns>
-        private Task ProcessMonitorItemResultAsync(MonitorItemResultMessage monitorItemResultMessage, MessageReceivedInfo messageReceivedInfo)
+        private Task HandleMonitorItemResultAsync(MonitorItemResultMessage monitorItemResultMessage, MessageReceivedInfo messageReceivedInfo)
         {
             return Task.Factory.StartNew(() =>
-            {                                
-                if (monitorItemResultMessage.MonitorItemOutput != null)
+            {
+                Console.WriteLine($"Processing {monitorItemResultMessage.TypeId} from Monitor Agent {monitorItemResultMessage.SenderAgentId}");
+
+                var monitorAgentCheck = GetMonitorAgentBySecurityKey(monitorItemResultMessage.SecurityKey);
+
+                if (monitorAgentCheck != null)
                 {
-                    // Save monitor item output
-                    var monitorItemOutput = monitorItemResultMessage.MonitorItemOutput;
-                    _monitorItemOutputService.Add(monitorItemOutput);
+                    if (monitorItemResultMessage.MonitorItemOutput != null)
+                    {
+                        // Save monitor item output
+                        var monitorItemOutput = monitorItemResultMessage.MonitorItemOutput;
+                        _monitorItemOutputService.Add(monitorItemOutput);
 
-                    // Get system user
-                    var systemUser = _userService.GetAll().First(u => u.GetUserType() == UserTypes.System);
+                        // Get system user
+                        var systemUser = _userService.GetAll().First(u => u.GetUserType() == UserTypes.System);
 
-                    // Add "Checked monitor item" audit event
-                    _auditEventService.Add(_auditEventFactory.CreateCheckedMonitorItem(systemUser.Id, monitorItemOutput.Id));
+                        // Add "Checked monitor item" audit event
+                        _auditEventService.Add(_auditEventFactory.CreateCheckedMonitorItem(systemUser.Id, monitorItemOutput.Id));
 
-                    // Execute action(s)
-                    if (monitorItemOutput.EventItemIdsForAction != null &&
-                        monitorItemOutput.EventItemIdsForAction.Any())
-                    {                        
-                        using (var scope = _serviceProvider.CreateScope())
+                        // Execute action(s)
+                        if (monitorItemOutput.EventItemIdsForAction != null &&
+                            monitorItemOutput.EventItemIdsForAction.Any())
                         {
-                            // Get services
-                            var auditEventFactory = scope.ServiceProvider.GetRequiredService<IAuditEventFactory>();
-                            var auditEventService = scope.ServiceProvider.GetRequiredService<IAuditEventService>();
-                            var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
-                            var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();                            
-                            
-                            // Get monitor item
-                            var monitorItem = monitorItemService.GetById(monitorItemOutput.MonitorItemId);
-
-                            foreach (var eventItemId in monitorItemOutput.EventItemIdsForAction)
+                            using (var scope = _serviceProvider.CreateScope())
                             {
-                                // Get event item
-                                var eventItem = _eventItemService.GetById(eventItemId);
+                                // Get services
+                                var auditEventFactory = scope.ServiceProvider.GetRequiredService<IAuditEventFactory>();
+                                var auditEventService = scope.ServiceProvider.GetRequiredService<IAuditEventService>();
+                                var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
+                                var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
 
-                                // Execute actions
-                                // TODO: Limit concurrent actions
-                                if (eventItem != null && eventItem.ActionItems.Any())
+                                // Get monitor item
+                                var monitorItem = monitorItemService.GetById(monitorItemOutput.MonitorItemId);
+
+                                foreach (var eventItemId in monitorItemOutput.EventItemIdsForAction)
                                 {
-                                    var actionTasksNByActionItemId = new Dictionary<string, Task>();
-                                    foreach (var actionItem in eventItem.ActionItems)
+                                    // Get event item
+                                    var eventItem = _eventItemService.GetById(eventItemId);
+
+                                    // Execute actions
+                                    // TODO: Limit concurrent actions
+                                    if (eventItem != null && eventItem.ActionItems.Any())
                                     {
-                                        // Create action scope to ensure that we don't use shared resources unless intended
-                                        using (var actionScope = _serviceProvider.CreateScope())
+                                        var actionTasksNByActionItemId = new Dictionary<string, Task>();
+                                        foreach (var actionItem in eventItem.ActionItems)
                                         {
-                                            // Get actioner
-                                            var actioner = actionScope.ServiceProvider.GetServices<IActioner>().First(a => a.CanExecute(actionItem));
+                                            // Create action scope to ensure that we don't use shared resources unless intended
+                                            using (var actionScope = _serviceProvider.CreateScope())
+                                            {
+                                                // Get actioner
+                                                var actioner = actionScope.ServiceProvider.GetServices<IActioner>().First(a => a.CanExecute(actionItem));
 
-                                            // Start action execute
-                                            actionTasksNByActionItemId.Add(actionItem.Id, actioner.ExecuteAsync(monitorItem, actionItem, monitorItemOutput.ActionItemParameters));
+                                                // Start action execute
+                                                actionTasksNByActionItemId.Add(actionItem.Id, actioner.ExecuteAsync(monitorItem, actionItem, monitorItemOutput.ActionItemParameters));
+                                            }
                                         }
-                                    }
 
-                                    // Wait for actions to complete
-                                    // TODO: Check errors
-                                    Task.WhenAll(actionTasksNByActionItemId.Select(k => k.Value).ToArray());
+                                        // Wait for actions to complete
+                                        // TODO: Check errors
+                                        Task.WhenAll(actionTasksNByActionItemId.Select(k => k.Value).ToArray());
 
-                                    // Add "Action executed" (or "Error") audit event
-                                    var systemValueTypes = systemValueTypeService.GetAll();
-                                    foreach (var actionItemId in actionTasksNByActionItemId.Keys)
-                                    {
-                                        if (actionTasksNByActionItemId[actionItemId].Exception == null)    // Action executed
+                                        // Add "Action executed" (or "Error") audit event
+                                        var systemValueTypes = systemValueTypeService.GetAll();
+                                        foreach (var actionItemId in actionTasksNByActionItemId.Keys)
                                         {
-                                            auditEventService.Add(auditEventFactory.CreateActionExecuted(systemUser.Id, monitorItemOutput.Id, actionItemId));                                            
-                                        }
-                                        else    // Add error audit event
-                                        {
-                                            // Note: MonitorItemOutput indicates MonitorItemId & MonitorAgentId
-                                            auditEventService.Add(auditEventFactory.CreateError(systemUser.Id, $"Error executing action item: {actionTasksNByActionItemId[actionItemId].Exception.Message}",
-                                                            new List<AuditEventParameter>()
-                                                            {
+                                            if (actionTasksNByActionItemId[actionItemId].Exception == null)    // Action executed
+                                            {
+                                                auditEventService.Add(auditEventFactory.CreateActionExecuted(systemUser.Id, monitorItemOutput.Id, actionItemId));
+                                            }
+                                            else    // Add error audit event
+                                            {
+                                                // Note: MonitorItemOutput indicates MonitorItemId & MonitorAgentId
+                                                auditEventService.Add(auditEventFactory.CreateError(systemUser.Id, $"Error executing action item: {actionTasksNByActionItemId[actionItemId].Exception.Message}",
+                                                                new List<AuditEventParameter>()
+                                                                {
                                                                 //new AuditEventParameter()
                                                                 //{
                                                                 //    SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorItemId).Id,
@@ -308,12 +505,13 @@ namespace CFMonitor.AgentManager
                                                                     SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_ActionItemId).Id,
                                                                     Value = actionItemId,
                                                                 },
-                                                                //   new AuditEventParameter()
-                                                                //{
-                                                                //    SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorAgentId).Id,
-                                                                //    Value = monitorItemOutput.MonitorAgentId,
-                                                                //}
-                                                            }));                                                    
+                                                                    //   new AuditEventParameter()
+                                                                    //{
+                                                                    //    SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorAgentId).Id,
+                                                                    //    Value = monitorItemOutput.MonitorAgentId,
+                                                                    //}
+                                                                }));
+                                            }
                                         }
                                     }
                                 }
@@ -321,6 +519,8 @@ namespace CFMonitor.AgentManager
                         }
                     }
                 }
+
+                Console.WriteLine($"Processed {monitorItemResultMessage.TypeId} from Monitor Agent {monitorItemResultMessage.SenderAgentId}");
             });
         }
 

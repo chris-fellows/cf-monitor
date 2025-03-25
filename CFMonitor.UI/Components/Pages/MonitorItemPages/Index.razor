@@ -5,6 +5,7 @@
 @using CFMonitor.Utilities
 @using CFUtilities
 @inject IMonitorItemService MonitorItemService
+@inject IMonitorItemTypeService MonitorItemTypeService
 
 @using System.IO
 @inject IJSRuntime JS
@@ -41,8 +42,10 @@
 }
 else
 {
-    <QuickGrid Class="table" Items="@MonitorItemsQueryable" Pagination="@Pagination">
-        <PropertyColumn Property="monitorItem => monitorItem.Name" />
+    <QuickGrid Class="table" Items="@MonitorItemsQueryable" Pagination="@Pagination">        
+        <TemplateColumn Title="Item" Context="monitorItem">
+            <ImageAndText ImageSource="@(GetMonitorItemTypeImageSource(monitorItem))" Text="@monitorItem.Name" />
+        </TemplateColumn>
 
         <TemplateColumn Context="monitorItem">
             <a href="@($"monitoritems/edit?id={monitorItem.Id}")">Edit</a> |
@@ -57,13 +60,17 @@ else
 @code {
     private IQueryable<MonitorItem>? MonitorItemsQueryable;
 
+    private List<MonitorItemType> MonitorItemTypes = new();
+
     private PaginationState Pagination = new PaginationState() { ItemsPerPage = 25 };
 
     private bool IsBusy { get; set; }
-    
+
     protected override async Task OnInitializedAsync()
     {
         IsBusy = true;
+
+        MonitorItemTypes = MonitorItemTypeService.GetAll();
 
         await RefreshMonitorItemsAsync();
     }
@@ -76,6 +83,11 @@ else
 
         IsBusy = false;
     } 
+
+    private string GetMonitorItemTypeImageSource(MonitorItem monitorItem)
+    {        
+        return $"../images/monitor_itemTypes/{MonitorItemTypes.First(mit => mit.ItemType == monitorItem.MonitorItemType).ImageSource}";
+    }
 
     private async Task DownloadCSVAsync()
     {

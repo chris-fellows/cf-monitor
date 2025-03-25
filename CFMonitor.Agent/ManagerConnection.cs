@@ -16,25 +16,16 @@ namespace CFMonitor.Agent
     internal class ManagerConnection
     {        
         private ConnectionTcp _connection;
-
-        // Message converters
-        private IExternalMessageConverter<GetFileObjectRequest> _getFileObjectRequestConverter = new GetFileObjectRequestConverter();
-        private IExternalMessageConverter<GetFileObjectResponse> _getFileObjectResponseConverter = new GetFileObjectResponseConverter();
-        private IExternalMessageConverter<GetMonitorItemsRequest> _getMonitorItemsRequestConverter = new GetMonitorItemsRequestConverter();
-        private IExternalMessageConverter<GetMonitorItemsResponse> _getMonitorItemsResponseConverter = new GetMonitorItemsResponseConverter();
-        private IExternalMessageConverter<Heartbeat> _heartbeatConverter = new HeartbeatConverter();
-        private IExternalMessageConverter<MonitorItemResultMessage> _monitorItemResultMessageConverter = new MonitorItemResultMessageConverter();
-        private IExternalMessageConverter<MonitorItemUpdated> _monitorItemUpdatedConverter = new MonitorItemUpdatedConverter();
+            
+        private readonly MessageConvertersList _messageConverters = new();
 
         //public delegate void GetMonitorItemsResponseReceived(GetMonitorItemsResponse response);
         //public event GetMonitorItemsResponseReceived? OnGetMonitorItemsResponseReceived;
 
         public delegate void MonitorItemUpdatedReceived(MonitorItemUpdated monitorItemUpdated);
-        public event MonitorItemUpdatedReceived? OnMonitorItemUpdated;
-            
+        public event MonitorItemUpdatedReceived? OnMonitorItemUpdated;            
 
         private List<MessageBase> _responseMessages = new List<MessageBase>();
-
 
         private TimeSpan _responseTimeout = TimeSpan.FromSeconds(30);
 
@@ -64,7 +55,7 @@ namespace CFMonitor.Agent
         public GetMonitorItemsResponse SendGetMonitorItems(GetMonitorItemsRequest getMonitorItemsRequest, EndpointInfo remoteEndpointInfo)
         {
             // Send request
-            _connection.SendMessage(_getMonitorItemsRequestConverter.GetConnectionMessage(getMonitorItemsRequest), remoteEndpointInfo);
+            _connection.SendMessage(_messageConverters.GetMonitorItemsRequestConverter.GetConnectionMessage(getMonitorItemsRequest), remoteEndpointInfo);
 
             // Wait for response
             var responseMessages = new List<MessageBase>();
@@ -83,6 +74,72 @@ namespace CFMonitor.Agent
             throw new MessageConnectionException("No response to get monitor items");
         }
 
+        public GetSystemValueTypesResponse SendGetSystemValueTypes(GetSystemValueTypesRequest getSystemValueTypesRequest, EndpointInfo remoteEndpointInfo)
+        {
+            // Send request
+            _connection.SendMessage(_messageConverters.GetSystemValueTypesRequestConverter.GetConnectionMessage(getSystemValueTypesRequest), remoteEndpointInfo);
+
+            // Wait for response
+            var responseMessages = new List<MessageBase>();
+            var isGotAllMessages = WaitForResponses(getSystemValueTypesRequest, _responseTimeout, _responseMessages,
+                  (responseMessage) =>
+                  {
+                      responseMessages.Add(responseMessage);
+                  });
+
+
+            if (isGotAllMessages)
+            {
+                return (GetSystemValueTypesResponse)responseMessages.First();
+            }
+
+            throw new MessageConnectionException("No response to get system value types");
+        }
+
+        public GetEventItemsResponse SendGetEventItems(GetEventItemsRequest getEventItemsRequest, EndpointInfo remoteEndpointInfo)
+        {
+            // Send request
+            _connection.SendMessage(_messageConverters.GetEventItemsRequestConverter.GetConnectionMessage(getEventItemsRequest), remoteEndpointInfo);
+
+            // Wait for response
+            var responseMessages = new List<MessageBase>();
+            var isGotAllMessages = WaitForResponses(getEventItemsRequest, _responseTimeout, _responseMessages,
+                  (responseMessage) =>
+                  {
+                      responseMessages.Add(responseMessage);
+                  });
+
+
+            if (isGotAllMessages)
+            {
+                return (GetEventItemsResponse)responseMessages.First();
+            }
+
+            throw new MessageConnectionException("No response to get event items");
+        }
+
+        public GetMonitorAgentsResponse SendGetMonitorAgents(GetMonitorAgentsRequest getMonitorAgentsRequest, EndpointInfo remoteEndpointInfo)
+        {
+            // Send request
+            _connection.SendMessage(_messageConverters.GetMonitorAgentsRequestConverter.GetConnectionMessage(getMonitorAgentsRequest), remoteEndpointInfo);
+
+            // Wait for response
+            var responseMessages = new List<MessageBase>();
+            var isGotAllMessages = WaitForResponses(getMonitorAgentsRequest, _responseTimeout, _responseMessages,
+                  (responseMessage) =>
+                  {
+                      responseMessages.Add(responseMessage);
+                  });
+
+
+            if (isGotAllMessages)
+            {
+                return (GetMonitorAgentsResponse)responseMessages.First();
+            }
+
+            throw new MessageConnectionException("No response to get monitor agents");
+        }
+
         /// <summary>
         /// Send heartbeat
         /// </summary>
@@ -90,7 +147,7 @@ namespace CFMonitor.Agent
         /// <param name="remoteEndpointInfo"></param>
         public void SendHeartbeat(Heartbeat heartbeat, EndpointInfo remoteEndpointInfo)
         {
-            _connection.SendMessage(_heartbeatConverter.GetConnectionMessage(heartbeat), remoteEndpointInfo);
+            _connection.SendMessage(_messageConverters.HeartbeatConverter.GetConnectionMessage(heartbeat), remoteEndpointInfo);
         }
 
         /// <summary>
@@ -100,7 +157,7 @@ namespace CFMonitor.Agent
         /// <param name="remoteEndpointInfo"></param>
         public void SendMonitorItemResultMessage(MonitorItemResultMessage monitorItemResult, EndpointInfo remoteEndpointInfo)
         {
-            _connection.SendMessage(_monitorItemResultMessageConverter.GetConnectionMessage(monitorItemResult), remoteEndpointInfo);
+            _connection.SendMessage(_messageConverters.MonitorItemResultMessageConverter.GetConnectionMessage(monitorItemResult), remoteEndpointInfo);
         }
 
         /// <summary>
@@ -112,29 +169,33 @@ namespace CFMonitor.Agent
         {
             switch (connectionMessage.TypeId)
             {
-                //case MessageTypeIds.GetMonitorItemsResponse:
-                //    {
-                //        // Get response
-                //        var getMonitorItemsResponse = _getMonitorItemsResponseConverter.GetExternalMessage(connectionMessage);
+                case MessageTypeIds.GetEventItemsResponse:                    
+                    var getEventItemsResponse = _messageConverters.GetEventItemsResponseConverter.GetExternalMessage(connectionMessage);
+                    _responseMessages.Add(getEventItemsResponse);                    
+                    break;
 
-                //        // Notify response
-                //        if (OnGetMonitorItemsResponseReceived != null)
-                //        {
-                //            OnGetMonitorItemsResponseReceived(getMonitorItemsResponse);
-                //        }
-                //    }
-                //    break;
+                case MessageTypeIds.GetMonitorAgentsResponse:
+                    var getMonitorAgentsResponse = _messageConverters.GetMonitorAgentsResponseConverter.GetExternalMessage(connectionMessage);
+                    _responseMessages.Add(getMonitorAgentsResponse);
+                    break;
 
-                case MessageTypeIds.MonitorItemUpdated:
-                    {
-                        var monitorItemUpdated = _monitorItemUpdatedConverter.GetExternalMessage(connectionMessage);
+                case MessageTypeIds.GetMonitorItemsResponse:                    
+                    var getMonitorItemsResponse = _messageConverters.GetMonitorItemsResponseConverter.GetExternalMessage(connectionMessage);
+                    _responseMessages.Add(getMonitorItemsResponse);                    
+                    break;
 
+                case MessageTypeIds.GetSystemValueTypesResponse:
+                    var getSystemValueTypesResponse = _messageConverters.GetSystemValueTypesResponseConverter.GetExternalMessage(connectionMessage);
+                    _responseMessages.Add(getSystemValueTypesResponse);
+                    break;
+                
+                case MessageTypeIds.MonitorItemUpdated:                    
+                        var monitorItemUpdated = _messageConverters.MonitorItemUpdatedConverter.GetExternalMessage(connectionMessage);
                         if (OnMonitorItemUpdated != null)
                         {
                             OnMonitorItemUpdated(monitorItemUpdated);
-                        }                        
-                    }
-                    break;
+                        }                                            
+                    break;                
             }
         }
 

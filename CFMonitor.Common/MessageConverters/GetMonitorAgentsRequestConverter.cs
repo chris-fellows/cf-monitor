@@ -1,26 +1,26 @@
-﻿using CFMonitor.Models.Messages;
-using CFConnectionMessaging.Interfaces;
+﻿using CFConnectionMessaging.Interfaces;
+using CFConnectionMessaging.Models;
+using CFMonitor.Constants;
+using CFMonitor.Models.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using CFConnectionMessaging.Models;
-using CFMonitor.Constants;
 
 namespace CFMonitor.MessageConverters
 {
-    public class GetFileObjectRequestConverter : IExternalMessageConverter<GetFileObjectRequest>
+    public class GetMonitorAgentsRequestConverter : IExternalMessageConverter<GetMonitorAgentsRequest>
     {
-        public ConnectionMessage GetConnectionMessage(GetFileObjectRequest externalMessage)
+        public ConnectionMessage GetConnectionMessage(GetMonitorAgentsRequest externalMessage)
         {
             var connectionMessage = new ConnectionMessage()
             {
                 Id = externalMessage.Id,
-                TypeId = MessageTypeIds.GetFileObjectRequest,
+                TypeId = MessageTypeIds.GetMonitorAgentsRequest,
                 Parameters = new List<ConnectionMessageParameter>()
                 {
-                    new ConnectionMessageParameter()
+                       new ConnectionMessageParameter()
                     {
                         Name = "SecurityKey",
                         Value = externalMessage.SecurityKey
@@ -35,16 +35,16 @@ namespace CFMonitor.MessageConverters
             return connectionMessage;
         }
 
-        public GetFileObjectRequest GetExternalMessage(ConnectionMessage connectionMessage)
+        public GetMonitorAgentsRequest GetExternalMessage(ConnectionMessage connectionMessage)
         {
-            var getFileObjectRequest = new GetFileObjectRequest()
+            var getEventItemsRequest = new GetMonitorAgentsRequest()
             {
                 Id = connectionMessage.Id,
                 SecurityKey = connectionMessage.Parameters.First(p => p.Name == "SecurityKey").Value,
                 SenderAgentId = connectionMessage.Parameters.First(p => p.Name == "SenderAgentId").Value
             };
 
-            return getFileObjectRequest;
+            return getEventItemsRequest;
         }
     }
 }

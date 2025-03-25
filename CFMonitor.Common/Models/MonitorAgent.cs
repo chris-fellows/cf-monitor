@@ -40,6 +40,11 @@ namespace CFMonitor.Models
         public string Version { get; set; } = String.Empty;
 
         /// <summary>
+        /// Security key
+        /// </summary>
+        public String SecurityKey { get; set; } = String.Empty;
+
+        /// <summary>
         /// Last heartbeat
         /// </summary>
         public DateTimeOffset HeartbeatDateTime { get; set; } = DateTimeOffset.MinValue;        

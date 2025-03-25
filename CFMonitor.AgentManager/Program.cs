@@ -8,6 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CFMonitor.AgentManager.Models;
 using CFMonitor.SystemTask;
+using CFUtilities.Interfaces;
+using CFUtilities.Services;
 
 internal static class Program
 {
@@ -17,11 +19,11 @@ internal static class Program
 
         var serviceProvider = CreateServiceProvider();
 
+        // Get system config
+        var placeholderService = serviceProvider.GetRequiredService<IPlaceholderService>();
+        var systemConfig = GetSystemConfig(placeholderService);
+       
         // Start worker
-        var systemConfig = new SystemConfig()
-        {
-            LocalPort = 10000
-        };
         var worker = new Worker(serviceProvider, systemConfig);
         worker.Start();
 
@@ -42,11 +44,25 @@ internal static class Program
         Console.WriteLine("Terminated CF Monitor Agent Manager");
     }
 
+    /// <summary>
+    /// Gets system config. Replaces placeholders in config file. E.g. Environment variable.
+    /// </summary>
+    /// <param name="placeholderService"></param>
+    /// <returns></returns>
+    private static SystemConfig GetSystemConfig(IPlaceholderService placeholderService)
+    {
+        return new SystemConfig()
+        {
+            LocalPort = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["LocalPort"].ToString(), new()))
+        };
+    }
 
     private static IServiceProvider CreateServiceProvider()
     {
         var configFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Config");
-        var logFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Log");
+        //var logFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Log");
+
+        configFolder = "D:\\Data\\Dev\\C#\\cf-monitor\\CFMonitor.UI\\bin\\Debug\\net8.0\\Config";   // TODO: Remove this
 
         var configuration = new ConfigurationBuilder()
             .Build();
@@ -81,7 +97,7 @@ internal static class Program
                 {
                     return new XmlMonitorAgentGroupService(Path.Combine(configFolder, "MonitorAgentGroup"));
                 })
-                .AddScoped<IMonitorItemOutputService>((scope) =>                
+                .AddScoped<IMonitorItemOutputService>((scope) =>
                 {
                     return new XmlMonitorItemOutputService(Path.Combine(configFolder, "MonitorItemOutput"));
                 })
@@ -103,6 +119,7 @@ internal static class Program
                 })
 
             .AddScoped<IPasswordService, PBKDF2PasswordService>()   // Needed for IUserService
+            .AddScoped<IPlaceholderService, PlaceholderService>()
             .AddScoped<IAuditEventFactory, AuditEventFactory>()
             .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()           
             
@@ -119,16 +136,7 @@ internal static class Program
                 };
                 return new SystemTaskList(4, systemTaskConfigs);
             })
-
-            //  // Seed
-            //.AddKeyedScoped<IEntityReader<ActionItemType>, ActionItemTypeSeed1>("ActionItemTypeSeed1")
-            //.AddKeyedScoped<IEntityReader<AuditEventType>, AuditEventTypeSeed1>("AuditEventTypeSeed1")
-            //.AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed1")
-            //.AddKeyedScoped<IEntityReader<MonitorAgent>, MonitorAgentSeed1>("MonitorAgentSeed1")
-            //.AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed1")
-            //.AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed1")
-            //.AddKeyedScoped<IEntityReader<User>, UserSeed1>("UserSeed1")
-
+      
             .BuildServiceProvider();
 
         return serviceProvider;

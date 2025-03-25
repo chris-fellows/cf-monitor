@@ -12,17 +12,17 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.MessageConverters
 {
-    public class GetMonitorItemsResponseConverter : IExternalMessageConverter<GetMonitorItemsResponse>
+    public class GetSystemValueTypesResponseConverter : IExternalMessageConverter<GetSystemValueTypesResponse>
     {
-        public ConnectionMessage GetConnectionMessage(GetMonitorItemsResponse externalMessage)
+        public ConnectionMessage GetConnectionMessage(GetSystemValueTypesResponse externalMessage)
         {
             var connectionMessage = new ConnectionMessage()
             {
                 Id = externalMessage.Id,
-                TypeId = MessageTypeIds.GetMonitorItemsResponse,
+                TypeId = MessageTypeIds.GetSystemValueTypesResponse,
                 Parameters = new List<ConnectionMessageParameter>()
                 {
-                     new ConnectionMessageParameter()
+                        new ConnectionMessageParameter()
                     {
                         Name = "Response",
                         Value = externalMessage.Response == null ? "" :
@@ -31,9 +31,9 @@ namespace CFMonitor.MessageConverters
                     },
                    new ConnectionMessageParameter()
                    {
-                       Name = "MonitorItems",
-                       Value = externalMessage.MonitorItems == null ? "" :
-                                        JsonUtilities.SerializeToBase64String(externalMessage.MonitorItems,
+                       Name = "SystemValueTypes",
+                       Value = externalMessage.SystemValueTypes == null ? "" :
+                                        JsonUtilities.SerializeToBase64String(externalMessage.SystemValueTypes,
                                         JsonUtilities.DefaultJsonSerializerOptions)
                    }
                 }
@@ -41,9 +41,9 @@ namespace CFMonitor.MessageConverters
             return connectionMessage;
         }
 
-        public GetMonitorItemsResponse GetExternalMessage(ConnectionMessage connectionMessage)
+        public GetSystemValueTypesResponse GetExternalMessage(ConnectionMessage connectionMessage)
         {
-            var externalMessage = new GetMonitorItemsResponse()
+            var externalMessage = new GetSystemValueTypesResponse()
             {
                 Id = connectionMessage.Id,
             };
@@ -56,10 +56,10 @@ namespace CFMonitor.MessageConverters
             }
 
             // Get monitor agents
-            var monitorItemsParameter = connectionMessage.Parameters.First(p => p.Name == "MonitorItems");
-            if (!String.IsNullOrEmpty(monitorItemsParameter.Value))
+            var systemValueTypesParameter = connectionMessage.Parameters.First(p => p.Name == "SystemValueTypes");
+            if (!String.IsNullOrEmpty(systemValueTypesParameter.Value))
             {
-                externalMessage.MonitorItems = JsonUtilities.DeserializeFromBase64String<List<MonitorItem>>(monitorItemsParameter.Value, JsonUtilities.DefaultJsonSerializerOptions);
+                externalMessage.SystemValueTypes = JsonUtilities.DeserializeFromBase64String<List<SystemValueType>>(systemValueTypesParameter.Value, JsonUtilities.DefaultJsonSerializerOptions);
             }
 
             return externalMessage;

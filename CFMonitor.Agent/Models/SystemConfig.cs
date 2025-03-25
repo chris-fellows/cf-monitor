@@ -1,8 +1,17 @@
-﻿namespace CFMonitor.Agent.Models
+﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+
+namespace CFMonitor.Agent.Models
 {
     public class SystemConfig
     {
+        public string MonitorAgentId { get; set; } = String.Empty;
+
         public int LocalPort { get; set; }
+
+        public string AgentManagerIp { get; set; } = String.Empty;
+
+        public int AgentManagerPort { get; set; }
         
         public int MaxConcurrentChecks { get; set; }
 

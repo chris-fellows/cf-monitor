@@ -12,17 +12,17 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.MessageConverters
 {
-    public class GetMonitorItemsResponseConverter : IExternalMessageConverter<GetMonitorItemsResponse>
+    public class GetEventItemsResponseConverter : IExternalMessageConverter<GetEventItemsResponse>
     {
-        public ConnectionMessage GetConnectionMessage(GetMonitorItemsResponse externalMessage)
+        public ConnectionMessage GetConnectionMessage(GetEventItemsResponse externalMessage)
         {
             var connectionMessage = new ConnectionMessage()
             {
                 Id = externalMessage.Id,
-                TypeId = MessageTypeIds.GetMonitorItemsResponse,
+                TypeId = MessageTypeIds.GetEventItemsResponse,
                 Parameters = new List<ConnectionMessageParameter>()
                 {
-                     new ConnectionMessageParameter()
+                   new ConnectionMessageParameter()
                     {
                         Name = "Response",
                         Value = externalMessage.Response == null ? "" :
@@ -31,9 +31,9 @@ namespace CFMonitor.MessageConverters
                     },
                    new ConnectionMessageParameter()
                    {
-                       Name = "MonitorItems",
-                       Value = externalMessage.MonitorItems == null ? "" :
-                                        JsonUtilities.SerializeToBase64String(externalMessage.MonitorItems,
+                       Name = "EventItems",                       
+                       Value = externalMessage.EventItems == null ? "" :
+                                        JsonUtilities.SerializeToBase64String(externalMessage.EventItems,
                                         JsonUtilities.DefaultJsonSerializerOptions)
                    }
                 }
@@ -41,9 +41,9 @@ namespace CFMonitor.MessageConverters
             return connectionMessage;
         }
 
-        public GetMonitorItemsResponse GetExternalMessage(ConnectionMessage connectionMessage)
+        public GetEventItemsResponse GetExternalMessage(ConnectionMessage connectionMessage)
         {
-            var externalMessage = new GetMonitorItemsResponse()
+            var externalMessage = new GetEventItemsResponse()
             {
                 Id = connectionMessage.Id,
             };
@@ -55,12 +55,13 @@ namespace CFMonitor.MessageConverters
                 externalMessage.Response = JsonUtilities.DeserializeFromBase64String<MessageResponse>(responseParameter.Value, JsonUtilities.DefaultJsonSerializerOptions);
             }
 
-            // Get monitor agents
-            var monitorItemsParameter = connectionMessage.Parameters.First(p => p.Name == "MonitorItems");
-            if (!String.IsNullOrEmpty(monitorItemsParameter.Value))
+            // Get event items
+            var eventItemsParameter = connectionMessage.Parameters.First(p => p.Name == "EventItems");
+            if (!String.IsNullOrEmpty(eventItemsParameter.Value))
             {
-                externalMessage.MonitorItems = JsonUtilities.DeserializeFromBase64String<List<MonitorItem>>(monitorItemsParameter.Value, JsonUtilities.DefaultJsonSerializerOptions);
+                externalMessage.EventItems = JsonUtilities.DeserializeFromBase64String<List<EventItem>>(eventItemsParameter.Value, JsonUtilities.DefaultJsonSerializerOptions);                
             }
+
 
             return externalMessage;
         }

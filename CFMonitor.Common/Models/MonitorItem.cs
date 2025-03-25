@@ -32,20 +32,13 @@ namespace CFMonitor.Models
         /// Schedule for checking item
         /// </summary>
         [XmlElement("MonitorItemSchedule")]
-        public MonitorItemSchedule MonitorItemSchedule = new MonitorItemSchedule();
-        
-        ///// <summary>
-        ///// Events to handle
-        ///// </summary>
-        //[XmlArray("EventItems")]
-        //[XmlArrayItem("EventItem")]
-        //public List<EventItem> EventItems = new List<EventItem>();
-
+        public MonitorItemSchedule MonitorItemSchedule { get; set; } = new MonitorItemSchedule();
+                
         /// <summary>
         /// Parameters that are specific to monitor item type
         /// </summary>
         [XmlArray("Parameters")]
         [XmlArrayItem("Parameter")]
-        public List<MonitorItemParameter> Parameters = new List<MonitorItemParameter>();           
+        public List<MonitorItemParameter> Parameters { get; set; } = new List<MonitorItemParameter>();           
     }
 }

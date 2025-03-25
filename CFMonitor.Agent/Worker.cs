@@ -1,5 +1,7 @@
-﻿using CFMonitor.Agent.Models;
+﻿using CFConnectionMessaging.Models;
+using CFMonitor.Agent.Models;
 using CFMonitor.Constants;
+using CFMonitor.Exceptions;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.Models.Messages;
@@ -10,17 +12,17 @@ using System.Reflection;
 namespace CFMonitor.Agent
 {
     /// <summary>
-    /// Agent worker. Performs monitoring
+    /// Agent worker. Performs monitoring.
+    /// 
+    /// Notes:
+    /// - Data is obtained from Agent Manager and stored locally.
+    /// - Items and checked and result is sent to Agent Manager.
     /// </summary>
     public class Worker
     {
         private readonly System.Timers.Timer _timer;
         
-        private ManagerConnection _managerConnection = new ManagerConnection();
-
-        private MonitorAgent? _monitorAgent;
-
-        private List<MonitorItem> _monitorItems = new List<MonitorItem>();
+        private ManagerConnection _managerConnection = new ManagerConnection();              
         
         private DateTimeOffset _lastHeartbeatTime = DateTimeOffset.MinValue;
 
@@ -30,9 +32,20 @@ namespace CFMonitor.Agent
 
         private readonly SystemConfig _systemConfig;
 
-        private readonly ISystemTaskList _systemTaskList;
-             
+        //private readonly ISystemTaskList _systemTaskList;
 
+        // Whether we need to refresh local data
+        private bool _isNeedToRefreshData = true;
+
+        private List<MonitorItem> _monitorItems = new();
+
+        // Local data services, populated from Agent Manager connection
+        // We only need to store data used by IChecker
+        private readonly IEventItemService _eventItemService;
+        private readonly IMonitorAgentService _monitorAgentService;
+        private readonly IMonitorItemService _monitorItemService;
+        private readonly ISystemValueTypeService _systemValueTypeService;
+             
         private class ActiveMonitorItemTask
         {
             public MonitorItem? MonitorItem { get; set; } = new();
@@ -44,8 +57,13 @@ namespace CFMonitor.Agent
         {
             _serviceProvider = serviceProvider; 
             _systemConfig = systemConfig;
-            _systemTaskList = serviceProvider.GetRequiredService<ISystemTaskList>();
-            
+            //_systemTaskList = serviceProvider.GetRequiredService<ISystemTaskList>();
+
+            _eventItemService = _serviceProvider.GetRequiredService<IEventItemService>();
+            _monitorAgentService = _serviceProvider.GetRequiredService<IMonitorAgentService>();
+            _monitorItemService = _serviceProvider.GetRequiredService<IMonitorItemService>();
+            _systemValueTypeService = _serviceProvider.GetRequiredService<ISystemValueTypeService>();
+
             _timer = new System.Timers.Timer();
             _timer.Elapsed += _timer_Elapsed;
             _timer.Interval = 5000;
@@ -54,7 +72,8 @@ namespace CFMonitor.Agent
             // Set handler for monitor item updated message
             _managerConnection.OnMonitorItemUpdated += delegate (MonitorItemUpdated monitorItemUpdated)
             {
-                _monitorItems.Clear();
+                Console.WriteLine("Received notification that monitor items have been updated");
+                _isNeedToRefreshData = true;
             };
         }
 
@@ -78,17 +97,26 @@ namespace CFMonitor.Agent
             {
                 _timer.Enabled = false;
 
-                // Get monitor items from Agent Manager
-                if (!_monitorItems.Any())
+                // Refresh data from Agent Manager
+                if (_isNeedToRefreshData)
                 {
+                    GetMonitorAgents();
+                    GetSystemValueTypes();
+                    GetEventItems();
                     GetMonitorItems();
-                }
-                
-                UpdateHeartbeat(false);
 
-                CheckMonitorItems();
-                
-                CheckMonitorItemsCompleted();
+                    _isNeedToRefreshData = false;
+                }
+
+                // Only do processing if we have all data
+                if (!_isNeedToRefreshData)
+                {
+                    UpdateHeartbeat(false);
+
+                    CheckMonitorItems();
+
+                    CheckMonitorItemsCompleted();
+                }
             }
             catch
             {
@@ -100,21 +128,146 @@ namespace CFMonitor.Agent
             }
         }
 
+        private EndpointInfo ManagerEndpointInfo => new EndpointInfo() { Ip = _systemConfig.AgentManagerIp, Port = _systemConfig.AgentManagerPort };
+
         /// <summary>
-        /// Gets monitor item list from Agent Manager
+        /// Gets monitor agents from Agent Manager, saves to local storage
         /// </summary>
-        private void GetMonitorItems()
+        private int GetMonitorAgents()
         {
+            Console.WriteLine($"Getting Monitor Agents");
+
             // Send request, wait for response
-            var request = new GetMonitorItemsRequest()
-            { 
-                SenderAgentId = _monitorAgent.Id,
+            var request = new GetMonitorAgentsRequest()
+            {
+                SenderAgentId = _systemConfig.MonitorAgentId,
                 SecurityKey = _systemConfig.SecurityKey
             };
-            var response = _managerConnection.SendGetMonitorItems(request, null);
+            var response = _managerConnection.SendGetMonitorAgents(request, ManagerEndpointInfo);
+
+            // Delete old monitor items
+            var monitorAgents = _monitorAgentService.GetAll();
+            while (monitorAgents.Any())
+            {
+                _monitorAgentService.DeleteById(monitorAgents.First().Id);
+                monitorAgents.RemoveAt(0);
+            }
+
+            // Save monitor agents
+            foreach (var monitorAgent in response.MonitorAgents)
+            {
+                _monitorAgentService.Add(monitorAgent);
+            }
+
+            Console.WriteLine($"Got Monitor Agents");
+
+            return response.MonitorAgents.Count;
+        }
+
+        /// <summary>
+        /// Gets monitor item list from Agent Manager, saves to local storage
+        /// </summary>
+        private int GetMonitorItems()
+        {
+            Console.WriteLine($"Getting monitor items");
+
+            // Send request, wait for response
+            var request = new GetMonitorItemsRequest()
+            {
+                SenderAgentId = _systemConfig.MonitorAgentId,
+                SecurityKey = _systemConfig.SecurityKey
+            };
+            var response = _managerConnection.SendGetMonitorItems(request, ManagerEndpointInfo);
+
+            // Delete old monitor items
+            var monitorItems = _monitorItemService.GetAll();
+            while (monitorItems.Any())
+            {
+                _monitorItemService.DeleteById(monitorItems.First().Id);
+                monitorItems.RemoveAt(0);
+            }
+
+            // Save monitor items
+            foreach (var monitorItem in response.MonitorItems)
+            {
+                _monitorItemService.Add(monitorItem);
+            }
 
             // Store monitor items
-            _monitorItems = response.MonitorItems;           
+            _monitorItems = response.MonitorItems;
+
+            Console.WriteLine($"Got monitor items");
+
+            return response.MonitorItems.Count;
+        }
+
+        /// <summary>
+        /// Gets event items from Agent Manager, saves to local storage
+        /// </summary>
+        private int GetEventItems()
+        {
+            Console.WriteLine($"Getting event items");
+
+            // Send request, wait for response
+            var request = new GetEventItemsRequest()
+            {
+                SenderAgentId = _systemConfig.MonitorAgentId,
+                SecurityKey = _systemConfig.SecurityKey
+            };
+
+                var response = _managerConnection.SendGetEventItems(request, ManagerEndpointInfo);
+
+                // Delete old monitor items
+                var eventItems = _eventItemService.GetAll();
+                while (eventItems.Any())
+                {
+                    _eventItemService.DeleteById(eventItems.First().Id);
+                    eventItems.RemoveAt(0);
+                }
+
+                // Save event items
+                foreach (var eventItem in response.EventItems)
+                {
+                    _eventItemService.Add(eventItem);
+                }
+           
+            Console.WriteLine($"Got event items");
+
+            return response.EventItems.Count;
+        }
+
+        /// <summary>
+        /// Gets system value types from Agent Manager, saves to local storage
+        /// </summary>
+        private int GetSystemValueTypes()
+        {
+            Console.WriteLine($"Getting system value types");
+
+            // Send request, wait for response
+            var request = new GetSystemValueTypesRequest()
+            {
+                SenderAgentId = _systemConfig.MonitorAgentId,
+                SecurityKey = _systemConfig.SecurityKey
+            };
+            var response = _managerConnection.SendGetSystemValueTypes(request, ManagerEndpointInfo);
+
+            // Delete old monitor items
+            var systemValueTypes = _systemValueTypeService.GetAll();
+            while (systemValueTypes.Any())
+            {
+                _systemValueTypeService.DeleteById(systemValueTypes.First().Id);
+                systemValueTypes.RemoveAt(0);
+            }
+
+            // Save system value types
+            foreach (var systemValueType in response.SystemValueTypes)
+            {
+                _systemValueTypeService.Add(systemValueType);
+            }
+
+            Console.WriteLine($"Got system value types");
+
+            return response.SystemValueTypes.Count;
         }
 
         /// <summary>
@@ -129,6 +282,8 @@ namespace CFMonitor.Agent
                 FilesRootFolder = _systemConfig.MonitorItemFilesRootFolder
             };
 
+            MonitorAgent? monitorAgent = null;
+
             // Check monitor items not active            
             foreach(var monitorItem in _monitorItems.Where(mi => !_activeMonitorItemTasks.Any(t => t.MonitorItem.Id == mi.Id)))
             {
@@ -136,10 +291,12 @@ namespace CFMonitor.Agent
                 {
                     if (monitorItem.MonitorItemSchedule.IsTime(DateTime.UtcNow))   // Overdue
                     {
+                        monitorAgent = monitorAgent ?? _monitorAgentService.GetById(_systemConfig.MonitorAgentId);
+
                         var activeTask = new ActiveMonitorItemTask()
                         {
                             MonitorItem = monitorItem,
-                            Task = CheckMonitorItemAsync(_monitorAgent, monitorItem, checkerConfig)
+                            Task = CheckMonitorItemAsync(monitorAgent, monitorItem, checkerConfig)
                         };
                         _activeMonitorItemTasks.Add(activeTask);
                     }
@@ -176,11 +333,11 @@ namespace CFMonitor.Agent
                 var monitorItemOutput = activeMonitorItemTask.Task.Result;
 
                 // Set Monitor Agent Id as IChecker isn't aware of Monitor Agent
-                monitorItemOutput.MonitorAgentId = _monitorAgent.Id;
+                monitorItemOutput.MonitorAgentId = _systemConfig.MonitorAgentId;
 
                 var monitorItemResultMessage = new MonitorItemResultMessage()
                 {                                        
-                    SenderAgentId = _monitorAgent.Id,
+                    SenderAgentId = _systemConfig.MonitorAgentId,
                     SecurityKey = _systemConfig.SecurityKey,
                     MonitorItemOutput = activeMonitorItemTask.Task.Result,
                 };                
@@ -203,6 +360,8 @@ namespace CFMonitor.Agent
         {
             return Task.Factory.StartNew(() =>
             {
+                Console.WriteLine($"Checking {monitorItem.Name}");
+
                 var monitorItemOutput = new MonitorItemOutput();
 
                 using (var scope = _serviceProvider.CreateScope())
@@ -213,7 +372,9 @@ namespace CFMonitor.Agent
                         monitorItemOutput = checker.CheckAsync(monitorAgent, monitorItem, checkerConfig).Result;
                     }
                 }
-                
+
+                Console.WriteLine($"Checked {monitorItem.Name}");
+
                 return monitorItemOutput;
             });
         }
@@ -225,17 +386,21 @@ namespace CFMonitor.Agent
         {
             if (force || _lastHeartbeatTime.AddSeconds(60) <= DateTimeOffset.UtcNow)
             {
+                Console.WriteLine("Sending heartbeat");
+
                 _lastHeartbeatTime = DateTimeOffset.UtcNow;
 
                 var heartbeat = new Heartbeat()
                 {
-                    SenderAgentId = _monitorAgent.Id,
+                    SenderAgentId = _systemConfig.MonitorAgentId,
                     SecurityKey = _systemConfig.SecurityKey,
                     MachineName = Environment.MachineName,
                     UserName = Environment.UserName,
                     Version = Assembly.GetExecutingAssembly().GetName().Version.ToString()
                 };
-                _managerConnection.SendHeartbeat(heartbeat, null);
+                _managerConnection.SendHeartbeat(heartbeat, ManagerEndpointInfo);
+
+                Console.WriteLine("Sent heartbeat");
             }  
         }
     }

@@ -2,6 +2,7 @@
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using CFMonitor.Constants
+@using CFMonitor.Enums
 @using CFMonitor.EntityWriter
 @using CFMonitor.Interfaces
 @using CFMonitor.Models
@@ -11,6 +12,10 @@
 @using CFUtilities.Utilities
 @inject IAuditEventService AuditEventService
 @inject IAuditEventTypeService AuditEventTypeService
+@inject IMonitorAgentService MonitorAgentService
+@inject IMonitorItemService MonitorItemService
+@inject IMonitorItemOutputService MonitorItemOutputService
+@inject IMonitorItemTypeService MonitorItemTypeService
 @inject ISystemValueTypeService SystemValueTypeService
 @inject IUserService UserService
 
@@ -78,7 +83,19 @@ else
 
         <TemplateColumn Title="Type" Context="auditevent">
             <ImageAndText ImageSource="@(GetAuditEventTypeImageSource(auditevent))" Text="@(GetAuditEventTypeName(auditevent))" />
-        </TemplateColumn>      
+        </TemplateColumn>
+
+        <TemplateColumn Title="Monitor Agent" Context="auditevent">
+            <a href="@($"monitoragents/details?id={GetMonitorAgentId(auditevent)}")">@($"{GetMonitorAgentMachineName(auditevent)}")</a>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Monitor Item" Context="auditevent">
+            <ImageAndText ImageSource="@(GetMonitorItemTypeImageSource(auditevent))" Text="@(GetMonitorItemName(auditevent))" />
+        </TemplateColumn>
+
+        <TemplateColumn Title="Monitor Item" Context="auditevent">
+            <a href="@($"monitoritems/details?id={GetMonitorItemId(auditevent)}")">@($"{GetMonitorItemName(auditevent)}")</a>
+        </TemplateColumn>
 
         <TemplateColumn Context="auditevent">        
             <a href="@($"auditevents/details?id={auditevent.Id}")">Details</a>        
@@ -89,7 +106,10 @@ else
 }
 
 @code {
-    private List<AuditEventType> AuditEventTypes = new();   
+    private List<AuditEventType> AuditEventTypes = new();
+    private List<MonitorAgent> MonitorAgents = new();
+    private List<MonitorItem> MonitorItems = new();
+    private List<MonitorItemType> MonitorItemTypes = new();
     private List<SystemValueType> SystemValueTypes = new();    
 
     private PaginationState Pagination = new PaginationState() { ItemsPerPage = ConfigUtilities.ItemsPerListPage };
@@ -134,9 +154,12 @@ else
     {
         IsBusy = true;
 
-        AuditEventTypes = AuditEventTypeService.GetAll();        
-        SystemValueTypes = SystemValueTypeService.GetAll();
-        
+        AuditEventTypes = AuditEventTypeService.GetAll();
+        MonitorAgents = MonitorAgentService.GetAll();
+        MonitorItems = MonitorItemService.GetAll();
+        MonitorItemTypes = MonitorItemTypeService.GetAll();
+        SystemValueTypes = SystemValueTypeService.GetAll();        
+
         CreatedDateRangeFilters = UIUtilities.GetDateRangeFilters();
         _filterCreatedDateRangeId = CreatedDateRangeFilters.First().Id;
 
@@ -155,6 +178,123 @@ else
     {
         return $"../images/audit_event_types/{AuditEventTypes.First(t => t.Id == auditEvent.TypeId).ImageSource}";
     }  
+
+    private string GetMonitorItemTypeImageSource(AuditEvent auditEvent)
+    {
+        var monitorItem = GetMonitorItem(auditEvent);
+
+        if (monitorItem == null)
+        {
+            var monitorItemOutput = GetMonitorItemOutput(auditEvent);
+            if (monitorItemOutput != null)
+            {
+                monitorItem = MonitorItems.First(ma => ma.Id == monitorItemOutput.MonitorItemId);
+            }
+        }
+
+        return monitorItem == null ? "" :
+            $"../images/monitor_itemTypes/{MonitorItemTypes.First(mit => mit.ItemType == monitorItem.MonitorItemType).ImageSource}";
+    }
+
+    private string GetMonitorAgentId(AuditEvent auditEvent)
+    {
+        var monitorAgent = GetMonitorAgent(auditEvent);
+
+        if (monitorAgent == null)
+        {
+            var monitorItemOutput = GetMonitorItemOutput(auditEvent);
+            if (monitorItemOutput != null)
+            {
+                monitorAgent = MonitorAgents.First(ma => ma.Id == monitorItemOutput.MonitorAgentId);
+            }
+        }
+
+        return monitorAgent == null ? "" : monitorAgent.Id;
+    }
+
+    private string GetMonitorAgentMachineName(AuditEvent auditEvent)
+    {
+        var monitorAgent = GetMonitorAgent(auditEvent);
+
+        if (monitorAgent == null)
+        {
+            var monitorItemOutput = GetMonitorItemOutput(auditEvent);
+            if (monitorItemOutput != null)
+            {
+                monitorAgent = MonitorAgents.First(ma => ma.Id == monitorItemOutput.MonitorAgentId);
+            }
+        }
+
+        return monitorAgent == null ? "" : monitorAgent.MachineName;
+    }
+
+    private string GetMonitorItemId(AuditEvent auditEvent)
+    {
+        var monitorItem = GetMonitorItem(auditEvent);
+
+        if (monitorItem == null)
+        {
+            var monitorItemOutput = GetMonitorItemOutput(auditEvent);
+            if (monitorItemOutput != null)
+            {
+                monitorItem = MonitorItems.First(ma => ma.Id == monitorItemOutput.MonitorItemId);
+            }
+        }
+
+        return monitorItem == null ? "" : monitorItem.Id; 
+    }
+
+    private string GetMonitorItemName(AuditEvent auditEvent)
+    {
+        var monitorItem = GetMonitorItem(auditEvent);
+
+        if (monitorItem == null)
+        {
+            var monitorItemOutput = GetMonitorItemOutput(auditEvent);
+            if (monitorItemOutput != null)
+            {
+                monitorItem = MonitorItems.First(ma => ma.Id == monitorItemOutput.MonitorItemId);
+            }
+        }
+
+        return monitorItem == null ? "" : monitorItem.Name;
+    }
+
+    private MonitorAgent? GetMonitorAgent(AuditEvent auditEvent)
+    {
+        var systemValueTypeMonitorAgentId = SystemValueTypes.First(svt => svt.ValueType == CFMonitor.Enums.SystemValueTypes.AEP_MonitorAgentId);
+
+        var parameterMonitorAgentId = auditEvent.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypeMonitorAgentId.Id);
+
+        MonitorAgent? monitorAgent = parameterMonitorAgentId != null ?
+                            MonitorAgents.First(mi => mi.Id == parameterMonitorAgentId.Value) : null;
+
+        return monitorAgent;
+    }
+
+    private MonitorItemOutput? GetMonitorItemOutput(AuditEvent auditEvent)
+    {
+        var systemValueTypeMonitorItemOutputId = SystemValueTypes.First(svt => svt.ValueType == CFMonitor.Enums.SystemValueTypes.AEP_MonitorItemOutputId);
+        var parameterMonitorItemOutputId = auditEvent.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypeMonitorItemOutputId.Id);
+
+        MonitorItemOutput? monitorItemOutput = parameterMonitorItemOutputId != null ?
+                            MonitorItemOutputService.GetById(parameterMonitorItemOutputId.Value) : null;
+
+        return monitorItemOutput;                           
+    }
+
+    private MonitorItem? GetMonitorItem(AuditEvent auditEvent)
+    {
+        var systemValueTypeMonitorItemId = SystemValueTypes.First(svt => svt.ValueType == CFMonitor.Enums.SystemValueTypes.AEP_MonitorItemId);     
+
+        var parameterMonitorItemId = auditEvent.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypeMonitorItemId.Id);        
+
+        MonitorItem? monitorItem = parameterMonitorItemId != null ?
+                            MonitorItems.First(mi => mi.Id == parameterMonitorItemId.Value) : null;   
+       
+        return monitorItem;
+    }
+
 
     private void RefreshAuditEvents()
     {

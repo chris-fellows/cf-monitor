@@ -9,9 +9,7 @@ namespace CFMonitor.Models.Messages
 {
     public class GetFileObjectResponse : MessageBase
     {
-        public byte[] Content { get; set; } = new byte[0];
-
-        public string Name { get; set; } = String.Empty;
+        public FileObject? FileObject { get; set; }
 
         public GetFileObjectResponse()
         {

@@ -25,10 +25,15 @@ namespace CFMonitor.Models
         /// </summary>
         public string Name { get; set; } = String.Empty;
 
+        ///// <summary>
+        ///// Data type
+        ///// </summary>
+        //public SystemValueDataTypes DataType { get; set; }
+
         /// <summary>
-        /// Data type
+        /// Type name
         /// </summary>
-        public SystemValueDataTypes DataType { get; set; }
+        public string ValueTypeName { get; set; } = typeof(String).FullName;
                 
         /// <summary>
         /// Min value for range. E.g. Integer range.

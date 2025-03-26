@@ -14,8 +14,9 @@ namespace CFMonitor.Checkers
     {
         protected readonly IAuditEventFactory _auditEventFactory;
         protected readonly IAuditEventService _auditEventService;
-        protected readonly IAuditEventTypeService _auditEventTypeService;
+        protected readonly IAuditEventTypeService _auditEventTypeService;        
         protected readonly IEventItemService _eventItemService;
+        protected readonly IFileObjectService _fileObjectService;
         protected readonly IPlaceholderService _placeholderService;
         protected readonly ISystemValueTypeService _systemValueTypeService;
 
@@ -23,6 +24,7 @@ namespace CFMonitor.Checkers
                         IAuditEventService auditEventService,
                         IAuditEventTypeService auditEventTypeService,
                         IEventItemService eventItemService, 
+                        IFileObjectService fileObjectService,
                         IPlaceholderService placeholderService,
                         ISystemValueTypeService systemValueTypeService)
         {
@@ -30,6 +32,7 @@ namespace CFMonitor.Checkers
             _auditEventService = auditEventService;
             _auditEventTypeService = auditEventTypeService;
             _eventItemService = eventItemService;
+            _fileObjectService = fileObjectService;
             _placeholderService = placeholderService;
             _systemValueTypeService = systemValueTypeService;
         }

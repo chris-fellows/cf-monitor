@@ -462,6 +462,11 @@ namespace CFMonitor.Services
                     {
                         SystemValueTypeId =systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_RunProcessFileName).Id,
                         Value = "File.exe"
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueTypeId =systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_RunProcessFileObjectId).Id,
+                        Value = ""
                     }
                 },
                 Color = Color.Blue.ToArgb().ToString(),
@@ -604,6 +609,11 @@ namespace CFMonitor.Services
                     {
                         SystemValueTypeId  = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SQLSQL).Id,
                         Value = "select * from Test"
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueTypeId  = systemValueTypes.First(t => t.ValueType == SystemValueTypes.MIP_SQLSQLFileObjectId).Id,
+                        Value = ""
                     }
                 },
                 Color = Color.Blue.ToArgb().ToString(),

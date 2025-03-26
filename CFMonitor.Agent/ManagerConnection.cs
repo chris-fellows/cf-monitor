@@ -48,6 +48,54 @@ namespace CFMonitor.Agent
             _connection.StopListening();
         }
 
+        public GetFileObjectResponse SendGetFileObject(GetFileObjectRequest getFileObjectRequest, EndpointInfo remoteEndpointInfo)
+        {
+            // Send request
+            _connection.SendMessage(_messageConverters.GetFileObjectRequestConverter.GetConnectionMessage(getFileObjectRequest), remoteEndpointInfo);
+
+            // Wait for response
+            var responseMessages = new List<MessageBase>();
+            var isGotAllMessages = WaitForResponses(getFileObjectRequest, _responseTimeout, _responseMessages,
+                  (responseMessage) =>
+                  {
+                      responseMessages.Add(responseMessage);
+                  });
+
+
+            if (isGotAllMessages)
+            {
+                return (GetFileObjectResponse)responseMessages.First();
+            }
+
+            throw new MessageConnectionException("No response to get file object");
+        }
+
+        /// <summary>
+        /// Sends request to get file object
+        /// </summary>
+        /// <param name="chatMessage"></param>
+        public GetFileObjectResponse SendGetMonitorItems(GetFileObjectRequest getFileObjectRequest, EndpointInfo remoteEndpointInfo)
+        {
+            // Send request
+            _connection.SendMessage(_messageConverters.GetFileObjectRequestConverter.GetConnectionMessage(getFileObjectRequest), remoteEndpointInfo);
+
+            // Wait for response
+            var responseMessages = new List<MessageBase>();
+            var isGotAllMessages = WaitForResponses(getFileObjectRequest, _responseTimeout, _responseMessages,
+                  (responseMessage) =>
+                  {
+                      responseMessages.Add(responseMessage);
+                  });
+
+
+            if (isGotAllMessages)
+            {
+                return (GetFileObjectResponse)responseMessages.First();
+            }
+
+            throw new MessageConnectionException("No response to get file object");
+        }
+
         /// <summary>
         /// Sends request to get monitor items
         /// </summary>
@@ -172,6 +220,11 @@ namespace CFMonitor.Agent
                 case MessageTypeIds.GetEventItemsResponse:                    
                     var getEventItemsResponse = _messageConverters.GetEventItemsResponseConverter.GetExternalMessage(connectionMessage);
                     _responseMessages.Add(getEventItemsResponse);                    
+                    break;
+
+                case MessageTypeIds.GetFileObjectResponse:
+                    var getFileObjectResponse = _messageConverters.GetFileObjectResponseConverter.GetExternalMessage(connectionMessage);
+                    _responseMessages.Add(getFileObjectResponse);
                     break;
 
                 case MessageTypeIds.GetMonitorAgentsResponse:

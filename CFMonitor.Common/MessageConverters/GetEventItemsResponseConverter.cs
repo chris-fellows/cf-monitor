@@ -62,7 +62,6 @@ namespace CFMonitor.MessageConverters
                 externalMessage.EventItems = JsonUtilities.DeserializeFromBase64String<List<EventItem>>(eventItemsParameter.Value, JsonUtilities.DefaultJsonSerializerOptions);                
             }
 
-
             return externalMessage;
         }
     }

@@ -6,48 +6,76 @@ namespace CFMonitor.Models
 {
     [XmlType("MonitorItemSchedule")]
     public class MonitorItemSchedule
-    {
-        [XmlAttribute("TimeLastChecked")]
-        public DateTime TimeLastChecked { get; set; }
-
+    {        
         [XmlAttribute("ScheduleType")]
         public ScheduleTypes ScheduleType { get; set; }
 
         [XmlAttribute("Times")]
-        public string Times { get; set; }
+        public string Times { get; set; } = String.Empty;
 
         public MonitorItemSchedule()
         {
-            TimeLastChecked = DateTime.MinValue;
+     
         }
 
-        public bool IsTime(DateTime time)
-        {
-            bool isTime = false;
+        public DateTime? CheckIsTime(DateTime time, DateTime timeLastChecked)
+        {            
             switch (ScheduleType)
             {
                 case ScheduleTypes.FixedInterval:
 
-                    int value = (int)NumericUtilities.GetNumberFromString(Times);
-                    if (Times.EndsWith("ms"))
-                    {                        
-                        isTime = (TimeLastChecked.AddMilliseconds(value) <= time);
-                    }
-                    else if (Times.EndsWith("sec"))
+                    var interval = GetFixedInterval(Times);
+                    var isTime = (timeLastChecked.Add(interval) <= time);
+
+                    if (isTime)
                     {
-                        isTime = (TimeLastChecked.AddSeconds(value) <= time);
-                    }
-                    else if (Times.EndsWith("min"))
-                    {                        
-                        isTime = (TimeLastChecked.AddMinutes(value) <= time);
-                    }
-                    else if (Times.EndsWith("hour"))
-                    {
-                        isTime = (TimeLastChecked.AddHours(value) <= time);
-                    }
+                        // Return the value to set TimeLastChecked
+                        var currentTimeLastChecked = timeLastChecked;
+                        while (currentTimeLastChecked < time)
+                        {
+                            currentTimeLastChecked = currentTimeLastChecked.Add(interval);
+                        }
+                        currentTimeLastChecked = currentTimeLastChecked.Subtract(interval);
+
+                        return currentTimeLastChecked;
+                    }                                        
+                    break;
+
+                case ScheduleTypes.FixedTimes:
+                    // TODO: Implement this
+                    // Format [Times]|[DaysOfWeek]  E.g. "13:00,18:30|Mon,Tue
+
+                    var elements = Times.Split('|');
+                    var times = elements[0].Split(',');
+                    var daysOfWeek = elements[1].Split(',');
+
                     break;
             }
-            return isTime;
-        }        
+
+            return null;
+        }
+        
+        private static TimeSpan GetFixedInterval(string times)
+        {
+            int value = (int)NumericUtilities.GetNumberFromString(times);
+            if (times.EndsWith("ms"))
+            {
+                return TimeSpan.FromMilliseconds(value);
+            }
+            else if (times.EndsWith("sec"))
+            {
+                return TimeSpan.FromSeconds(value);
+            }
+            else if (times.EndsWith("min"))
+            {
+                return TimeSpan.FromMinutes(value);
+            }
+            else if (times.EndsWith("hour"))
+            {
+                return TimeSpan.FromHours(value);
+            }
+
+            return TimeSpan.Zero;
+        }
     }
 }

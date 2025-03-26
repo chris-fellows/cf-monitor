@@ -1,7 +1,9 @@
 ﻿using CFConnectionMessaging.Interfaces;
 using CFConnectionMessaging.Models;
 using CFMonitor.Constants;
+using CFMonitor.Models;
 using CFMonitor.Models.Messages;
+using CFMonitor.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +31,14 @@ namespace CFMonitor.MessageConverters
                     {
                         Name = "SenderAgentId",
                         Value = externalMessage.SenderAgentId
-                    }
+                    },
+                    new ConnectionMessageParameter()
+                   {
+                       Name = "MonitorItemOutput",
+                       Value = externalMessage.MonitorItemOutput == null ? "" :
+                                        JsonUtilities.SerializeToBase64String(externalMessage.MonitorItemOutput,
+                                        JsonUtilities.DefaultJsonSerializerOptions)
+                   }
                 }
             };
             return connectionMessage;
@@ -43,6 +52,13 @@ namespace CFMonitor.MessageConverters
                 SecurityKey = connectionMessage.Parameters.First(p => p.Name == "SecurityKey").Value,
                 SenderAgentId = connectionMessage.Parameters.First(p => p.Name == "SenderAgentId").Value
             };
+
+            // Get monitor item output
+            var monitorItemOutputParameter = connectionMessage.Parameters.First(p => p.Name == "MonitorItemOutput");
+            if (!String.IsNullOrEmpty(monitorItemOutputParameter.Value))
+            {
+                externalMessage.MonitorItemOutput = JsonUtilities.DeserializeFromBase64String<MonitorItemOutput>(monitorItemOutputParameter.Value, JsonUtilities.DefaultJsonSerializerOptions);
+            }
 
             return externalMessage;
         }

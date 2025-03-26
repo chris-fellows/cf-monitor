@@ -105,6 +105,10 @@ internal static class Program
                 {
                     return new XmlMonitorItemService(Path.Combine(configFolder, "MonitorItem"));
                 })
+                .AddScoped<IMonitorItemCheckService>((scope) =>
+                {
+                    return new XmlMonitorItemCheckService(Path.Combine(configFolder, "MonitorItemCheck"));
+                })
                  .AddScoped<IPasswordResetService>((scope) =>
                  {
                      return new XmlPasswordResetService(Path.Combine(configFolder, "PasswordReset"));

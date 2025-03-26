@@ -1,5 +1,6 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Models;
+using Microsoft.AspNetCore.Builder;
 using System.Text;
 
 namespace CFMonitor.Utilities
@@ -23,45 +24,47 @@ namespace CFMonitor.Utilities
 
             var text = new StringBuilder($"{eventConditionSystemValueType.Name}");
 
+            Type valueType = Type.GetType(eventItem.EventCondition.ValueTypeName)!;
+
             switch(eventItem.EventCondition.Operator)
             {
                 case ConditionOperators.Between:
-                    text.Append($" between {GetDisplayValue(eventItem.EventCondition.Values[0], eventConditionSystemValueType.DataType)} and " +
-                        $"{GetDisplayValue(eventItem.EventCondition.Values[1], eventConditionSystemValueType.DataType)}");
+                    text.Append($" between {GetDisplayValue(eventItem.EventCondition.Values[0], valueType)} and " +
+                        $"{GetDisplayValue(eventItem.EventCondition.Values[1], valueType)}");
                     break;
                 case ConditionOperators.Equals:
-                    text.Append($" = {GetDisplayValue(eventItem.EventCondition.Values[0], eventConditionSystemValueType.DataType)}");
+                    text.Append($" = {GetDisplayValue(eventItem.EventCondition.Values[0], valueType)}");
                     break;
                 case ConditionOperators.InList:
                     text.Append(" in (");
                     foreach(var value in eventItem.EventCondition.Values)
                     {
                         if (value != eventItem.EventCondition.Values[0]) text.Append(", ");
-                        text.Append(GetDisplayValue(value, eventConditionSystemValueType.DataType));
+                        text.Append(GetDisplayValue(value, valueType));
                     }
                     text.Append(")");
                     break;
                 case ConditionOperators.LessThan:
-                    text.Append($" < {GetDisplayValue(eventItem.EventCondition.Values[0], eventConditionSystemValueType.DataType)}");
+                    text.Append($" < {GetDisplayValue(eventItem.EventCondition.Values[0], valueType)}");
                     break;
                 case ConditionOperators.LessThanOrEqualTo:
-                    text.Append($" <= {GetDisplayValue(eventItem.EventCondition.Values[0], eventConditionSystemValueType.DataType)}");
+                    text.Append($" <= {GetDisplayValue(eventItem.EventCondition.Values[0], valueType)}");
                     break;
                 case ConditionOperators.MoreThan:
-                    text.Append($" > {GetDisplayValue(eventItem.EventCondition.Values[0], eventConditionSystemValueType.DataType)}");
+                    text.Append($" > {GetDisplayValue(eventItem.EventCondition.Values[0], valueType)}");
                     break;
                 case ConditionOperators.MoreThanOrEqualTo:
-                    text.Append($" >= {GetDisplayValue(eventItem.EventCondition.Values[0], eventConditionSystemValueType.DataType)}");
+                    text.Append($" >= {GetDisplayValue(eventItem.EventCondition.Values[0], valueType)}");
                     break;
                 case ConditionOperators.NotEquals:
-                    text.Append($" not {GetDisplayValue(eventItem.EventCondition.Values[0], eventConditionSystemValueType.DataType)}");
+                    text.Append($" not {GetDisplayValue(eventItem.EventCondition.Values[0], valueType)}");
                     break;
                 case ConditionOperators.NotInList:
                     text.Append(" not in (");
                     foreach (var value in eventItem.EventCondition.Values)
                     {
                         if (value != eventItem.EventCondition.Values[0]) text.Append(", ");
-                        text.Append(GetDisplayValue(value, eventConditionSystemValueType.DataType));
+                        text.Append(GetDisplayValue(value, valueType));
                     }
                     text.Append(")");
                     break;
@@ -76,15 +79,35 @@ namespace CFMonitor.Utilities
         /// <param name="value"></param>
         /// <param name="systemValueDataType"></param>
         /// <returns></returns>
-        private static string GetDisplayValue(object value, SystemValueDataTypes systemValueDataType)
+        private static string GetDisplayValue(object value, Type valueType)
         {
             if (value == null) return "";
 
-            return systemValueDataType switch
+            switch(valueType)
             {
-                SystemValueDataTypes.Boolean => (bool)value ? "Yes" : "No",
-                _ => value.ToString()
-            };
+                case Type _ when valueType == typeof(Boolean):
+                    return (bool)value ? "Yes" : "No";
+                default:
+                    return value.ToString();
+
+            }
         }
+
+        ///// <summary>
+        ///// Gets value for display
+        ///// </summary>
+        ///// <param name="value"></param>
+        ///// <param name="systemValueDataType"></param>
+        ///// <returns></returns>
+        //private static string GetDisplayValue(object value, SystemValueDataTypes systemValueDataType)
+        //{
+        //    if (value == null) return "";
+
+        //    return systemValueDataType switch
+        //    {
+        //        SystemValueDataTypes.Boolean => (bool)value ? "Yes" : "No",
+        //        _ => value.ToString()
+        //    };
+        //}
     }
 }

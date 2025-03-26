@@ -15,6 +15,19 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//var valueAsString = new ValueAsString();
+//var booleanValue = true;
+//valueAsString.SetValue(booleanValue);
+//var newBooleanValue = valueAsString.GetValue();
+//var type1 = newBooleanValue.GetType();
+
+//var dateTime = DateTimeOffset.UtcNow;
+//valueAsString.SetValue(dateTime);
+//var newDateTime = valueAsString.GetValue();
+//var type2 = newDateTime.GetType();
+
+//var newValue = valueAsString.GetValue();
+
 // CMF Added
 // Set authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -76,6 +89,10 @@ builder.Services.AddScoped<IMonitorItemService>((scope) =>
 {
     return new XmlMonitorItemService(Path.Combine(configFolder, "MonitorItem"));
 });
+builder.Services.AddScoped<IMonitorItemCheckService>((scope) =>     // Only used by Monitor Agent
+{
+    return new XmlMonitorItemCheckService(Path.Combine(configFolder, "MonitorItemCheck"));  
+});
 builder.Services.AddScoped<IPasswordResetService>((scope) =>
 {
     return new XmlPasswordResetService(Path.Combine(configFolder, "PasswordReset"));
@@ -123,6 +140,7 @@ builder.Services.AddScoped<IPasswordService, PBKDF2PasswordService>();
 builder.Services.AddKeyedScoped<IEntityReader<ActionItemType>, ActionItemTypeSeed1>("ActionItemTypeSeed");
 builder.Services.AddKeyedScoped<IEntityReader<AuditEventType>, AuditEventTypeSeed1>("AuditEventTypeSeed");
 builder.Services.AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed");
+builder.Services.AddKeyedScoped<IEntityReader<FileObject>, FileObjectSeed1>("FileObjectSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorAgentGroup>, MonitorAgentGroupSeed1>("MonitorAgentGroupSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorAgent>, MonitorAgentSeed1>("MonitorAgentSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed");

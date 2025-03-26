@@ -18,9 +18,10 @@ namespace CFMonitor.Checkers
         public CheckerLDAP(IAuditEventFactory auditEventFactory, 
                 IAuditEventService auditEventService,
                 IAuditEventTypeService auditEventTypeService, 
-                IEventItemService eventItemService, 
+                IEventItemService eventItemService,
+                  IFileObjectService fileObjectService,
                 IPlaceholderService placeholderService,
-                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
+                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, fileObjectService, placeholderService, systemValueTypeService)
         {
             
         }

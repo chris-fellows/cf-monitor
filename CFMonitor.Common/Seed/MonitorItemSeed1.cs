@@ -12,11 +12,16 @@ namespace CFMonitor.Seed
 {
     public class MonitorItemSeed1 : IEntityReader<MonitorItem>
     {
-        //private readonly IFileObjectService _fileObjectService;
+        private readonly IFileObjectService _fileObjectService;
+        private readonly IMonitorAgentService _monitorAgentService;
         private readonly ISystemValueTypeService _systemValueTypeService;
 
-        public MonitorItemSeed1(ISystemValueTypeService systemValueTypeService)
-        {          
+        public MonitorItemSeed1(IFileObjectService fileObjectService,
+                                IMonitorAgentService monitorAgentService,
+                                ISystemValueTypeService systemValueTypeService)
+        {
+            _fileObjectService = fileObjectService;
+            _monitorAgentService = monitorAgentService;
             _systemValueTypeService = systemValueTypeService;
         }
 
@@ -31,11 +36,19 @@ namespace CFMonitor.Seed
             //items.Add(CreateTestMonitorFolderSize(systemValueTypes));
             //items.Add(CreateTestMonitorURL(systemValueTypes));
             //items.Add(CreateTestMonitorMemory(systemValueTypes));
-            items.Add(CreateTestMonitorTime(systemValueTypes));            
+            items.Add(CreateTestMonitorTime(systemValueTypes));
             //items.Add(CreateTestMonitorPing(systemValueTypes));
-            //items.Add(CreateTestMonitorSQL(systemValueTypes));
+            //items.Add(CreateTestMonitorSQLErrors(systemValueTypes));
             //items.Add(CreateTestMonitorLocalFile(systemValueTypes));
             //items.Add(CreateTestMonitorActiveProcess(systemValueTypes));
+            items.Add(CreateTestMonitorMSOfficeInstalled(systemValueTypes));
+
+            // Run all monitor items on every Monitor Agent
+            var monitorAgents = _monitorAgentService.GetAll();
+            foreach(var item in items)
+            {
+                item.MonitorAgentIds = monitorAgents.Select(mi => mi.Id).ToList();
+            }
 
             return items;
         }    
@@ -46,9 +59,9 @@ namespace CFMonitor.Seed
             //return string.Format("Monitor Item.{0}", Guid.NewGuid().ToString());        
         }
 
-        private MonitorItem CreateTestMonitorSQL(List<SystemValueType> systemValueTypes)
+        private MonitorItem CreateTestMonitorSQLErrors(List<SystemValueType> systemValueTypes)
         {
-            //var fileObject = _fileObjectService.GetAll().First(fo => fo.Name == "Query1.sql");
+            var fileObject = _fileObjectService.GetAll().First(fi => fi.Name.Equals("Errors.sql"));
 
             MonitorItem monitorSQL = new MonitorItem()
             {
@@ -66,13 +79,18 @@ namespace CFMonitor.Seed
                     new MonitorItemParameter()
                     {
                         SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SQLSQL).Id,
-                        Value = "SELECT * FROM Test"            // File.ReadAllText(@"D:\\Temp\\Data\\Query1.sql")
+                        Value = ""          // "SELECT * FROM Errors"
+                    },
+                     new MonitorItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SQLSQLFileObjectId).Id,
+                        Value = fileObject.Id
                     }
                 }
             };
 
             // Set schedule
-            monitorSQL.MonitorItemSchedule.Times = "60sec";
+            monitorSQL.MonitorItemSchedule.Times = "900sec";
 
             //// Add event for Status not success
             //EventItem eventItem = new EventItem();
@@ -472,6 +490,37 @@ namespace CFMonitor.Seed
             //                "The machine time is different from the NTP server and outside the threshold"));
 
             return monitorNTP;
+        }
+
+        private MonitorItem CreateTestMonitorMSOfficeInstalled(List<SystemValueType> systemValueTypes)
+        {
+            var fileObject = _fileObjectService.GetAll().First(fi => fi.Name.Equals("Check MS Office installed.ps1"));
+
+            MonitorItem monitorItem = new MonitorItem()
+            {
+                Id = GetNewMonitorItemID(),
+                MonitorItemType = MonitorItemTypes.RunProcess,
+                Enabled = true,
+                Name = "Check MS Office installed",
+                Parameters = new List<MonitorItemParameter>()
+                {
+                    new MonitorItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_RunProcessFileName).Id,
+                        Value = ""     // "Check MS Office installed.ps1"
+                    },
+                    new MonitorItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_RunProcessFileObjectId).Id,
+                        Value = fileObject.Id
+                    },
+                }
+            };
+
+            // Set schedule
+            monitorItem.MonitorItemSchedule.Times = "900sec";
+      
+            return monitorItem;
         }
     }
 }

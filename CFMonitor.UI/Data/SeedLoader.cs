@@ -16,6 +16,7 @@ namespace CFMonitor.UI.Data
             var auditEventService = scope.ServiceProvider.GetRequiredService<IAuditEventService>();
             var auditEventTypeService = scope.ServiceProvider.GetRequiredService<IAuditEventTypeService>();
             var eventItemService = scope.ServiceProvider.GetRequiredService<IEventItemService>();
+            var fileObjectService = scope.ServiceProvider.GetRequiredService<IFileObjectService>();
             var monitorAgentService = scope.ServiceProvider.GetRequiredService<IMonitorAgentService>();
             var monitorAgentGroupService = scope.ServiceProvider.GetRequiredService<IMonitorAgentGroupService>();
             var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
@@ -26,6 +27,7 @@ namespace CFMonitor.UI.Data
             var actionItemTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<ActionItemType>>("ActionItemTypeSeed");
             var auditEventTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<AuditEventType>>("AuditEventTypeSeed");
             var eventItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<EventItem>>("EventItemSeed");
+            var fileObjectSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<FileObject>>("FileObjectSeed");
             var monitorAgentGroupSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorAgentGroup>>("MonitorAgentGroupSeed");
             var monitorAgentSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorAgent>>("MonitorAgentSeed");
             var monitorItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorItem>>("MonitorItemSeed");
@@ -51,6 +53,13 @@ namespace CFMonitor.UI.Data
             foreach (var auditEventType in auditEventTypesNew)
             {
                 auditEventTypeService.Add(auditEventType);
+            }
+
+            // Add file objects
+            var fileObjectsNew = fileObjectSeed.Read();
+            foreach (var fileObject in fileObjectsNew)
+            {
+                fileObjectService.Add(fileObject);
             }
 
             // Add users
@@ -86,10 +95,10 @@ namespace CFMonitor.UI.Data
                 auditEventService.Add(auditEventFactory.CreateMonitorAgentAdded(systemUser.Id, monitorAgent.Id));
             }
 
-            // Add monitor items
+            // Add monitor items            
             var monitorItemsNew = monitorItemSeed.Read();
             foreach(var monitorItem in monitorItemsNew)
-            {
+            {                
                 monitorItemService.Add(monitorItem);
 
                 // Add audit event

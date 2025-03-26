@@ -34,7 +34,7 @@ namespace CFMonitor.MessageConverters
         public IExternalMessageConverter<GetEventItemsResponse> GetEventItemsResponseConverter => _getEventItemsResponseConverter;
 
         public IExternalMessageConverter<GetFileObjectRequest> GetFileObjectRequestConverter => _getFileObjectRequestConverter;
-        public IExternalMessageConverter<GetFileObjectResponse> _GetFileObjectResponseConverter => _getFileObjectResponseConverter;
+        public IExternalMessageConverter<GetFileObjectResponse> GetFileObjectResponseConverter => _getFileObjectResponseConverter;
 
         public IExternalMessageConverter<GetMonitorAgentsRequest> GetMonitorAgentsRequestConverter => _getMonitorAgentsRequestConverter;
         public IExternalMessageConverter<GetMonitorAgentsResponse> GetMonitorAgentsResponseConverter => _getMonitorAgentsResponseConverter;

@@ -16,6 +16,6 @@ namespace CFMonitor.Models
 
         public ActionerTypes ActionerType { get; set; }
 
-        public List<ActionItemParameter> Parameters = new List<ActionItemParameter>();        
+        public List<ActionItemParameter> Parameters { get; set; } = new();
     }
 }

@@ -34,14 +34,15 @@ namespace CFMonitor.AgentManager
             var auditEventFactory = _serviceProvider.GetRequiredService<IAuditEventFactory>();
             var auditEventService = _serviceProvider.GetRequiredService<IAuditEventService>();
             var eventItemService = _serviceProvider.GetRequiredService<IEventItemService>();
+            var fileObjectService = _serviceProvider.GetRequiredService<IFileObjectService>();
             var monitorAgentService = _serviceProvider.GetRequiredService<IMonitorAgentService>();
             var monitorItemOutputService = _serviceProvider.GetRequiredService<IMonitorItemOutputService>();
             var monitorItemService = _serviceProvider.GetRequiredService<IMonitorItemService>();
             var userService = _serviceProvider.GetRequiredService<IUserService>();
 
             _agentConnection = new AgentConnection(auditEventFactory, auditEventService, eventItemService, 
-                            monitorAgentService, monitorItemOutputService, monitorItemService,
-                            _serviceProvider, userService);
+                            fileObjectService, monitorAgentService, monitorItemOutputService, 
+                            monitorItemService, _serviceProvider, userService);
 
             _timer = new System.Timers.Timer();
             _timer.Elapsed += _timer_Elapsed;

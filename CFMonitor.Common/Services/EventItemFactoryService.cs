@@ -47,6 +47,7 @@ namespace CFMonitor.Services
                 {
                     SourceValueType = eventConditionSystemValueType.DefaultEventCondition.SourceValueType,
                     Operator = eventConditionSystemValueType.DefaultEventCondition.Operator,
+                    ValueTypeName = eventConditionSystemValueType.DefaultEventCondition.ValueTypeName,
                     Values = eventConditionSystemValueType.DefaultEventCondition.Values
                 }
             };            

@@ -20,10 +20,10 @@ namespace CFMonitor.Models
         public string MonitorItemId { get; set; } = String.Empty;
 
         [XmlElement("EventCondition")]
-        public EventCondition EventCondition = new EventCondition();  
-        
+        public EventCondition EventCondition { get; set; } = new();
+
         [XmlArray("ActionItems")]
         [XmlArrayItem("ActionItem")]
-        public List<ActionItem> ActionItems = new List<ActionItem>();
+        public List<ActionItem> ActionItems { get; set; } = new();
     }
 }

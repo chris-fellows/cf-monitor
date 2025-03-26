@@ -18,8 +18,14 @@ namespace CFMonitor.Seed
                 new FileObject()
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Name = "Query1.sql",
-                    Content = File.ReadAllBytes("D:\\Temp\\Queries\\Query1.sql")
+                    Name = "Errors.sql",
+                    Content = File.ReadAllBytes("D:\\Data\\Dev\\C#\\cf-monitor-local\\FileObjects\\SQL\\Errors.sql")
+                },
+                new FileObject()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = "Check MS Office installed.ps1",
+                    Content = File.ReadAllBytes("D:\\Data\\Dev\\C#\\cf-monitor-local\\FileObjects\\PowerShell\\Check MS Office installed.ps1")
                 }
             };
 

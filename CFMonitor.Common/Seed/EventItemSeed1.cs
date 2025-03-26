@@ -44,6 +44,7 @@ namespace CFMonitor.Seed
             //list.AddRange(CreateEventsCPU(monitorItems.First(mi => mi.Name == "Check CPU"), monitorItemTypes, systemValueTypes));
             //list.AddRange(CreateEventsMemory(monitorItems.First(mi => mi.Name == "Check Memory"), monitorItemTypes, systemValueTypes));
             list.AddRange(CreateEventsNTP(monitorItems.First(mi => mi.Name == "Check Time"), monitorItemTypes, systemValueTypes));
+            list.AddRange(CreateEventsMSOfficeInstalled(monitorItems.First(mi => mi.Name == "Check MS Office installed"), monitorItemTypes, systemValueTypes));
 
             return list;
         }
@@ -202,6 +203,18 @@ namespace CFMonitor.Seed
             var eventItem = eventItems.First(ei => ei.EventCondition.SourceValueType == SystemValueTypes.ECS_NTPTimeInTolerance);
             eventItem.ActionItems.Add(CreateDefaultActionEmail("Machine time incorrect",
                             "The machine time is different from the NTP server and outside the threshold"));
+
+            return new() { eventItem };
+        }
+
+        private List<EventItem> CreateEventsMSOfficeInstalled(MonitorItem monitorItem, List<MonitorItemType> monitorItemTypes, List<SystemValueType> systemValueTypes)
+        {
+            var eventItems = _eventItemFactoryService.GetDefaultForMonitorItem(monitorItem);
+
+            // Default condition is ExitCode <> 0
+            var eventItem = eventItems.First(ei => ei.EventCondition.SourceValueType == SystemValueTypes.ECS_RunProcessExitCode);            
+            eventItem.ActionItems.Add(CreateDefaultActionEmail("MS Office not installed",
+                            "MS Office is not installed"));
 
             return new() { eventItem };
         }

@@ -1,11 +1,13 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
+using CFUtilities;
 using CFUtilities.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.OleDb;
+using System.Text;
 using System.Threading.Tasks;
 using System.Transactions;
 
@@ -23,8 +25,9 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService, 
                     IEventItemService eventItemService,
+                      IFileObjectService fileObjectService,
                     IPlaceholderService placeholderService,
-                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
+                        ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, fileObjectService, placeholderService, systemValueTypeService)
         {
             
         }
@@ -50,12 +53,28 @@ namespace CFMonitor.Checkers
                     return monitorItemOutput;
                 }
 
-                ////MonitorSQL monitorSQL = (MonitorSQL)monitorItem;
-                var connectionStringParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == "");               // TODO: Fix this    
+                var systemValueTypes = _systemValueTypeService.GetAll();
+
+                var svtConnectionString = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SQLConnectionString);
+                var connectionStringParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtConnectionString.Id);
                 var connectionString = GetValueWithPlaceholdersReplaced(connectionStringParam);
 
-                var queryParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == "");      // TODO: Fix this
+                var svtQuery = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_SQLSQL);
+                var queryParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtQuery.Id);
                 var query = GetValueWithPlaceholdersReplaced(queryParam);
+
+                var svtFileObjectId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_RunProcessFileObjectId);
+                var fileObjectIdParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFileObjectId.Id);
+                var fileObjectId = GetValueWithPlaceholdersReplaced(fileObjectIdParam);     // Shouldn't use placeholders
+
+                var queryToRun = query;     // Default
+
+                // Get file object if set
+                FileObject? fileObject = String.IsNullOrEmpty(fileObjectId) ? null : _fileObjectService.GetById(fileObjectId);
+                if (fileObject != null)
+                {
+                    queryToRun = System.Text.Encoding.UTF8.GetString(fileObject.Content);
+                }
 
                 Exception exception = null;
                 //OleDbDatabase database = null;
@@ -71,13 +90,13 @@ namespace CFMonitor.Checkers
                     connection.Open();
 
                     var command = new OleDbCommand(query, connection);
-                    reader = command.ExecuteReader();                    
+                    reader = command.ExecuteReader();
                 }
-                catch(System.Exception ex)
+                catch (System.Exception ex)
                 {
                     exception = ex;
                 }
-                
+
                 try
                 {
                     // Check events                    
@@ -99,7 +118,7 @@ namespace CFMonitor.Checkers
                     {
                         reader.Close();
                     }
-                    
+
                     if (connection != null && connection.State != ConnectionState.Closed)
                     {
                         connection.Close();
@@ -107,7 +126,7 @@ namespace CFMonitor.Checkers
                     }
                 }
 
-                return monitorItemOutput;
+                return monitorItemOutput;            
             });
         }
 

@@ -1,11 +1,13 @@
 ﻿using CFConnectionMessaging.Models;
 using CFMonitor.Agent.Models;
 using CFMonitor.Constants;
+using CFMonitor.Enums;
 using CFMonitor.Exceptions;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.Models.Messages;
 using CFMonitor.SystemTask;
+using CFUtilities.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -42,7 +44,9 @@ namespace CFMonitor.Agent
         // Local data services, populated from Agent Manager connection
         // We only need to store data used by IChecker
         private readonly IEventItemService _eventItemService;
+        private readonly IFileObjectService _fileObjectService;
         private readonly IMonitorAgentService _monitorAgentService;
+        private readonly IMonitorItemCheckService _monitorItemCheckService;
         private readonly IMonitorItemService _monitorItemService;
         private readonly ISystemValueTypeService _systemValueTypeService;
              
@@ -60,7 +64,9 @@ namespace CFMonitor.Agent
             //_systemTaskList = serviceProvider.GetRequiredService<ISystemTaskList>();
 
             _eventItemService = _serviceProvider.GetRequiredService<IEventItemService>();
+            _fileObjectService = _serviceProvider.GetRequiredService<IFileObjectService>();
             _monitorAgentService = _serviceProvider.GetRequiredService<IMonitorAgentService>();
+            _monitorItemCheckService = _serviceProvider.GetRequiredService<IMonitorItemCheckService>();
             _monitorItemService = _serviceProvider.GetRequiredService<IMonitorItemService>();
             _systemValueTypeService = _serviceProvider.GetRequiredService<ISystemValueTypeService>();
 
@@ -100,12 +106,17 @@ namespace CFMonitor.Agent
                 // Refresh data from Agent Manager
                 if (_isNeedToRefreshData)
                 {
+                    Console.WriteLine("Refreshing data");
+
                     GetMonitorAgents();
                     GetSystemValueTypes();
                     GetEventItems();
                     GetMonitorItems();
+                    GetFileObjects();   // Must be done after get system value types & monitor items
 
                     _isNeedToRefreshData = false;
+
+                    Console.WriteLine("Refreshed data");
                 }
 
                 // Only do processing if we have all data
@@ -118,9 +129,9 @@ namespace CFMonitor.Agent
                     CheckMonitorItemsCompleted();
                 }
             }
-            catch
+            catch(Exception exception)
             {
-                // TODO: Log error
+                Console.WriteLine($"Error performed regular functions: {exception.Message}");
             }
             finally
             {
@@ -129,6 +140,64 @@ namespace CFMonitor.Agent
         }
 
         private EndpointInfo ManagerEndpointInfo => new EndpointInfo() { Ip = _systemConfig.AgentManagerIp, Port = _systemConfig.AgentManagerPort };
+
+        private List<SystemValueType> GetSystemValueTypesForFileObjects()
+        {
+            var systemValueTypes = _systemValueTypeService.GetAll();
+
+            return systemValueTypes.Where(svt => (new[] { SystemValueTypes.MIP_RunProcessFileObjectId }).Contains(svt.ValueType)).ToList();
+        }
+
+        /// <summary>
+        /// Gets file objects from Agent Manager, saves to local storage. We get file objects for monitor event parameters        
+        /// </summary>
+        private int GetFileObjects()
+        {
+            Console.WriteLine($"Getting file objects");
+
+            // Delete old monitor items
+            var fileObjects = _fileObjectService.GetAll();
+            while (fileObjects.Any())
+            {
+                _fileObjectService.DeleteById(fileObjects.First().Id);
+                fileObjects.RemoveAt(0);
+            }
+
+            // Get system value types that refer to file objects
+            var systemValueTypes = GetSystemValueTypesForFileObjects();
+
+            // Get file object Ids for parameters that refer to file objects
+            var fileObjectIds = _monitorItems.Where(mi => mi.MonitorAgentIds.Contains(_systemConfig.MonitorAgentId))
+                                        .SelectMany(mi => mi.Parameters)
+                                        .Where(p => !String.IsNullOrEmpty(p.Value) && systemValueTypes.Select(svt => svt.Id).Contains(p.SystemValueTypeId))                                        
+                                        .Select(p => p.Value).Distinct().ToList();
+
+            foreach (var fileObjectId in fileObjectIds)
+            {
+                Console.WriteLine($"Getting file object {fileObjectId}");
+
+                // Send request, wait for response
+                var request = new GetFileObjectRequest()
+                {
+                    SenderAgentId = _systemConfig.MonitorAgentId,
+                    SecurityKey = _systemConfig.SecurityKey,
+                    FileObjectId = fileObjectId
+                };
+                var response = _managerConnection.SendGetFileObject(request, ManagerEndpointInfo);
+
+                // Save file object
+                if (response.FileObject != null)
+                {
+                    _fileObjectService.Add(response.FileObject);
+                }
+
+                Console.WriteLine($"Got file object {fileObjectId}");
+            }
+
+            Console.WriteLine($"Got file objects");
+
+            return fileObjectIds.Count;
+        }
 
         /// <summary>
         /// Gets monitor agents from Agent Manager, saves to local storage
@@ -262,7 +331,14 @@ namespace CFMonitor.Agent
             // Save system value types
             foreach (var systemValueType in response.SystemValueTypes)
             {
-                _systemValueTypeService.Add(systemValueType);
+                try
+                {
+                    _systemValueTypeService.Add(systemValueType);
+                }
+                catch(Exception  exception)
+                {
+                    throw;
+                }
             }
 
             Console.WriteLine($"Got system value types");
@@ -284,14 +360,35 @@ namespace CFMonitor.Agent
 
             MonitorAgent? monitorAgent = null;
 
-            // Check monitor items not active            
-            foreach(var monitorItem in _monitorItems.Where(mi => !_activeMonitorItemTasks.Any(t => t.MonitorItem.Id == mi.Id)))
+            // Check monitor items for this Monitor Agent and not active            
+            foreach(var monitorItem in _monitorItems.Where(mi => mi.MonitorAgentIds.Contains(_systemConfig.MonitorAgentId) &&            
+                                                    !_activeMonitorItemTasks.Any(t => t.MonitorItem.Id == mi.Id)))
             {
                 if (_activeMonitorItemTasks.Count < _systemConfig.MaxConcurrentChecks)
                 {
-                    if (monitorItem.MonitorItemSchedule.IsTime(DateTime.UtcNow))   // Overdue
+                    var now = DateTime.UtcNow;
+
+                    // Get time last checked
+                    var monitorItemCheck = _monitorItemCheckService.GetById(monitorItem.Id);
+                    if (monitorItemCheck == null)   // First time checking item
                     {
+                        monitorItemCheck = new MonitorItemCheck()
+                        {
+                            Id = monitorItem.Id,
+                            TimeLastChecked = DateTimeUtilities.GetStartOfDay(DateTimeOffset.UtcNow).DateTime   // Times always offset from start of day
+                        };
+                        _monitorItemCheckService.Add(monitorItemCheck);
+                    }
+
+                    // Check if time, returns new TimeLastChecked value if item must be checked
+                    var timeLastChecked = monitorItem.MonitorItemSchedule.CheckIsTime(DateTime.UtcNow, monitorItemCheck.TimeLastChecked);
+                    if (timeLastChecked != null)        // Need to check item
+                    {                        
                         monitorAgent = monitorAgent ?? _monitorAgentService.GetById(_systemConfig.MonitorAgentId);
+
+                        // Update time last checked
+                        monitorItemCheck.TimeLastChecked = timeLastChecked.Value;
+                        _monitorItemCheckService.Update(monitorItemCheck);
 
                         var activeTask = new ActiveMonitorItemTask()
                         {
@@ -330,6 +427,8 @@ namespace CFMonitor.Agent
         {
             if (activeMonitorItemTask.Task.Exception == null)       // Success
             {
+                Console.WriteLine($"Sending monitor item output for {activeMonitorItemTask.MonitorItem.Name} to Agent Manager");
+
                 var monitorItemOutput = activeMonitorItemTask.Task.Result;
 
                 // Set Monitor Agent Id as IChecker isn't aware of Monitor Agent
@@ -337,16 +436,18 @@ namespace CFMonitor.Agent
 
                 var monitorItemResultMessage = new MonitorItemResultMessage()
                 {                                        
-                    SenderAgentId = _systemConfig.MonitorAgentId,
+                    SenderAgentId = _systemConfig.MonitorAgentId,                     
                     SecurityKey = _systemConfig.SecurityKey,
-                    MonitorItemOutput = activeMonitorItemTask.Task.Result,
+                    MonitorItemOutput = monitorItemOutput
                 };                
 
-                _managerConnection.SendMonitorItemResultMessage(monitorItemResultMessage, null);  // TODO: Send endpoint
+                _managerConnection.SendMonitorItemResultMessage(monitorItemResultMessage, ManagerEndpointInfo);
+
+                Console.WriteLine($"Sent monitor item output for {activeMonitorItemTask.MonitorItem.Name} to Agent Manager");
             }
             else    // Failed
             {
-
+                Console.WriteLine($"Failed checking monitor item {activeMonitorItemTask.MonitorItem.Name}: {activeMonitorItemTask.Task.Exception.Message}");
             }
         }
 

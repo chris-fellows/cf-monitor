@@ -40,7 +40,8 @@ namespace CFMonitor.AgentManager
 
         private readonly IAuditEventFactory _auditEventFactory;
         private readonly IAuditEventService _auditEventService;
-        private readonly IEventItemService _eventItemService;        
+        private readonly IEventItemService _eventItemService;
+        private readonly IFileObjectService _fileObjectService;
         private readonly IMonitorAgentService _monitorAgentService;
         private readonly IMonitorItemOutputService _monitorItemOutputService;
         private readonly IMonitorItemService _monitorItemService;        
@@ -53,6 +54,7 @@ namespace CFMonitor.AgentManager
         public AgentConnection(IAuditEventFactory auditEventFactory,
                                 IAuditEventService auditEventService,
                                 IEventItemService eventItemService,
+                                IFileObjectService fileObjectService,
                                 IMonitorAgentService monitorAgentService,
                                IMonitorItemOutputService monitorItemOutputService,
                                IMonitorItemService monitorItemService,
@@ -63,6 +65,7 @@ namespace CFMonitor.AgentManager
             _auditEventFactory = auditEventFactory;
             _auditEventService = auditEventService;
             _eventItemService = eventItemService;
+            _fileObjectService = fileObjectService;
             _monitorAgentService = monitorAgentService;
             _monitorItemOutputService = monitorItemOutputService;
             _monitorItemService = monitorItemService;
@@ -120,6 +123,12 @@ namespace CFMonitor.AgentManager
                     HandleGetEventItemsRequestAsync(getEventItemsRequest, messageReceivedInfo);
                     break;
 
+                case MessageTypeIds.GetFileObjectRequest:
+                    var getFileObjectRequest = _messageConverters.GetFileObjectRequestConverter.GetExternalMessage(connectionMessage);
+
+                    HandleGetFileObjectRequestAsync(getFileObjectRequest, messageReceivedInfo);
+                    break;
+
                 case MessageTypeIds.GetMonitorAgentsRequest:
                     var getMonitorAgentsRequest = _messageConverters.GetMonitorAgentsRequestConverter.GetExternalMessage(connectionMessage);
 
@@ -171,6 +180,48 @@ namespace CFMonitor.AgentManager
                 _monitorAgentService.GetAll().ForEach(monitorAgent => _monitorAgentsBySecurityKey.Add(monitorAgent.SecurityKey, monitorAgent));
             }
             return _monitorAgentsBySecurityKey.ContainsKey(securityKey) ? _monitorAgentsBySecurityKey[securityKey] : null;
+        }
+
+        private Task HandleGetFileObjectRequestAsync(GetFileObjectRequest getFileObjectRequest, MessageReceivedInfo messageReceivedInfo)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                Console.WriteLine($"Processing {getFileObjectRequest.TypeId} from Monitor Agent {getFileObjectRequest.SenderAgentId}");
+
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var getFileObjectResponse = new GetFileObjectResponse()
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Response = new MessageResponse()
+                        {
+                            IsMore = false,
+                            MessageId = getFileObjectRequest.Id,
+                            Sequence = 1
+                        }
+                    };
+
+                    var monitorAgent = GetMonitorAgentBySecurityKey(getFileObjectRequest.SecurityKey);
+
+                    if (monitorAgent == null)
+                    {
+                        getFileObjectResponse.Response.ErrorCode = ResponseErrorCodes.PermissionDenied;
+                        getFileObjectResponse.Response.ErrorMessage = EnumUtilities.GetEnumDescription(getFileObjectResponse.Response.ErrorCode);
+                    }
+                    else
+                    {
+                        var fileObject = _fileObjectService.GetById(getFileObjectRequest.FileObjectId);
+
+                        getFileObjectResponse.FileObject = fileObject;
+                    }
+
+                    // Send response
+                    _connection.SendMessage(_messageConverters.GetFileObjectResponseConverter.GetConnectionMessage(getFileObjectResponse), messageReceivedInfo.RemoteEndpointInfo);
+
+                    var error = getFileObjectResponse.Response.ErrorCode == null ? "Success" : getFileObjectResponse.Response.ErrorMessage;
+                    Console.WriteLine($"Processed {getFileObjectRequest.TypeId} from Monitor Agent {getFileObjectRequest.SenderAgentId}: {error}");
+                }
+            });
         }
 
         private Task HandleGetEventItemsRequestAsync(GetEventItemsRequest getEventItemsRequest, MessageReceivedInfo messageReceivedInfo)

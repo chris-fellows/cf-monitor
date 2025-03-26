@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CFConnectionMessaging.Models;
 using CFMonitor.Constants;
+using System.Collections.Frozen;
 
 namespace CFMonitor.MessageConverters
 {
@@ -29,6 +30,11 @@ namespace CFMonitor.MessageConverters
                     {
                         Name = "SenderAgentId",
                         Value = externalMessage.SenderAgentId
+                    },
+                    new ConnectionMessageParameter()
+                    {
+                        Name = "FileObjectId",
+                        Value = externalMessage.FileObjectId
                     }
                 }
             };
@@ -41,7 +47,8 @@ namespace CFMonitor.MessageConverters
             {
                 Id = connectionMessage.Id,
                 SecurityKey = connectionMessage.Parameters.First(p => p.Name == "SecurityKey").Value,
-                SenderAgentId = connectionMessage.Parameters.First(p => p.Name == "SenderAgentId").Value
+                SenderAgentId = connectionMessage.Parameters.First(p => p.Name == "SenderAgentId").Value,
+                FileObjectId = connectionMessage.Parameters.First(p => p.Name == "FileObjectId").Value
             };
 
             return getFileObjectRequest;

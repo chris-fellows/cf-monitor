@@ -1,9 +1,11 @@
 ﻿using CFMonitor.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Models;
+using CFUtilities;
 using CFUtilities.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace CFMonitor.Checkers
@@ -18,8 +20,9 @@ namespace CFMonitor.Checkers
             IAuditEventService auditEventService,
             IAuditEventTypeService auditEventTypeService, 
             IEventItemService eventItemService,
+              IFileObjectService fileObjectService,
             IPlaceholderService placeholderService,
-            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, placeholderService, systemValueTypeService)
+            ISystemValueTypeService systemValueTypeService) : base(auditEventFactory, auditEventService, auditEventTypeService, eventItemService, fileObjectService, placeholderService, systemValueTypeService)
         {
             
         }
@@ -32,49 +35,86 @@ namespace CFMonitor.Checkers
         {
             return Task.Factory.StartNew(() =>
             {
-                SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
-
-                var monitorItemOutput = new MonitorItemOutput();
-
-                // Get event items
-                var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
-                if (!eventItems.Any())
+                using (var disposableSession = new DisposableActionsSession())
                 {
-                    return monitorItemOutput;
-                }
+                    SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                //MonitorActiveProcess monitorProcess = (MonitorActiveProcess)monitorItem;
-                Exception exception = null;
-                var actionItemParameters = new List<ActionItemParameter>();
-                int? exitCode = null;
+                    var monitorItemOutput = new MonitorItemOutput();
 
-                try
-                {
-
-                }
-                catch (System.Exception ex)
-                {
-                    exception = ex;
-                }
-
-                try
-                {
-                    // Check events
-                    //actionParameters.Values.Add(ActionParameterTypes.Body, "Error running process");
-                    foreach (var eventItem in eventItems)
+                    // Get event items
+                    var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
+                    if (!eventItems.Any())
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, exitCode))
+                        return monitorItemOutput;
+                    }
+
+                    var systemValueTypes = _systemValueTypeService.GetAll();
+
+                    var svtRunProcessFileName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_RunProcessFileName);
+                    var runProcessFileNameParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtRunProcessFileName.Id);
+                    var runProcessFileName = GetValueWithPlaceholdersReplaced(runProcessFileNameParam);
+
+                    var svtRunProcessFileObjectId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_RunProcessFileObjectId);
+                    var runProcessFileObjectIdParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtRunProcessFileObjectId.Id);
+                    var runProcessFileObjectId = GetValueWithPlaceholdersReplaced(runProcessFileObjectIdParam);     // Shouldn't use placeholders
+
+                    // Default file to run, may override with file object
+                    var fileToRun = runProcessFileName;
+
+                    // Get file object if set
+                    FileObject? fileObject = String.IsNullOrEmpty(runProcessFileObjectId) ? null : _fileObjectService.GetById(runProcessFileObjectId);
+
+                    // If using file object then write to temp folder and run it from there
+                    if (fileObject != null)
+                    {
+                        fileToRun = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid().ToString()}{Path.GetExtension(fileObject.Name)}");
+                        File.WriteAllBytes(fileToRun, fileObject.Content);
+
+                        disposableSession.AddAction(() => File.Delete(fileToRun));  // Clean up
+                    }
+
+                    //MonitorActiveProcess monitorProcess = (MonitorActiveProcess)monitorItem;
+                    Exception exception = null;
+                    var actionItemParameters = new List<ActionItemParameter>();
+                    int? exitCode = null;
+
+                    try
+                    {                        
+                        using (var process = new Process())
                         {
-                            monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                            process.StartInfo.UseShellExecute = false;
+                            process.StartInfo.CreateNoWindow = true;
+                            process.StartInfo.FileName = fileToRun;
+                            process.Start();
+                            process.WaitForExit();
+
+                            exitCode = process.ExitCode;
                         }
                     }
-                }
-                catch (System.Exception ex)
-                {
+                    catch (System.Exception ex)
+                    {
+                        exception = ex;
+                    }
 
-                }
+                    try
+                    {
+                        // Check events
+                        //actionParameters.Values.Add(ActionParameterTypes.Body, "Error running process");
+                        foreach (var eventItem in eventItems)
+                        {
+                            if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, exitCode))
+                            {
+                                monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
+                            }
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
 
-                return monitorItemOutput;
+                    }
+
+                    return monitorItemOutput;
+                }
             });
         }
 

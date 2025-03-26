@@ -2,6 +2,12 @@
 {
     /// <summary>
     /// System value types   
+    /// 
+    /// Split in to categories:
+    /// - AEP_ : Audit event parameter types
+    /// - ECS_ : Event condition sources
+    /// - AIP_ : Action item parameters
+    /// - MIP_ : Monitor item parameters
     /// </summary>
     public enum SystemValueTypes
     {
@@ -124,6 +130,7 @@
         MIP_RESTURL,
 
         MIP_RunProcessFileName,
+        MIP_RunProcessFileObjectId,
 
         //MIP_ServiceMachineName,
         //MIP_ServiceServiceName,
@@ -140,6 +147,7 @@
 
         MIP_SQLConnectionString,
         MIP_SQLSQL,
+        MIP_SQLSQLFileObjectId,
 
         MIP_URLURL,
         MIP_URLMethod,

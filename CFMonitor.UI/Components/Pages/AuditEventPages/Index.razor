@@ -85,6 +85,14 @@ else
             <ImageAndText ImageSource="@(GetAuditEventTypeImageSource(auditevent))" Text="@(GetAuditEventTypeName(auditevent))" />
         </TemplateColumn>
 
+        <TemplateColumn Title="User" Context="auditevent">
+            <ImageAndText ImageSource="@(GetUserImageSource(auditevent))" Text="@(GetUserName(auditevent))" />
+        </TemplateColumn>
+
+        <TemplateColumn Title="User" Context="auditevent">
+            <ImageAndContent ImageSource="@(GetUserImageSource(auditevent))"><a href="@($"users/details?id={GetUserId(auditevent)}")">@(GetUserName(auditevent))</a></ImageAndContent>
+        </TemplateColumn>
+
         <TemplateColumn Title="Monitor Agent" Context="auditevent">
             <a href="@($"monitoragents/details?id={GetMonitorAgentId(auditevent)}")">@($"{GetMonitorAgentMachineName(auditevent)}")</a>
         </TemplateColumn>
@@ -92,11 +100,7 @@ else
         <TemplateColumn Title="Monitor Item" Context="auditevent">
             <ImageAndText ImageSource="@(GetMonitorItemTypeImageSource(auditevent))" Text="@(GetMonitorItemName(auditevent))" />
         </TemplateColumn>
-
-        <TemplateColumn Title="Monitor Item" Context="auditevent">
-            <a href="@($"monitoritems/details?id={GetMonitorItemId(auditevent)}")">@($"{GetMonitorItemName(auditevent)}")</a>
-        </TemplateColumn>
-
+        
         <TemplateColumn Context="auditevent">        
             <a href="@($"auditevents/details?id={auditevent.Id}")">Details</a>        
         </TemplateColumn>
@@ -110,7 +114,8 @@ else
     private List<MonitorAgent> MonitorAgents = new();
     private List<MonitorItem> MonitorItems = new();
     private List<MonitorItemType> MonitorItemTypes = new();
-    private List<SystemValueType> SystemValueTypes = new();    
+    private List<SystemValueType> SystemValueTypes = new();
+    private List<User> Users = new();
 
     private PaginationState Pagination = new PaginationState() { ItemsPerPage = ConfigUtilities.ItemsPerListPage };
 
@@ -158,7 +163,8 @@ else
         MonitorAgents = MonitorAgentService.GetAll();
         MonitorItems = MonitorItemService.GetAll();
         MonitorItemTypes = MonitorItemTypeService.GetAll();
-        SystemValueTypes = SystemValueTypeService.GetAll();        
+        SystemValueTypes = SystemValueTypeService.GetAll();
+        Users = UserService.GetAll();
 
         CreatedDateRangeFilters = UIUtilities.GetDateRangeFilters();
         _filterCreatedDateRangeId = CreatedDateRangeFilters.First().Id;
@@ -167,6 +173,21 @@ else
         UIUtilities.AddAny(AuditEventTypes);
 
         RefreshAuditEvents();
+    }
+
+    private string GetUserId(AuditEvent auditEvent)
+    {
+        return Users.First(u => u.Id == auditEvent.CreatedUserId).Id; ;
+    }
+
+    private string GetUserName(AuditEvent auditEvent)
+    {
+        return Users.First(u => u.Id == auditEvent.CreatedUserId).Name;        ;
+    }
+
+    private string GetUserImageSource(AuditEvent auditEvent)
+    {
+        return $"../images/users/{Users.First(t => t.Id == auditEvent.CreatedUserId).ImageSource}";
     }
 
     private string GetAuditEventTypeName(AuditEvent auditEvent)
@@ -193,7 +214,7 @@ else
         }
 
         return monitorItem == null ? "" :
-            $"../images/monitor_itemTypes/{MonitorItemTypes.First(mit => mit.ItemType == monitorItem.MonitorItemType).ImageSource}";
+            $"../images/monitor_item_types/{MonitorItemTypes.First(mit => mit.ItemType == monitorItem.MonitorItemType).ImageSource}";
     }
 
     private string GetMonitorAgentId(AuditEvent auditEvent)

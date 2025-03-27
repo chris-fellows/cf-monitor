@@ -12,21 +12,11 @@ using CFUtilities.Services;
 using System;
 using CFUtilities.Utilities;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using CFMonitor.Common.Services;
+using CFMonitor.SystemTask;
+using CFMonitor.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
-
-//var valueAsString = new ValueAsString();
-//var booleanValue = true;
-//valueAsString.SetValue(booleanValue);
-//var newBooleanValue = valueAsString.GetValue();
-//var type1 = newBooleanValue.GetType();
-
-//var dateTime = DateTimeOffset.UtcNow;
-//valueAsString.SetValue(dateTime);
-//var newDateTime = valueAsString.GetValue();
-//var type2 = newDateTime.GetType();
-
-//var newValue = valueAsString.GetValue();
 
 // CMF Added
 // Set authentication
@@ -59,11 +49,15 @@ builder.Services.AddScoped<IActionItemTypeService>((scope) =>
 });
 builder.Services.AddScoped<IAuditEventService>((scope) =>
 {
-    return new XmlAuditEventService(Path.Combine(configFolder, "AuditEvent"));
+    return new XmlAuditEventService(Path.Combine(configFolder, "AuditEvent"), scope.GetRequiredService<IAuditEventProcessorService>());
 });
 builder.Services.AddScoped<IAuditEventTypeService>((scope) =>
 {
     return new XmlAuditEventTypeService(Path.Combine(configFolder, "AuditEventType"));
+});
+builder.Services.AddScoped<IContentTemplateService>((scope) =>
+{
+    return new XmlContentTemplateService(Path.Combine(configFolder, "ContentTemplate"));
 });
 builder.Services.AddScoped<IEventItemService>((scope) =>
 {
@@ -93,9 +87,25 @@ builder.Services.AddScoped<IMonitorItemCheckService>((scope) =>     // Only used
 {
     return new XmlMonitorItemCheckService(Path.Combine(configFolder, "MonitorItemCheck"));  
 });
+builder.Services.AddScoped<INotificationGroupService>((scope) =>     // Only used by Monitor Agent
+{
+    return new XmlNotificationGroupService(Path.Combine(configFolder, "NotificationGroup"));
+});
 builder.Services.AddScoped<IPasswordResetService>((scope) =>
 {
     return new XmlPasswordResetService(Path.Combine(configFolder, "PasswordReset"));
+});
+builder.Services.AddScoped<ISystemTaskJobService>((scope) =>
+{
+    return new XmlSystemTaskJobService(Path.Combine(configFolder, "SystemTaskJob"));
+});
+builder.Services.AddScoped<ISystemTaskStatusService>((scope) =>
+{
+    return new XmlSystemTaskStatusService(Path.Combine(configFolder, "SystemTaskStatus"));
+});
+builder.Services.AddScoped<ISystemTaskTypeService>((scope) =>
+{
+    return new XmlSystemTaskTypeService(Path.Combine(configFolder, "SystemTaskType"));
 });
 builder.Services.AddScoped<ISystemValueTypeService>((scope) =>
 {
@@ -136,16 +146,39 @@ builder.Services.AddScoped<IPlaceholderService, PlaceholderService>();
 // Add password service
 builder.Services.AddScoped<IPasswordService, PBKDF2PasswordService>();
 
+// Add audit event processor service. E.g. Create notifications
+builder.Services.AddScoped<IAuditEventProcessorService, AuditEventProcessorService>();
+
 // Seed
 builder.Services.AddKeyedScoped<IEntityReader<ActionItemType>, ActionItemTypeSeed1>("ActionItemTypeSeed");
 builder.Services.AddKeyedScoped<IEntityReader<AuditEventType>, AuditEventTypeSeed1>("AuditEventTypeSeed");
+builder.Services.AddKeyedScoped<IEntityReader<ContentTemplate>, ContentTemplateSeed1>("ContentTemplateSeed");
 builder.Services.AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed");
 builder.Services.AddKeyedScoped<IEntityReader<FileObject>, FileObjectSeed1>("FileObjectSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorAgentGroup>, MonitorAgentGroupSeed1>("MonitorAgentGroupSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorAgent>, MonitorAgentSeed1>("MonitorAgentSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed");
+builder.Services.AddKeyedScoped<IEntityReader<NotificationGroup>, NotificationGroupSeed1>("NotificationGroupSeed");
+builder.Services.AddKeyedScoped<IEntityReader<SystemTaskStatus>, SystemTaskStatusSeed1>("SystemTaskStatusSeed");
+builder.Services.AddKeyedScoped<IEntityReader<SystemTaskType>, SystemTaskTypeSeed1>("SystemTaskTypeSeed");
 builder.Services.AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed");
 builder.Services.AddKeyedScoped<IEntityReader<User>, UserSeed1>("UserSeed");
+
+// Set system task list
+builder.Services.AddSingleton<ISystemTaskList>((scope) =>
+{
+    var systemTaskConfigs = new List<SystemTaskConfig>()
+    {
+        new SystemTaskConfig()
+        {        
+            SystemTaskName = SystemTaskTypeNames.SendEmail,
+            ExecuteFrequency = TimeSpan.FromMinutes(15)        
+        }
+    };
+    systemTaskConfigs.ForEach(stc => stc.NextExecuteTime = DateTimeUtilities.GetNextTaskExecuteTimeFromFrequency(stc.ExecuteFrequency));
+
+    return new SystemTaskList(5, systemTaskConfigs);
+});
 
 var app = builder.Build();
 

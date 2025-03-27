@@ -84,11 +84,15 @@ namespace CFMonitor.Agent
                 })
                 .AddScoped<IAuditEventService>((scope) =>
                 {
-                    return new XmlAuditEventService(Path.Combine(configFolder, "AuditEvent"));
+                    return new XmlAuditEventService(Path.Combine(configFolder, "AuditEvent"), scope.GetRequiredService<IAuditEventProcessorService>());
                 })
                 .AddScoped<IAuditEventTypeService>((scope) =>
                 {
                     return new XmlAuditEventTypeService(Path.Combine(configFolder, "AuditEventType"));
+                })
+                .AddScoped<IContentTemplateService>((scope) =>
+                {
+                    return new XmlContentTemplateService(Path.Combine(configFolder, "ContentTemplate"));
                 })
                 .AddScoped<IEventItemService>((scope) =>
                 {
@@ -118,10 +122,22 @@ namespace CFMonitor.Agent
                  {
                      return new XmlMonitorItemCheckService(Path.Combine(configFolder, "MonitorItemCheck"));
                  })
+                    .AddScoped<INotificationGroupService>((scope) =>
+                    {
+                        return new XmlNotificationGroupService(Path.Combine(configFolder, "NotificationGroup"));
+                    })
                    .AddScoped<IPasswordResetService>((scope) =>
                    {
                        return new XmlPasswordResetService(Path.Combine(configFolder, "PasswordReset"));
                    })
+                .AddScoped<ISystemTaskStatusService>((scope) =>
+                {
+                    return new XmlSystemTaskStatusService(Path.Combine(configFolder, "SystemTaskStatus"));
+                })
+                .AddScoped<ISystemTaskTypeService>((scope) =>
+                {
+                    return new XmlSystemTaskTypeService(Path.Combine(configFolder, "SystemTaskType"));
+                })
                 .AddScoped<ISystemValueTypeService>((scope) =>
                 {
                     return new XmlSystemValueTypeService(Path.Combine(configFolder, "SystemValueType"));
@@ -135,6 +151,7 @@ namespace CFMonitor.Agent
                 .AddScoped<IPlaceholderService, PlaceholderService>()
                 .AddScoped<IAuditEventFactory, AuditEventFactory>()
                 .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()
+                .AddScoped<IAuditEventProcessorService, NoActionAuditEventProcessorService>()   // No need to create notifications for audit events
 
                 .RegisterAllTypes<IChecker>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
                 .RegisterAllTypes<IActioner>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)

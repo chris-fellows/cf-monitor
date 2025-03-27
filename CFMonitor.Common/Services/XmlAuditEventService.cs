@@ -6,12 +6,15 @@ namespace CFMonitor.Services
 {
     public class XmlAuditEventService : XmlEntityWithIdService<AuditEvent, string>, IAuditEventService
     {
-        public XmlAuditEventService(string folder) : base(folder,
+        private readonly IAuditEventProcessorService _auditEventProcessorService;
+
+        public XmlAuditEventService(string folder,            
+            IAuditEventProcessorService auditEventProcessorService) : base(folder,
                                                 "AuditEvent.*.xml",
                                               (auditEvent) => $"AuditEvent.{auditEvent.Id}.xml",
                                                 (auditEventId) => $"AuditEvent.{auditEventId}.xml")
         {
-
+            _auditEventProcessorService = auditEventProcessorService;
         }
 
         public List<AuditEvent> GetByFilter(AuditEventFilter filter)

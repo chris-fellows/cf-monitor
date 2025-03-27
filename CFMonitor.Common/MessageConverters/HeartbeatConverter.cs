@@ -25,11 +25,26 @@ namespace CFMonitor.Common.MessageConverters
                         Name = "SecurityKey",
                         Value = externalMessage.SecurityKey
                     },
-                                         new ConnectionMessageParameter()
+                    new ConnectionMessageParameter()
                     {
                         Name = "SenderAgentId",
                         Value = externalMessage.SenderAgentId
-                    }
+                    },
+                    new ConnectionMessageParameter()
+                    {
+                        Name = "MachineName",
+                        Value = externalMessage.MachineName
+                    },
+                    new ConnectionMessageParameter()
+                    {
+                        Name = "UserName",
+                        Value = externalMessage.UserName
+                    },
+                    new ConnectionMessageParameter()
+                    {
+                        Name = "Version",
+                        Value = externalMessage.Version
+                    },
                 }
             };
             return connectionMessage;
@@ -41,7 +56,10 @@ namespace CFMonitor.Common.MessageConverters
             {
                 Id = connectionMessage.Id,
                 SecurityKey = connectionMessage.Parameters.First(p => p.Name == "SecurityKey").Value,
-                SenderAgentId = connectionMessage.Parameters.First(p => p.Name == "SenderAgentId").Value
+                SenderAgentId = connectionMessage.Parameters.First(p => p.Name == "SenderAgentId").Value,
+                MachineName = connectionMessage.Parameters.First(p => p.Name == "MachineName").Value,
+                UserName = connectionMessage.Parameters.First(p => p.Name == "UserName").Value,
+                Version = connectionMessage.Parameters.First(p => p.Name == "Version").Value,
             };
 
             return heartbeat;

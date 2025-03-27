@@ -24,7 +24,7 @@ namespace CFMonitor.AgentManager
     /// <summary>
     /// Connection to Agent instances
     /// </summary>
-    internal class AgentConnection
+    internal class AgentsConnection
     {
         private ConnectionTcp _connection;
 
@@ -51,7 +51,7 @@ namespace CFMonitor.AgentManager
         private DateTimeOffset _monitorAgentsLastRefreshTime = DateTimeOffset.MinValue;
         private Dictionary<string, MonitorAgent> _monitorAgentsBySecurityKey = new();
 
-        public AgentConnection(IAuditEventFactory auditEventFactory,
+        public AgentsConnection(IAuditEventFactory auditEventFactory,
                                 IAuditEventService auditEventService,
                                 IEventItemService eventItemService,
                                 IFileObjectService fileObjectService,
@@ -89,16 +89,7 @@ namespace CFMonitor.AgentManager
             Console.WriteLine("Stopping listening");
             _connection.StopListening();
         }
-
-        ///// <summary>
-        ///// Sends request to get monitor items
-        ///// </summary>
-        ///// <param name="chatMessage"></param>
-        //public void SendGetMonitorItems(GetMonitorItemsRequest getMonitorItemsRequest, EndpointInfo remoteEndpointInfo)
-        //{
-        //    _connection.SendMessage(_getMonitorItemsRequestConverter.GetConnectionMessage(getMonitorItemsRequest), remoteEndpointInfo);
-        //}
-
+       
         /// <summary>
         /// Send monitor item updated notification
         /// </summary>
@@ -403,7 +394,7 @@ namespace CFMonitor.AgentManager
             return Task.Factory.StartNew(() =>
             {
                 Console.WriteLine($"Processing {heartbeat.TypeId} from Monitor Agent {heartbeat.SenderAgentId}");
-
+                
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var monitorAgentCheck = GetMonitorAgentBySecurityKey(heartbeat.SecurityKey);

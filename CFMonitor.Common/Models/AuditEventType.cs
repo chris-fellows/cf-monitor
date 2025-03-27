@@ -13,5 +13,7 @@ namespace CFMonitor.Models
         public string Color { get; set; } = String.Empty;
 
         public string ImageSource { get; set; } = String.Empty;
+
+        public List<string> NotificationGroupIds { get; set; } = new();
     }
 }

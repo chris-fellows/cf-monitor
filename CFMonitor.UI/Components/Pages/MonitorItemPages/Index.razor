@@ -4,7 +4,9 @@
 @using CFMonitor.Models
 @using CFMonitor.Utilities
 @using CFUtilities
+@inject IMonitorAgentService MonitorAgentService
 @inject IMonitorItemService MonitorItemService
+@inject IMonitorItemOutputService MonitorItemOutputService
 @inject IMonitorItemTypeService MonitorItemTypeService
 
 @using System.IO
@@ -47,6 +49,9 @@ else
             <ImageAndText ImageSource="@(GetMonitorItemTypeImageSource(monitorItem))" Text="@monitorItem.Name" />
         </TemplateColumn>
 
+        <PropertyColumn Title="Agents Good" Property="monitorItem => GetCountAgentsGood(monitorItem)" />
+        <PropertyColumn Title="Agents Bad" Property="monitorItem => GetCountAgentsBad(monitorItem)" />
+
         <TemplateColumn Context="monitorItem">
             <a href="@($"monitoritems/edit?id={monitorItem.Id}")">Edit</a> |
             <a href="@($"monitoritems/details?id={monitorItem.Id}")">Details</a> |
@@ -60,7 +65,11 @@ else
 @code {
     private IQueryable<MonitorItem>? MonitorItemsQueryable;
 
+    private List<MonitorAgent> MonitorAgents = new();
     private List<MonitorItemType> MonitorItemTypes = new();
+
+    private Dictionary<string, int> CountAgentsGoodByMonitorItemId = new();
+    private Dictionary<string, int> CountAgentsBadKByMonitorItemId = new();
 
     private PaginationState Pagination = new PaginationState() { ItemsPerPage = 25 };
 
@@ -70,6 +79,7 @@ else
     {
         IsBusy = true;
 
+        MonitorAgents = MonitorAgentService.GetAll();
         MonitorItemTypes = MonitorItemTypeService.GetAll();
 
         await RefreshMonitorItemsAsync();
@@ -81,12 +91,54 @@ else
 
         MonitorItemsQueryable = MonitorItemService.GetAll().AsQueryable();
 
+        await CountAgentsGoodAndBad();
+
         IsBusy = false;
     } 
 
+    /// <summary>
+    /// Counts agents good & bad for each monitor item
+    /// </summary>
+    /// <returns></returns>
+    private Task CountAgentsGoodAndBad()
+    {
+        // Get latest monitor item outputs
+        var monitorItemOutputFilter = new MonitorItemOutputFilter()
+            {
+                CheckedDateTimeFrom = DateTimeOffset.UtcNow.AddDays(-7),
+                LatestOnly = true
+            };
+        var monitorItemOutputs = MonitorItemOutputService.GetByFilter(monitorItemOutputFilter);
+
+        CountAgentsGoodByMonitorItemId.Clear();
+        CountAgentsBadKByMonitorItemId.Clear();
+        foreach (var monitorItem in MonitorItemsQueryable)
+        {
+            // Count good Monitor Agents
+            var countGood = monitorItemOutputs.Count(mio => mio.MonitorItemId == monitorItem.Id && !mio.EventItemIdsForAction.Any());
+            CountAgentsGoodByMonitorItemId.Add(monitorItem.Id, countGood);
+
+            // Count bad Monitor Agents
+            var countBad = monitorItemOutputs.Count(mio => mio.MonitorItemId == monitorItem.Id && mio.EventItemIdsForAction.Any());
+            CountAgentsBadKByMonitorItemId.Add(monitorItem.Id, countBad);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private int GetCountAgentsGood(MonitorItem monitorItem)
+    {
+        return CountAgentsGoodByMonitorItemId[monitorItem.Id];
+    }
+
+    private int GetCountAgentsBad(MonitorItem monitorItem)
+    {
+        return CountAgentsBadKByMonitorItemId[monitorItem.Id];
+    }
+
     private string GetMonitorItemTypeImageSource(MonitorItem monitorItem)
     {        
-        return $"../images/monitor_itemTypes/{MonitorItemTypes.First(mit => mit.ItemType == monitorItem.MonitorItemType).ImageSource}";
+        return $"../images/monitor_item_types/{MonitorItemTypes.First(mit => mit.ItemType == monitorItem.MonitorItemType).ImageSource}";
     }
 
     private async Task DownloadCSVAsync()

@@ -15,14 +15,14 @@ namespace CFMonitor.Seed
                     Id = Guid.NewGuid().ToString(),
                     Name = "Group 1",
                     Color = Color.Green.ToArgb().ToString(),
-                    ImageSource = "monitor_item_group.png",
+                    ImageSource = "monitor_agent_group.png",
                 },
                 new MonitorAgentGroup()
                 {
                     Id = Guid.NewGuid().ToString(),
                     Name = "Group 2",
                     Color = Color.Green.ToArgb().ToString(),
-                    ImageSource = "monitor_item_group.png",
+                    ImageSource = "monitor_agent_group.png",
                 },
             };
 

@@ -10,5 +10,6 @@ namespace CFMonitor.Interfaces
 {
     public interface IMonitorItemOutputService : IEntityWithIdService<MonitorItemOutput, string>
     {
+        List<MonitorItemOutput> GetByFilter(MonitorItemOutputFilter filter);
     }
 }

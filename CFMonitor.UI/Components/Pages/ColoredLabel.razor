@@ -1,0 +1,15 @@
+﻿<style>
+    .colorlabel {
+        color: white;
+        padding: 1px;
+    }
+</style>
+<span class="colorlabel" style="background-color: @BackColor">@Text</span>
+
+@code {
+    [Parameter]
+    public string BackColor { get; set; } = String.Empty;
+
+    [Parameter]
+    public string Text { get; set; } = String.Empty;
+}

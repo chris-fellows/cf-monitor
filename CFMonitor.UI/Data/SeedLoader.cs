@@ -15,22 +15,30 @@ namespace CFMonitor.UI.Data
             var auditEventFactory = scope.ServiceProvider.GetRequiredService<IAuditEventFactory>();
             var auditEventService = scope.ServiceProvider.GetRequiredService<IAuditEventService>();
             var auditEventTypeService = scope.ServiceProvider.GetRequiredService<IAuditEventTypeService>();
+            var contentTemplateService = scope.ServiceProvider.GetRequiredService<IContentTemplateService>();
             var eventItemService = scope.ServiceProvider.GetRequiredService<IEventItemService>();
             var fileObjectService = scope.ServiceProvider.GetRequiredService<IFileObjectService>();
             var monitorAgentService = scope.ServiceProvider.GetRequiredService<IMonitorAgentService>();
             var monitorAgentGroupService = scope.ServiceProvider.GetRequiredService<IMonitorAgentGroupService>();
             var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
+            var notificationGroupService = scope.ServiceProvider.GetRequiredService<INotificationGroupService>();
+            var systemTaskStatusService = scope.ServiceProvider.GetRequiredService<ISystemTaskStatusService>();
+            var systemTaskTypeService = scope.ServiceProvider.GetRequiredService<ISystemTaskTypeService>();
             var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
             var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
 
             // Get seed serviced
             var actionItemTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<ActionItemType>>("ActionItemTypeSeed");
             var auditEventTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<AuditEventType>>("AuditEventTypeSeed");
+            var contentTemplateSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<ContentTemplate>>("ContentTemplateSeed");
             var eventItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<EventItem>>("EventItemSeed");
             var fileObjectSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<FileObject>>("FileObjectSeed");
             var monitorAgentGroupSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorAgentGroup>>("MonitorAgentGroupSeed");
             var monitorAgentSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorAgent>>("MonitorAgentSeed");
-            var monitorItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorItem>>("MonitorItemSeed");
+            var monitorItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorItem>>("MonitorItemSeed");            
+            var notificationGroupSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<NotificationGroup>>("NotificationGroupSeed");
+            var systemTaskStatusSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<SystemTaskStatus>>("SystemTaskStatusSeed");
+            var systemTaskTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<SystemTaskType>>("SystemTaskTypeSeed");
             var systemValueTypeSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<SystemValueType>>("SystemValueTypeSeed");
             var userSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<User>>("UserSeed");
 
@@ -48,12 +56,40 @@ namespace CFMonitor.UI.Data
                 actionItemTypeService.Add(actionItemType);
             }
 
+            // Add notification groups
+            var notificationGroupsNews = notificationGroupSeed.Read();
+            foreach (var notificationGroup in notificationGroupsNews)
+            {
+                notificationGroupService.Add(notificationGroup);
+            }
+
             // Add audit event types
             var auditEventTypesNew = auditEventTypeSeed.Read();
             foreach (var auditEventType in auditEventTypesNew)
             {
                 auditEventTypeService.Add(auditEventType);
             }
+
+            // Add system statuses
+            var systemTaskStatusesNew = systemTaskStatusSeed.Read();
+            foreach (var systemTaskStatus in systemTaskStatusesNew)
+            {
+                systemTaskStatusService.Add(systemTaskStatus);
+            }
+
+            // Add system task types
+            var systemTaskTypesNew = systemTaskTypeSeed.Read();
+            foreach(var systemTaskType in systemTaskTypesNew)
+            {
+                systemTaskTypeService.Add(systemTaskType);
+            }
+
+            // Add content templates
+            var contentTemplatesNew = contentTemplateSeed.Read();
+            foreach (var contentTemplate in contentTemplatesNew)
+            {
+                contentTemplateService.Add(contentTemplate);
+            }         
 
             // Add file objects
             var fileObjectsNew = fileObjectSeed.Read();

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CFMonitor.Interfaces
 {
-    public interface ISystemValueTypeService : IEntityWithIdAndNameStoreService<SystemValueType, string>
+    public interface ISystemValueTypeService : IEntityWithIdAndNameService<SystemValueType, string>
     {
     }
 }

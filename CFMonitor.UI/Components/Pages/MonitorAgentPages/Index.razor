@@ -45,15 +45,20 @@ else
     <QuickGrid Class="table" Items="@MonitorAgentsQueryable" Pagination="@Pagination">
         <PropertyColumn Title="Id" Property="monitorAgent => monitorAgent.Id" />
 
-        <TemplateColumn Title="Type" Context="monitorAgent">
+        <TemplateColumn Title="Group" Context="monitorAgent">
             <ImageAndText ImageSource="@(GetMonitorAgentGroupImageSource(monitorAgent))" Text="@(GetMonitorAgentGroupName(monitorAgent))" />
         </TemplateColumn>
 
         <PropertyColumn Title="Machine" Property="monitorAgent => monitorAgent.MachineName" />
         <PropertyColumn Title="User" Property="monitorAgent => monitorAgent.UserName" />
         <PropertyColumn Title="IP" Property="monitorAgent => monitorAgent.IP" />
-        <PropertyColumn Title="Port" Property="monitorAgent => monitorAgent.IP" />
+        <PropertyColumn Title="Port" Property="monitorAgent => monitorAgent.Port" />
         <PropertyColumn Title="Heartbeat" Property="monitorAgent => monitorAgent.HeartbeatDateTime" />
+
+        <TemplateColumn Title="Status" Context="monitorAgent">
+            <ColoredLabel BackColor="@(GetMonitorAgentStatusColor(monitorAgent))" Text="@(GetMonitorAgentStatusName(monitorAgent))" />
+        </TemplateColumn>
+
         <PropertyColumn Title="Version" Property="monitorAgent => monitorAgent.Version" />
     </QuickGrid>
 
@@ -81,7 +86,7 @@ else
     private async Task RefreshMonitorAgentsAsync()
     {
         IsBusy = true;
-        
+
         MonitorAgentsQueryable = MonitorAgentService.GetAll().AsQueryable();        
 
         IsBusy = false;
@@ -91,6 +96,20 @@ else
     // {
     //     return HTMLUtilities.GetHTMLColor(user.Color);
     // }
+
+    private string GetMonitorAgentStatusName(MonitorAgent monitorAgent)
+    {
+        return monitorAgent.HeartbeatDateTime >= DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(10)) ?
+                        "Active" : "Inactive";
+    }
+
+    private string GetMonitorAgentStatusColor(MonitorAgent monitorAgent)
+    {
+        var statusName = GetMonitorAgentStatusName(monitorAgent);
+
+        return HTMLUtilities.GetHTMLColor(statusName.Equals("Active") ? System.Drawing.Color.Green.ToArgb().ToString() :
+                    System.Drawing.Color.Red.ToArgb().ToString());
+    }
 
     private string GetMonitorAgentGroupName(MonitorAgent monitorAgent)
     {

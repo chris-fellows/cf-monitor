@@ -21,7 +21,7 @@ namespace CFMonitor.AgentManager
 
         private readonly IServiceProvider _serviceProvider;
         private readonly SystemConfig _systemConfig;
-        private readonly AgentConnection _agentConnection;   // = new AgentConnection()
+        private readonly AgentsConnection _agentConnection;   // = new AgentConnection()
         //private readonly ISystemTaskList _systemTaskList;
         
         public Worker(IServiceProvider serviceProvider,
@@ -40,7 +40,7 @@ namespace CFMonitor.AgentManager
             var monitorItemService = _serviceProvider.GetRequiredService<IMonitorItemService>();
             var userService = _serviceProvider.GetRequiredService<IUserService>();
 
-            _agentConnection = new AgentConnection(auditEventFactory, auditEventService, eventItemService, 
+            _agentConnection = new AgentsConnection(auditEventFactory, auditEventService, eventItemService, 
                             fileObjectService, monitorAgentService, monitorItemOutputService, 
                             monitorItemService, _serviceProvider, userService);
 

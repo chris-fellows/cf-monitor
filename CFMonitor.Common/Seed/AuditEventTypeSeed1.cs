@@ -1,5 +1,7 @@
-﻿using CFMonitor.EntityReader;
+﻿using CFMonitor.Constants;
+using CFMonitor.EntityReader;
 using CFMonitor.Enums;
+using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using System.Drawing;
 
@@ -7,8 +9,17 @@ namespace CFMonitor.Seed
 {
     public class AuditEventTypeSeed1 : IEntityReader<AuditEventType>
     {
+        private readonly INotificationGroupService _notificationGroupService;
+
+        public AuditEventTypeSeed1(INotificationGroupService notificationGroupService)
+        {
+            _notificationGroupService = notificationGroupService;
+        }
+
         public IEnumerable<AuditEventType> Read()
         {
+            var notificationGroups = _notificationGroupService.GetAll();
+
             var items = new List<AuditEventType>()
             {
                  new AuditEventType()
@@ -90,6 +101,10 @@ namespace CFMonitor.Seed
                    Name = "Password reset created",
                    Color = Color.Blue.ToArgb().ToString(),
                     ImageSource = "audit_event_type.png",
+                    NotificationGroupIds = new List<string>()
+                    {
+                        notificationGroups.First(ng => ng.Name == NotificationGroupNames.ResetPassword).Id
+                    }
                },
                   new AuditEventType()
                {
@@ -106,6 +121,10 @@ namespace CFMonitor.Seed
                    Name = "User added",
                    Color = Color.Blue.ToArgb().ToString(),
                     ImageSource = "audit_event_type.png",
+                    NotificationGroupIds = new List<string>()
+                    {
+                        notificationGroups.First(ng => ng.Name == NotificationGroupNames.NewUser).Id
+                    }
                },
                new AuditEventType()
                {

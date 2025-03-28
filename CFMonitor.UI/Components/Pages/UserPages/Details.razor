@@ -46,7 +46,7 @@
         //using var context = DbFactory.CreateDbContext();
         //user = await context.User.FirstOrDefaultAsync(m => m.Id == Id);
 
-        user = UserService.GetById(Id);
+        user = await UserService.GetByIdAsync(Id);
 
 
         if (user is null)

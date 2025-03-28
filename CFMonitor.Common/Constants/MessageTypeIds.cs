@@ -18,6 +18,8 @@
         public const string GetSystemValueTypesResponse = "GetSystemValueTypesResponse";
         
         public const string Heartbeat = "Heartbeat";
+        public const string MonitorAgentLogMessage = "MonitorAgentLogMessage";
+
         public const string MonitorItemResultMessage = "MonitorItemResultMessage";
         public const string MonitorItemUpdated = "MonitorItemUpdated";        
     }

@@ -21,13 +21,13 @@ namespace CFMonitor.Common.Services
 
         public async Task ProcessAsync(AuditEvent auditEvent)
         {
-            var auditEventType = _auditEventTypeService.GetById(auditEvent.TypeId);
+            var auditEventType = await _auditEventTypeService.GetByIdAsync(auditEvent.TypeId);
 
             if (auditEventType.NotificationGroupIds != null)
             {
                 foreach(var notificationGroupId in auditEventType.NotificationGroupIds)
                 {
-                    var notificationGroup = _notificationGroupService.GetById(notificationGroupId);
+                    var notificationGroup = await _notificationGroupService.GetByIdAsync(notificationGroupId);
 
                     // Process email notifications
                     foreach (var emailNotificationConfig in notificationGroup.EmailNotificationConfigs)

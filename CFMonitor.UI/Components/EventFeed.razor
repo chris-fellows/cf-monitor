@@ -84,7 +84,7 @@ Latest events:
             }
         }
         var monitorItemOutputs = monitorItemOutputIds.Any() ?
-                    MonitorItemOutputService.GetByIds(monitorItemOutputIds) : new();
+                    await MonitorItemOutputService.GetByIdsAsync(monitorItemOutputIds) : new();
 
         // Create event info list
         var eventInfos = auditEvents.OrderByDescending(e => e.CreatedDateTime)

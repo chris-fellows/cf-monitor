@@ -71,6 +71,10 @@ builder.Services.AddScoped<IMonitorAgentService>((scope) =>
 {
     return new XmlMonitorAgentService(Path.Combine(configFolder, "MonitorAgent"));
 });
+builder.Services.AddScoped<IMonitorAgentManagerService>((scope) =>
+{
+    return new XmlMonitorAgentManagerService(Path.Combine(configFolder, "MonitorAgentManager"));
+});
 builder.Services.AddScoped<IMonitorAgentGroupService>((scope) =>
 {
     return new XmlMonitorAgentGroupService(Path.Combine(configFolder, "MonitorAgentGroup"));
@@ -156,6 +160,7 @@ builder.Services.AddKeyedScoped<IEntityReader<ContentTemplate>, ContentTemplateS
 builder.Services.AddKeyedScoped<IEntityReader<EventItem>, EventItemSeed1>("EventItemSeed");
 builder.Services.AddKeyedScoped<IEntityReader<FileObject>, FileObjectSeed1>("FileObjectSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorAgentGroup>, MonitorAgentGroupSeed1>("MonitorAgentGroupSeed");
+builder.Services.AddKeyedScoped<IEntityReader<MonitorAgentManager>, MonitorAgentManagerSeed1>("MonitorAgentManagerSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorAgent>, MonitorAgentSeed1>("MonitorAgentSeed");
 builder.Services.AddKeyedScoped<IEntityReader<MonitorItem>, MonitorItemSeed1>("MonitorItemSeed");
 builder.Services.AddKeyedScoped<IEntityReader<NotificationGroup>, NotificationGroupSeed1>("NotificationGroupSeed");

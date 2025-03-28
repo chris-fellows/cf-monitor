@@ -34,13 +34,13 @@ namespace CFMonitor.Seed
             //items.Add(CreateTestMonitorCPU(systemValueTypes));
             //items.Add(CreateTestMonitorFileSize(systemValueTypes));
             //items.Add(CreateTestMonitorFolderSize(systemValueTypes));
-            //items.Add(CreateTestMonitorURL(systemValueTypes));
+            items.Add(CreateTestMonitorURL(systemValueTypes));
             //items.Add(CreateTestMonitorMemory(systemValueTypes));
             items.Add(CreateTestMonitorTime(systemValueTypes));
-            //items.Add(CreateTestMonitorPing(systemValueTypes));
+            items.Add(CreateTestMonitorPing(systemValueTypes));
             //items.Add(CreateTestMonitorSQLErrors(systemValueTypes));
             //items.Add(CreateTestMonitorLocalFile(systemValueTypes));
-            //items.Add(CreateTestMonitorActiveProcess(systemValueTypes));
+            items.Add(CreateTestMonitorMSEdgeActiveProcess(systemValueTypes));
             items.Add(CreateTestMonitorMSOfficeInstalled(systemValueTypes));
 
             // Run all monitor items on every Monitor Agent
@@ -102,7 +102,7 @@ namespace CFMonitor.Seed
             return monitorSQL;
         }
 
-        private static MonitorItem CreateTestMonitorActiveProcess(List<SystemValueType> systemValueTypes)
+        private static MonitorItem CreateTestMonitorMSEdgeActiveProcess(List<SystemValueType> systemValueTypes)
         {
             var svtActiveProcessFileName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_ActiveProcessFileName);
             var svtActiveProcessMachineName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_ActiveProcessMachineName);
@@ -112,18 +112,18 @@ namespace CFMonitor.Seed
                 Id = GetNewMonitorItemID(),
                 MonitorItemType = MonitorItemTypes.ActiveProcess,
                 Enabled = true,
-                Name = "Check Process",
+                Name = "Check MS Edge Active Process",
                 Parameters = new List<MonitorItemParameter>()
                 {
                     new MonitorItemParameter()
                     {
                         SystemValueTypeId = svtActiveProcessFileName.Id,
-                        Value = @"C:\My Data\SomeProcess.exe"
+                        Value = "msedge.exe"
                     },
                     new MonitorItemParameter()
                     {
                         SystemValueTypeId = svtActiveProcessMachineName.Id,
-                        Value = @"MY_MACHINE"
+                        Value = Environment.MachineName
                     },
                 }
             };
@@ -261,7 +261,7 @@ namespace CFMonitor.Seed
             };
 
             // Set schedule
-            monitorURL.MonitorItemSchedule.Times = "60sec";
+            monitorURL.MonitorItemSchedule.Times = "300sec";
 
             //// Add event for StatusCode not OK, send email
             //EventItem eventItem = new EventItem();

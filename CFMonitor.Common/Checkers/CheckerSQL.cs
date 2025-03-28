@@ -44,7 +44,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -70,19 +78,16 @@ namespace CFMonitor.Checkers
                 var queryToRun = query;     // Default
 
                 // Get file object if set
-                FileObject? fileObject = String.IsNullOrEmpty(fileObjectId) ? null : _fileObjectService.GetById(fileObjectId);
+                FileObject? fileObject = String.IsNullOrEmpty(fileObjectId) ? null : _fileObjectService.GetByIdAsync(fileObjectId).Result;
                 if (fileObject != null)
                 {
                     queryToRun = System.Text.Encoding.UTF8.GetString(fileObject.Content);
                 }
 
                 Exception exception = null;
-                //OleDbDatabase database = null;
-
+                
                 OleDbConnection? connection = null;
-                OleDbDataReader? reader = null;
-                //ActionParameters actionParameters = new ActionParameters();
-                var actionItemParameters = new List<ActionItemParameter>();
+                OleDbDataReader? reader = null;                                
 
                 try
                 {
@@ -95,6 +100,12 @@ namespace CFMonitor.Checkers
                 catch (System.Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
@@ -102,7 +113,7 @@ namespace CFMonitor.Checkers
                     // Check events                    
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, reader.HasRows))
+                        if (IsEventValid(eventItem, monitorItem, exception, reader.HasRows))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -130,7 +141,7 @@ namespace CFMonitor.Checkers
             });
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSQL, List<ActionItemParameter> actionItemParameters, Exception exception, bool hasRows)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSQL, Exception exception, bool hasRows)
         {                        
                 bool meetsCondition = false;
 

@@ -36,7 +36,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -51,8 +59,7 @@ namespace CFMonitor.Checkers
                 var fileSizeParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFileSize.Id);
                 var file = GetValueWithPlaceholdersReplaced(fileSizeParam);
 
-                Exception exception = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                Exception exception = null;                
                 double? fileSize = null;
 
                 try
@@ -66,15 +73,29 @@ namespace CFMonitor.Checkers
                 catch (System.Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
                 {
-                    // Check events
-                    //actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking file size");
+                    if (fileSize != null)
+                    {
+                        monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                        {
+                            SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_Message).Id,
+                            Value = $"File size={fileSize} bytes"
+                        });
+                    }
+
+                    // Check events                   
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, fileSize, systemValueTypes))
+                        if (IsEventValid(eventItem, monitorItem, exception, fileSize, systemValueTypes))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -89,7 +110,7 @@ namespace CFMonitor.Checkers
             });
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorFileSize, List<ActionItemParameter> actionItemParameters, Exception exception, double? fileSize,
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorFileSize, Exception exception, double? fileSize,
                                 List<SystemValueType> systemValueTypes)
         {            
             var svtFileSizeMailFileSize = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_FileSizeMaxFileSizeBytes);

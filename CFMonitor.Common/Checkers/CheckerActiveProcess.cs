@@ -35,7 +35,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -54,8 +62,7 @@ namespace CFMonitor.Checkers
                 var machineNameParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtMachineName.Id);
                 var machineName = GetValueWithPlaceholdersReplaced(machineNameParam);
 
-                Exception exception = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                Exception exception = null;                
                 List<Process> processesFound = new List<Process>();
 
                 try
@@ -75,7 +82,7 @@ namespace CFMonitor.Checkers
                 {
                     exception = ex;
 
-                    actionItemParameters.Add(new ActionItemParameter()
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
                     {
                         SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
                         Value = ex.Message
@@ -87,7 +94,7 @@ namespace CFMonitor.Checkers
                     // Check events                
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, processesFound))
+                        if (IsEventValid(eventItem, monitorItem, exception, processesFound))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -102,7 +109,7 @@ namespace CFMonitor.Checkers
             });
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorProcess, List<ActionItemParameter> actionItemParameters, Exception exception, List<Process> processesFound)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorProcess, Exception exception, List<Process> processesFound)
         {            
                 bool meetsCondition = false;
 

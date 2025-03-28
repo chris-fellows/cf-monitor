@@ -50,7 +50,7 @@ namespace CFMonitor.Services
                             return _userService.GetAll().FirstOrDefault(u => u.Email == nameClaim.Value);
                         }
 
-                        var user = _userService.GetById(nameClaim.Value);
+                        var user = _userService.GetByIdAsync(nameClaim.Value).Result;
                         return user;
                     }
                 }

@@ -13,6 +13,9 @@ using CFMonitor.SystemTask;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using CFUtilities.Interfaces;
 using CFUtilities.Services;
+using CFMonitor.Log;
+using CFMonitor.Common.Log;
+using CFMonitor.Common.Interfaces;
 
 namespace CFMonitor.Agent
 {
@@ -64,14 +67,17 @@ namespace CFMonitor.Agent
                 MaxConcurrentChecks = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced( System.Configuration.ConfigurationManager.AppSettings["MaxConcurrentChecks"].ToString(), new())),
                 MonitorAgentId = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["MonitorAgentId"].ToString(), new()),
                 MonitorItemFilesRootFolder = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["MonitorItemFilesRootFolder"].ToString(), new()),
-                SecurityKey = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["SecurityKey"].ToString(), new())
+                SecurityKey = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["SecurityKey"].ToString(), new()),
+                HeartbeatSecs = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["HeartbeatSecs"].ToString(), new())),
+                LogFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Log"),
+                MaxLogDays = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["MaxLogDays"].ToString(), new())),
             };            
         }
 
         private static IServiceProvider CreateServiceProvider()
         {
             var configFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Config");
-            //var logFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Log");
+            var logFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Log");
 
             var configuration = new ConfigurationBuilder()                
                 .Build();
@@ -110,10 +116,15 @@ namespace CFMonitor.Agent
                 {
                     return new XmlMonitorAgentGroupService(Path.Combine(configFolder, "MonitorAgentGroup"));
                 })
+                .AddScoped<IMonitorAgentManagerService>((scope) =>
+                {
+                    return new XmlMonitorAgentManagerService(Path.Combine(configFolder, "MonitorAgentManager"));
+                })
                    .AddScoped<IMonitorItemOutputService>((scope) =>
                    {
                        return new XmlMonitorItemOutputService(Path.Combine(configFolder, "MonitorItemOutput"));
                    })
+
                 .AddScoped<IMonitorItemService>((scope) =>
                 {
                     return new XmlMonitorItemService(Path.Combine(configFolder, "MonitorItem"));
@@ -121,6 +132,10 @@ namespace CFMonitor.Agent
                  .AddScoped<IMonitorItemCheckService>((scope) =>
                  {
                      return new XmlMonitorItemCheckService(Path.Combine(configFolder, "MonitorItemCheck"));
+                 })
+                 .AddScoped<INameValueItemService>((scope) =>
+                 {
+                     return new XmlNameValueItemService(Path.Combine(configFolder, "NameValueItem"));
                  })
                     .AddScoped<INotificationGroupService>((scope) =>
                     {
@@ -156,6 +171,15 @@ namespace CFMonitor.Agent
                 .RegisterAllTypes<IChecker>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
                 .RegisterAllTypes<IActioner>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
                 .RegisterAllTypes<ISystemTask>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
+
+                // Add logging (Console & CSV)
+                .AddScoped<ISimpleLog>((scope) =>
+                {
+                    return new SimpleMultiLog(new() {
+                        new SimpleConsoleLog(),
+                        new SimpleLogCSV(Path.Combine(logFolder, "MonitorAgent-{date}.txt"))
+                    });
+                })
 
                 // Add system tasks
                 .AddSingleton<ISystemTaskList>((scope) =>

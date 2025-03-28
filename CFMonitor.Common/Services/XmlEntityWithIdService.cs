@@ -38,42 +38,55 @@ namespace CFWebServer.Services
             return items;
         }
 
-        public TEntityType? GetById(TIdType id)
+        public Task<List<TEntityType>> GetAllAsync()
+        {
+            var items = new List<TEntityType>();
+            foreach (var file in Directory.GetFiles(_folder, _getAllFilePattern))
+            {
+                items.Add(XmlUtilities.DeserializeFromString<TEntityType>(File.ReadAllText(file)));
+            }
+            return Task.FromResult(items);
+        }
+
+        public Task<TEntityType?> GetByIdAsync(TIdType id)
         {
             var file = Path.Combine(_folder, _getEntityFileNameByIdFunction(id));
-            return File.Exists(file) ?
-                    XmlUtilities.DeserializeFromString<TEntityType>(File.ReadAllText(file)) : default(TEntityType);
+            return Task.FromResult(File.Exists(file) ?
+                    XmlUtilities.DeserializeFromString<TEntityType>(File.ReadAllText(file)) : default(TEntityType));
         }
 
-        public void Add(TEntityType entity)
+        public Task<TEntityType> AddAsync(TEntityType entity)
         {
             var file = Path.Combine(_folder, _getEntityFileNameByEntityFunction(entity));
             File.WriteAllText(file, XmlUtilities.SerializeToString(entity));
+            return Task.FromResult(entity);
         }
 
-        public void Update(TEntityType entity)
+        public Task<TEntityType> UpdateAsync(TEntityType entity)
         {
             var file = Path.Combine(_folder, _getEntityFileNameByEntityFunction(entity));
             File.WriteAllText(file, XmlUtilities.SerializeToString(entity));
+            return Task.FromResult(entity);
         }
 
-        public void DeleteById(TIdType id)
+        public Task DeleteByIdAsync(TIdType id)
         {
             var file = Path.Combine(_folder, _getEntityFileNameByIdFunction(id));
             if (File.Exists(file)) File.Delete(file);
+            return Task.CompletedTask;
         }
 
-        public List<TEntityType> GetByIds(List<TIdType> ids)
+        public Task<List<TEntityType>> GetByIdsAsync(List<TIdType> ids)
         {
             var entities = new List<TEntityType>();
 
             foreach (var id in ids)
             {
-                var entity = GetById(id);
+                var entity = GetByIdAsync(id).Result;
                 if (entity != null) entities.Add(entity);
             }
 
-            return entities;
+            return Task.FromResult(entities);
         }
     }
 }

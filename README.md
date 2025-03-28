@@ -20,10 +20,14 @@ Monitor Agent
 Runs silently on specific machines and performs checking of items being monitored. It communicates with Monitor
 Agent Manager via TCP. Monitor Agent will get all data & files (E.g. PowerShell & SQL scripts) from Agent Manager.
 
+Each Monitor Agent regularly sends a heartbeat to indicate that it is healthy.
+
 Monitor Agent Manager
 ---------------------
 Runs silently on single machine and controls agents via TCP connection. It will execute any actions as a result
 of items being checks. E.g. Send an email.
+
+Each Monitor Agent Manager regularly sends a heartbeat to indicate that it is healthy.
 
 Monitor Items
 -------------
@@ -65,5 +69,9 @@ The following actions can be taken if the conditions for the monitor item event 
 TODO List
 ---------
 - Complete data management screens.
+- Change DB to EF.
 - (Monitor Agent) Support download of update. E.g. Add Monitor Agent Launcher which gets updated files and
   then launches Monitor Agent.
+- (Monitor Agent) Make installation as simple as possible.
+- Audit event when Monitor Agent is unhealthy. Need to consider storing previous state so that the event is
+  only generated when the state changes.

@@ -241,11 +241,11 @@ else
     //using var context = DbFactory.CreateDbContext();
     //User ??= await context.User.FirstOrDefaultAsync(m => m.Id == Id);
 
-    MonitorItem = MonitorItemService.GetById(Id);
+    MonitorItem = await MonitorItemService.GetByIdAsync(Id);
 
     MonitorItemTypes = MonitorItemTypeService.GetAll();
 
-    SystemValueTypes = SystemValueTypeService.GetAll();
+    SystemValueTypes = await SystemValueTypeService.GetAllAsync();
 
     if (MonitorItem is null)
     {
@@ -329,7 +329,7 @@ else
         try
         {          
 
-            MonitorItemService.Update(MonitorItem);
+            await MonitorItemService.UpdateAsync(MonitorItem);
             //await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
@@ -359,7 +359,7 @@ else
 
     private bool MonitorItemExists(string id)
     {
-        return MonitorItemService.GetById(id) != null;
+        return MonitorItemService.GetByIdAsync(id).Result != null;
         //using var context = DbFactory.CreateDbContext();
         //return context.User.Any(e => e.Id == id);
     }

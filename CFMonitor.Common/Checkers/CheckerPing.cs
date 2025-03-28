@@ -36,7 +36,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -52,8 +60,7 @@ namespace CFMonitor.Checkers
                 var server = GetValueWithPlaceholdersReplaced(serverParam);
 
                 Exception exception = null;
-                PingReply pingReply = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                PingReply pingReply = null;             
 
                 try
                 {
@@ -81,13 +88,28 @@ namespace CFMonitor.Checkers
                 catch (System.Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
                 {
+                    if (pingReply != null)
+                    {
+                        monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                        {
+                            SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_Message).Id,
+                            Value = $"Ping status={pingReply.Status} bytes"
+                        });
+                    }
+
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem,  monitorItem, actionItemParameters, exception, pingReply))
+                        if (IsEventValid(eventItem,  monitorItem, exception, pingReply))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -102,7 +124,7 @@ namespace CFMonitor.Checkers
             });
         }        
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorPing, List<ActionItemParameter> actionItemParameters, Exception exception, PingReply pingReply)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorPing, Exception exception, PingReply pingReply)
         {
                 bool meetsCondition = false;
 

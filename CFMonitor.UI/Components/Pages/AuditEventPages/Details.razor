@@ -57,7 +57,7 @@
     {
         //using var context = DbFactory.CreateDbContext();
         //auditevent = await context.AuditEvent.FirstOrDefaultAsync(m => m.Id == Id);
-        auditevent = AuditEventService.GetById(Id);
+        auditevent = await AuditEventService.GetByIdAsync(Id);
 
         if (auditevent is null)
         {
@@ -72,7 +72,7 @@
 
     private string GetAuditEventTypeName(AuditEvent auditEvent)
     {
-        return AuditEventTypeService.GetById(auditEvent.TypeId).Name;
+        return AuditEventTypeService.GetByIdAsync(auditEvent.TypeId).Result.Name;
     }
 
     // private string GetAuditEventCreatedUserName(AuditEvent auditEvent)

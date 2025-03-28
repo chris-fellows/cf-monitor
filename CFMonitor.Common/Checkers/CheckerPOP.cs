@@ -37,7 +37,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -46,9 +54,10 @@ namespace CFMonitor.Checkers
                     return monitorItemOutput;
                 }
 
+                var systemValueTypes = _systemValueTypeService.GetAll();
+
                 //MonitorPOP monitorPOP = (MonitorPOP)monitorItem;
-                Exception exception = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                Exception exception = null;             
 
                 try
                 {
@@ -57,15 +66,20 @@ namespace CFMonitor.Checkers
                 catch (System.Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
                 {
-                    // Check events
-                    //actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking POP server");
+                    // Check events                    
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception))
+                        if (IsEventValid(eventItem, monitorItem, exception))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -80,7 +94,7 @@ namespace CFMonitor.Checkers
             });
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorPOP, List<ActionItemParameter> actionItemParameters, Exception exception)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorPOP, Exception exception)
         {            
                 bool meetsCondition = false;
 

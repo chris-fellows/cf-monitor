@@ -39,7 +39,7 @@ namespace CFMonitor.Services
         public async Task<List<string[]>> GetDisplayItemsAsync(SystemValue systemValue)
         {
             // Get system value type
-            var systemValueType = _systemValueTypeService.GetById(systemValue.TypeId);            
+            var systemValueType = await _systemValueTypeService.GetByIdAsync(systemValue.TypeId);            
 
             // Set function to get display value from value
             // TODO: Can we store the label in SystemValueType?
@@ -47,7 +47,7 @@ namespace CFMonitor.Services
             {                            
                 { SystemValueTypes.AEP_MonitorAgentId, async (value) =>
                     {
-                        var monitorAgent = _monitorAgentService.GetById(value);
+                        var monitorAgent = await _monitorAgentService.GetByIdAsync(value);
                         return new List<string[]>()
                         {
                             new[] { "Monitor Agent Machine", monitorAgent.MachineName }
@@ -56,7 +56,7 @@ namespace CFMonitor.Services
                 },
                 { SystemValueTypes.AEP_MonitorItemId, async (value) =>
                     {
-                        var monitorItem = _monitorItemService.GetById(value);
+                        var monitorItem = await _monitorItemService.GetByIdAsync(value);
                         return new List<string[]>
                         {
                             new [] { "Monitor Item", monitorItem.Name }
@@ -65,9 +65,9 @@ namespace CFMonitor.Services
                 },
                 { SystemValueTypes.AEP_MonitorItemOutputId, async (value) =>
                     {
-                        var monitorItemOutput = _monitorItemOutputService.GetById(value);
-                        var monitorItem = _monitorItemService.GetById(monitorItemOutput.MonitorItemId);
-                        var monitorAgent = _monitorAgentService.GetById(monitorItemOutput.MonitorAgentId);
+                        var monitorItemOutput = await _monitorItemOutputService.GetByIdAsync(value);
+                        var monitorItem = await _monitorItemService.GetByIdAsync(monitorItemOutput.MonitorItemId);
+                        var monitorAgent = await _monitorAgentService.GetByIdAsync(monitorItemOutput.MonitorAgentId);
                         return new List<string[]>
                         {
                             new [] { "Monitor Item", monitorItem.Name },
@@ -80,7 +80,7 @@ namespace CFMonitor.Services
 
                 { SystemValueTypes.AEP_UserId, async (value) =>
                     {
-                        var user = _userService.GetById(value);
+                        var user = await _userService.GetByIdAsync(value);
                         return new List<string[]>()
                         {
                             new[] { "User", user.Name }

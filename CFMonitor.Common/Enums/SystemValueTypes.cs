@@ -76,7 +76,7 @@
 
         AIP_ProcessFileName,
 
-        AIP_ServiceRestartServiceName,
+        //AIP_ServiceRestartServiceName,
 
         AIP_SMSNumber,
 
@@ -94,7 +94,7 @@
         // -----------------------------------------------------------------------------------------------------
         // Action item parameters (Custom - Generated during the check)
         AIPC_ErrorMessage,        
-        AIPC_CheckMachineName,  // Machine that runs check
+        AIPC_Message,
 
         // -----------------------------------------------------------------------------------------------------
         // Monitor item parameters

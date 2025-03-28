@@ -35,7 +35,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -51,8 +59,7 @@ namespace CFMonitor.Checkers
                 var host = GetValueWithPlaceholdersReplaced(hostParam);
 
                 Exception exception = null;
-                IPHostEntry hostEntry = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                IPHostEntry hostEntry = null;          
 
                 try
                 {
@@ -61,13 +68,19 @@ namespace CFMonitor.Checkers
                 catch (Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
                 {
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, hostEntry))
+                        if (IsEventValid(eventItem, monitorItem,  exception, hostEntry))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -87,7 +100,7 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.DNS;
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorDNS, List<ActionItemParameter> actionItemParameters, Exception exception, IPHostEntry hostEntry)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorDNS, Exception exception, IPHostEntry hostEntry)
         {            
                 bool meetsCondition = false;
 

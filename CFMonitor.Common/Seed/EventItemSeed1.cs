@@ -36,14 +36,14 @@ namespace CFMonitor.Seed
 
             var list = new List<EventItem>();
             //list.AddRange(CreateEventsSQL(monitorItems.First(mi => mi.Name == "Monitor SQL"), monitorItemTypes, systemValueTypes));
-            //list.AddRange(CreateEventsActiveProcess(monitorItems.First(mi => mi.Name == "Check Process"), monitorItemTypes, systemValueTypes));
+            list.AddRange(CreateEventsMSEdgeActiveProcess(monitorItems.First(mi => mi.Name == "Check MS Edge Active Process"), monitorItemTypes, systemValueTypes));
             //list.AddRange(CreateEventsLocalFile(monitorItems.First(mi => mi.Name == "Check Log File Exists"), monitorItemTypes, systemValueTypes));
-            //list.AddRange(CreateEventsPing(monitorItems.First(mi => mi.Name == "Ping Google"), monitorItemTypes, systemValueTypes));
-            //list.AddRange(CreateEventsURL(monitorItems.First(mi => mi.Name == "Check Google Website"), monitorItemTypes, systemValueTypes));
+            list.AddRange(CreateEventsPing(monitorItems.First(mi => mi.Name == "Ping Google"), monitorItemTypes, systemValueTypes));
+            list.AddRange(CreateEventsURL(monitorItems.First(mi => mi.Name == "Check Google Website"), monitorItemTypes, systemValueTypes));
             //list.AddRange(CreateEventsFolderSize(monitorItems.First(mi => mi.Name == "Check Temp Folder Size"), monitorItemTypes, systemValueTypes));
             //list.AddRange(CreateEventsCPU(monitorItems.First(mi => mi.Name == "Check CPU"), monitorItemTypes, systemValueTypes));
             //list.AddRange(CreateEventsMemory(monitorItems.First(mi => mi.Name == "Check Memory"), monitorItemTypes, systemValueTypes));
-            list.AddRange(CreateEventsNTP(monitorItems.First(mi => mi.Name == "Check Time"), monitorItemTypes, systemValueTypes));
+            list.AddRange(CreateEventsTime(monitorItems.First(mi => mi.Name == "Check Time"), monitorItemTypes, systemValueTypes));
             list.AddRange(CreateEventsMSOfficeInstalled(monitorItems.First(mi => mi.Name == "Check MS Office installed"), monitorItemTypes, systemValueTypes));
 
             return list;
@@ -91,7 +91,7 @@ namespace CFMonitor.Seed
             return new() { eventItem };            
         }
 
-        private List<EventItem> CreateEventsActiveProcess(MonitorItem monitorItem, List<MonitorItemType> monitorItemTypes, List<SystemValueType> systemValueTypes)
+        private List<EventItem> CreateEventsMSEdgeActiveProcess(MonitorItem monitorItem, List<MonitorItemType> monitorItemTypes, List<SystemValueType> systemValueTypes)
         {
        
             var svtActiveProcessFileName = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_ActiveProcessFileName);
@@ -196,7 +196,7 @@ namespace CFMonitor.Seed
             return new() { eventItem };
         }
 
-        private  List<EventItem> CreateEventsNTP(MonitorItem monitorItem, List<MonitorItemType> monitorItemTypes, List<SystemValueType> systemValueTypes)
+        private  List<EventItem> CreateEventsTime(MonitorItem monitorItem, List<MonitorItemType> monitorItemTypes, List<SystemValueType> systemValueTypes)
         {        
             var eventItems = _eventItemFactoryService.GetDefaultForMonitorItem(monitorItem);
 

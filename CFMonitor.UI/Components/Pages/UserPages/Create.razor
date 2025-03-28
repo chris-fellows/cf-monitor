@@ -53,7 +53,7 @@
     {
         User.Id = Guid.NewGuid().ToString();
 
-        UserService.Add(User);
+        await UserService.AddAsync(User);
 
         //using var context = DbFactory.CreateDbContext();
         //context.User.Add(User);

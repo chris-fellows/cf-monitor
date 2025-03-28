@@ -4,6 +4,7 @@
 @using CFMonitor.Models
 @using CFMonitor.Utilities
 @using CFUtilities
+@using CFMonitor.UI.Utilities
 @inject IFileObjectService FileObjectService
 
 @using System.IO
@@ -31,6 +32,7 @@
 
 <p>
     <a href="users/create">Create New</a>
+    <InputFile id="newfile" OnChange="OnNewFileChangeAsync" />
     <button @onclick="DownloadCSVAsync" class="btn btn-primary">Download</button>
 </p>
 
@@ -43,6 +45,10 @@ else
 {
     <QuickGrid Class="table" Items="@FileObjectsQueryable" Pagination="@Pagination">
         <PropertyColumn Title="Name" Property="fileObject => fileObject.Name" />
+
+        <TemplateColumn Context="fileObject">
+            <button @onclick="@(() => @DownloadFileAsync(fileObject.Id))" class="btn btn-primary">Download</button>
+        </TemplateColumn>
 
         <TemplateColumn Context="fileObject">
             <a href="@($"fileobjects/edit?id={fileObject.Id}")">Edit</a> |
@@ -61,6 +67,8 @@ else
 
     private bool IsBusy { get; set; }
 
+    private string _newFile = "";
+
     protected override async Task OnInitializedAsync()
     {
         IsBusy = true;
@@ -75,12 +83,7 @@ else
         FileObjectsQueryable = FileObjectService.GetAll().AsQueryable();
 
         IsBusy = false;
-    }
-    
-    // private string GetMonitorAgentGroupName(MonitorAgent monitorAgent)
-    // {
-    //     return MonitorAgentGroups.First(t => t.Id == monitorAgent.MonitorAgentGroupId).Name;
-    // }    
+    }  
 
     private async Task DownloadCSVAsync()
     {
@@ -104,6 +107,52 @@ else
 
         //     await JS.InvokeVoidAsync("downloadFileFromStream", "Users.txt", streamRef);
         // }
+    }
+
+    private async Task DownloadFileAsync(string fileObjectId)
+    {
+        using (var session = new DisposableActionsSession())
+        {
+            IsBusy = true;
+            session.AddAction(() => IsBusy = false);
+
+            var fileObject = await FileObjectService.GetByIdAsync(fileObjectId);
+
+            using var memoryStream = new MemoryStream(fileObject.Content);
+            using var streamRef = new DotNetStreamReference(stream: memoryStream);
+
+            await JS.InvokeVoidAsync("downloadFileFromStream", fileObject.Name, streamRef);
+        }
+    }
+
+    private async Task OnNewFileChangeAsync(InputFileChangeEventArgs eventArgs)
+    {
+        // Check file size
+        if (eventArgs.File.Size > ConfigUtilities.MaxUploadFileObjectSize)
+        {
+            throw new ArgumentException("File is too big");
+        }
+
+        // Save
+        using (var stream = eventArgs.File.OpenReadStream())
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream);
+
+                var content = new byte[memoryStream.Length];
+                await memoryStream.ReadAsync(content);
+
+                var fileObject = new FileObject()
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Name = eventArgs.File.Name,
+                        Content = content
+                    };
+
+                await FileObjectService.AddAsync(fileObject);
+            }
+        }
     }
 
     //@implements IAsyncDisposable

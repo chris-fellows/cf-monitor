@@ -299,7 +299,7 @@ else
         var parameterMonitorItemOutputId = auditEvent.Parameters.FirstOrDefault(p => p.SystemValueTypeId == systemValueTypeMonitorItemOutputId.Id);
 
         MonitorItemOutput? monitorItemOutput = parameterMonitorItemOutputId != null ?
-                            MonitorItemOutputService.GetById(parameterMonitorItemOutputId.Value) : null;
+                            MonitorItemOutputService.GetByIdAsync(parameterMonitorItemOutputId.Value).Result : null;
 
         return monitorItemOutput;                           
     }

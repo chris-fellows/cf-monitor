@@ -37,7 +37,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -47,8 +55,7 @@ namespace CFMonitor.Checkers
                 }
 
                 //MonitorNTP monitorNTP = (MonitorNTP)monitorItem;
-                Exception exception = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                Exception exception = null;             
 
                 var systemValueTypes = _systemValueTypeService.GetAll();
 
@@ -80,19 +87,32 @@ namespace CFMonitor.Checkers
 
                     // Check if in tolernace
                     isTimeInTolerance = Math.Abs((timeRemote.Value - timeLocal).TotalSeconds) <= maxToleranceSecs;
+                    
+                        monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                        {
+                            SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_Message).Id,
+                            Value = $"Local time={timeLocal.ToString()}, Remote time={timeRemote.ToString()}"
+                        });
+                    
                 }
                 catch (System.Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
-                {
+                {                   
                     // Check events
                     //actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking NTP time");
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem,  monitorItem, actionItemParameters, exception, isTimeInTolerance))
+                        if (IsEventValid(eventItem,  monitorItem, exception, isTimeInTolerance))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -107,7 +127,7 @@ namespace CFMonitor.Checkers
             });
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorNTP, List<ActionItemParameter> actionItemParameters, Exception exception, bool isTimeInTolerance)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorNTP, Exception exception, bool isTimeInTolerance)
         {
                 bool meetsCondition = false;
 

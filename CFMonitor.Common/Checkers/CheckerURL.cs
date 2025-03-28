@@ -35,7 +35,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -44,12 +52,11 @@ namespace CFMonitor.Checkers
                     return monitorItemOutput;
                 }
 
-                //MonitorURL monitorURL = (MonitorURL)monitorItem;
+                var systemValueTypes = _systemValueTypeService.GetAll();
 
                 HttpWebRequest request = null;
                 HttpWebResponse response = null;
-                Exception exception = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                Exception exception = null;                
 
                 try
                 {
@@ -62,15 +69,29 @@ namespace CFMonitor.Checkers
                 catch (System.Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
                 {
+                    if (response != null)
+                    {
+                        monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                        {
+                            SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_Message).Id,
+                            Value = $"Response status={response.StatusCode}"
+                        });
+                    }
+
                     // Check events
-                    //actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking URL");
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, request, response))
+                        if (IsEventValid(eventItem, monitorItem, exception, request, response))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -129,7 +150,7 @@ namespace CFMonitor.Checkers
             return request;
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorURL, List<ActionItemParameter> actionItemParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorURL, Exception exception, HttpWebRequest request, HttpWebResponse response)
         {            
             int webExceptionStatus = -1;
             if (exception is WebException)
@@ -148,25 +169,8 @@ namespace CFMonitor.Checkers
                     case SystemValueTypes.ECS_HTTPResponseStatusCode:
                         meetsCondition = eventItem.EventCondition.IsValid(response.StatusCode);
                         break;
-
-                    /*
-                    case EventConditionSources.HttpResponseStatusCode:
-                        meetsCondition = eventItem.EventCondition.IsValid(response.StatusCode);
-                        break;
-                    case EventConditionSources.WebExceptionStatus:
-                        meetsCondition = eventItem.EventCondition.IsValid(webExceptionStatus);
-                        break;
-                    */
                 }
-
-            //if (meetsCondition)
-            //{
-            //    foreach (ActionItem actionItem in eventItem.ActionItems)
-            //    {
-            //        await ExecuteActionAsync(actionerList, monitorURL, actionItem, actionParameters);
-            //    }
-            //}
-
+            
             return meetsCondition;
         }
 

@@ -20,6 +20,7 @@ namespace CFMonitor.UI.Data
             var fileObjectService = scope.ServiceProvider.GetRequiredService<IFileObjectService>();
             var monitorAgentService = scope.ServiceProvider.GetRequiredService<IMonitorAgentService>();
             var monitorAgentGroupService = scope.ServiceProvider.GetRequiredService<IMonitorAgentGroupService>();
+            var monitorAgentManagerService = scope.ServiceProvider.GetRequiredService<IMonitorAgentManagerService>();
             var monitorItemService = scope.ServiceProvider.GetRequiredService<IMonitorItemService>();
             var notificationGroupService = scope.ServiceProvider.GetRequiredService<INotificationGroupService>();
             var systemTaskStatusService = scope.ServiceProvider.GetRequiredService<ISystemTaskStatusService>();
@@ -34,6 +35,7 @@ namespace CFMonitor.UI.Data
             var eventItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<EventItem>>("EventItemSeed");
             var fileObjectSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<FileObject>>("FileObjectSeed");
             var monitorAgentGroupSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorAgentGroup>>("MonitorAgentGroupSeed");
+            var monitorAgentManagerSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorAgentManager>>("MonitorAgentManagerSeed");
             var monitorAgentSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorAgent>>("MonitorAgentSeed");
             var monitorItemSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<MonitorItem>>("MonitorItemSeed");            
             var notificationGroupSeed = scope.ServiceProvider.GetRequiredKeyedService<IEntityReader<NotificationGroup>>("NotificationGroupSeed");
@@ -46,56 +48,56 @@ namespace CFMonitor.UI.Data
             var systemValueTypesNew = systemValueTypeSeed.Read();
             foreach(var systemValueType in systemValueTypesNew)
             {
-                systemValueTypeService.Add(systemValueType);
+                await systemValueTypeService.AddAsync(systemValueType);
             }
 
             // Add action item types
             var actionItemTypesNew = actionItemTypeSeed.Read();
             foreach(var actionItemType in actionItemTypesNew)
             {
-                actionItemTypeService.Add(actionItemType);
+                await actionItemTypeService.AddAsync(actionItemType);
             }
 
             // Add notification groups
             var notificationGroupsNews = notificationGroupSeed.Read();
             foreach (var notificationGroup in notificationGroupsNews)
             {
-                notificationGroupService.Add(notificationGroup);
+               await notificationGroupService.AddAsync(notificationGroup);
             }
 
             // Add audit event types
             var auditEventTypesNew = auditEventTypeSeed.Read();
             foreach (var auditEventType in auditEventTypesNew)
             {
-                auditEventTypeService.Add(auditEventType);
+                await auditEventTypeService.AddAsync(auditEventType);
             }
 
             // Add system statuses
             var systemTaskStatusesNew = systemTaskStatusSeed.Read();
             foreach (var systemTaskStatus in systemTaskStatusesNew)
             {
-                systemTaskStatusService.Add(systemTaskStatus);
+                await systemTaskStatusService.AddAsync(systemTaskStatus);
             }
 
             // Add system task types
             var systemTaskTypesNew = systemTaskTypeSeed.Read();
             foreach(var systemTaskType in systemTaskTypesNew)
             {
-                systemTaskTypeService.Add(systemTaskType);
+                await systemTaskTypeService.AddAsync(systemTaskType);
             }
 
             // Add content templates
             var contentTemplatesNew = contentTemplateSeed.Read();
             foreach (var contentTemplate in contentTemplatesNew)
             {
-                contentTemplateService.Add(contentTemplate);
+                await contentTemplateService.AddAsync(contentTemplate);
             }         
 
             // Add file objects
             var fileObjectsNew = fileObjectSeed.Read();
             foreach (var fileObject in fileObjectsNew)
             {
-                fileObjectService.Add(fileObject);
+                await fileObjectService.AddAsync(fileObject);
             }
 
             // Add users
@@ -103,7 +105,7 @@ namespace CFMonitor.UI.Data
             var usersNew = userSeed.Read();
             foreach(var user in usersNew)
             {
-                userService.Add(user);                
+                await userService.AddAsync(user);                
             }
 
             // Add "User added" audit event
@@ -111,41 +113,48 @@ namespace CFMonitor.UI.Data
             var systemUser = users.First(u => u.GetUserType() == Enums.UserTypes.System);
             foreach(var user in users)
             {
-                auditEventService.Add(auditEventFactory.CreateUserAdded(systemUser.Id, user.Id));
+                await auditEventService.AddAsync(auditEventFactory.CreateUserAdded(systemUser.Id, user.Id));
+            }
+
+            // Add monitor agent managers
+            var monitorAgentManagersNew = monitorAgentManagerSeed.Read();
+            foreach(var monitorAgentManager in monitorAgentManagersNew)
+            {
+                await monitorAgentManagerService.AddAsync(monitorAgentManager);
             }
 
             // Add monitor agent groups
             var monitorAgentGroupsNew = monitorAgentGroupSeed.Read();
             foreach (var monitorAgentGroup in monitorAgentGroupsNew)
             {
-                monitorAgentGroupService.Add(monitorAgentGroup);
+                await monitorAgentGroupService.AddAsync(monitorAgentGroup);
             }
 
             // Add monitor agents. Depends on monitor agent groups
             var monitorAgentsNew =  monitorAgentSeed.Read();
             foreach (var monitorAgent in monitorAgentsNew)
             {
-                monitorAgentService.Add(monitorAgent);
+                await monitorAgentService.AddAsync(monitorAgent);
 
                 // Add audit event
-                auditEventService.Add(auditEventFactory.CreateMonitorAgentAdded(systemUser.Id, monitorAgent.Id));
+                await auditEventService.AddAsync(auditEventFactory.CreateMonitorAgentAdded(systemUser.Id, monitorAgent.Id));
             }
 
             // Add monitor items            
             var monitorItemsNew = monitorItemSeed.Read();
             foreach(var monitorItem in monitorItemsNew)
             {                
-                monitorItemService.Add(monitorItem);
+                await monitorItemService.AddAsync(monitorItem);
 
                 // Add audit event
-                auditEventService.Add(auditEventFactory.CreateMonitorItemAdded(systemUser.Id, monitorItem.Id, usersNew.ToList()[0].Id));
+                await auditEventService.AddAsync(auditEventFactory.CreateMonitorItemAdded(systemUser.Id, monitorItem.Id, usersNew.ToList()[0].Id));
             }
 
             // Add event items. Depends on monitor items
             var eventItemsNew = eventItemSeed.Read();
             foreach(var eventItem in eventItemsNew)
             {
-                eventItemService.Add(eventItem);
+                await eventItemService.AddAsync(eventItem);
             }
         }
     }

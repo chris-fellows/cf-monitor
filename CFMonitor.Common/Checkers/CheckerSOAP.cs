@@ -37,7 +37,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -52,8 +60,7 @@ namespace CFMonitor.Checkers
                 Exception exception = null;
                 string result = "";
                 HttpWebRequest webRequest = null;
-                HttpWebResponse webResponse = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                HttpWebResponse webResponse = null;               
 
                 try
                 {
@@ -71,13 +78,28 @@ namespace CFMonitor.Checkers
                 catch (Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
                 {
+                    if (webResponse != null)
+                    {
+                        monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                        {
+                            SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_Message).Id,
+                            Value = $"Response status={webResponse.StatusCode}"
+                        });
+                    }
+
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, webRequest, webResponse))
+                        if (IsEventValid(eventItem, monitorItem, exception, webRequest, webResponse))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -97,7 +119,7 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.SOAP;
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSOAP, List<ActionItemParameter> actionItemParameters, Exception exception, HttpWebRequest request, HttpWebResponse response)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSOAP, Exception exception, HttpWebRequest request, HttpWebResponse response)
         {            
             int webExceptionStatus = -1;
             if (exception is WebException)

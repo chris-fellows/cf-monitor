@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CFMonitor.Common.MessageConverters
+namespace CFMonitor.MessageConverters
 {
     public class HeartbeatConverter : IExternalMessageConverter<Heartbeat>
     {

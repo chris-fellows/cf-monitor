@@ -108,7 +108,7 @@ else
 
         UserRoles = UIUtilities.GetUserRoles();
 
-        User = UserService.GetById(Id);
+        User = await UserService.GetByIdAsync(Id);
 
         if (User is null)
         {
@@ -139,7 +139,7 @@ else
                 _newImageFile = "";
             }
 
-            UserService.Update(User);
+            await UserService.UpdateAsync(User);
             //await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
@@ -159,7 +159,7 @@ else
 
     private bool UserExists(string id)
     {
-        return UserService.GetById(id) != null;
+        return UserService.GetByIdAsync(id).Result != null;
         //using var context = DbFactory.CreateDbContext();
         //return context.User.Any(e => e.Id == id);
     }

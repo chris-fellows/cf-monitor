@@ -6,6 +6,8 @@
        /// </summary>
         public static long MaxUploadImageSize = 1024 * 300;
 
+        public static long MaxUploadFileObjectSize = 1024 * 100000;
+
         /// <summary>
         /// Items per page on list pages (Audit Events etc)
         /// </summary>

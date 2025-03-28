@@ -35,7 +35,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -51,8 +59,7 @@ namespace CFMonitor.Checkers
                 var drive = GetValueWithPlaceholdersReplaced(driveParam);
 
                 Exception exception = null;
-                DriveInfo driveInfo = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                DriveInfo driveInfo = null;             
 
                 try
                 {
@@ -62,7 +69,7 @@ namespace CFMonitor.Checkers
                 {
                     exception = ex;
 
-                    actionItemParameters.Add(new ActionItemParameter()
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
                     {
                         SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
                         Value = ex.Message
@@ -71,9 +78,18 @@ namespace CFMonitor.Checkers
 
                 try
                 {
+                    if (driveInfo != null)
+                    {
+                        monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                        {
+                            SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_Message).Id,
+                            Value = $"Free space={driveInfo.AvailableFreeSpace} bytes"
+                        });
+                    }
+
                     foreach (var eventItem in eventItems)
                     {                        
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, driveInfo))
+                        if (IsEventValid(eventItem, monitorItem, exception, driveInfo))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -93,7 +109,7 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.DiskSpace;
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorDiskSpace, List<ActionItemParameter> actionItemParameters, Exception exception, DriveInfo driveInfo)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorDiskSpace, Exception exception, DriveInfo driveInfo)
         {            
                 bool meetsCondition = false;
 

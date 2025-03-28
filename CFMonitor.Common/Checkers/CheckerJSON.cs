@@ -35,7 +35,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -44,9 +52,10 @@ namespace CFMonitor.Checkers
                     return monitorItemOutput;
                 }
 
+                var systemValueTypes = _systemValueTypeService.GetAll();
+
                 //MonitorJSON monitorJSON = (MonitorJSON)monitorItem;
-                Exception exception = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                Exception exception = null;        
 
                 try
                 {
@@ -55,13 +64,20 @@ namespace CFMonitor.Checkers
                 catch (Exception ex)
                 {
                     exception = ex;
+
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
                 {
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception))
+                        if (IsEventValid(eventItem, monitorItem, exception))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -81,7 +97,7 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.JSON;
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorJSON, List<ActionItemParameter> actionItemParameters, Exception exception)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorJSON, Exception exception)
         {
                 bool meetsCondition = false;
 

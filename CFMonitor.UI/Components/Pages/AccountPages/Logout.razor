@@ -47,6 +47,6 @@
     private async Task AddAuditEventLogOutAsync(string userId)
     {
         var auditEvent = AuditEventFactory.CreateUserLogOut(userId, userId);
-        AuditEventService.Add(auditEvent);
+        await AuditEventService.AddAsync(auditEvent);
     }
 }

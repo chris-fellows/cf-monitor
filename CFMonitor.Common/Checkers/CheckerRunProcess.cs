@@ -6,6 +6,7 @@ using CFUtilities.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace CFMonitor.Checkers
@@ -39,7 +40,15 @@ namespace CFMonitor.Checkers
                 {
                     SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                    var monitorItemOutput = new MonitorItemOutput();
+                    var monitorItemOutput = new MonitorItemOutput()
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        ActionItemParameters = new(),
+                        CheckedDateTime = DateTime.UtcNow,
+                        EventItemIdsForAction = new(),
+                        MonitorAgentId = monitorAgent.Id,
+                        MonitorItemId = monitorItem.Id,
+                    };
 
                     // Get event items
                     var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -62,7 +71,7 @@ namespace CFMonitor.Checkers
                     var fileToRun = runProcessFileName;
 
                     // Get file object if set
-                    FileObject? fileObject = String.IsNullOrEmpty(runProcessFileObjectId) ? null : _fileObjectService.GetById(runProcessFileObjectId);
+                    FileObject? fileObject = String.IsNullOrEmpty(runProcessFileObjectId) ? null : _fileObjectService.GetByIdAsync(runProcessFileObjectId).Result;
 
                     // If using file object then write to temp folder and run it from there
                     if (fileObject != null)
@@ -74,8 +83,7 @@ namespace CFMonitor.Checkers
                     }
 
                     //MonitorActiveProcess monitorProcess = (MonitorActiveProcess)monitorItem;
-                    Exception exception = null;
-                    var actionItemParameters = new List<ActionItemParameter>();
+                    Exception exception = null;                
                     int? exitCode = null;
 
                     try
@@ -94,15 +102,30 @@ namespace CFMonitor.Checkers
                     catch (System.Exception ex)
                     {
                         exception = ex;
+
+                        monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                        {
+                            SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                            Value = ex.Message
+                        });
                     }
 
                     try
                     {
+                        if (exitCode != null)
+                        {
+                            monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                            {
+                                SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_Message).Id,
+                                Value = $"Exit code={exitCode}"
+                            });
+                        }
+
                         // Check events
                         //actionParameters.Values.Add(ActionParameterTypes.Body, "Error running process");
                         foreach (var eventItem in eventItems)
                         {
-                            if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, exitCode))
+                            if (IsEventValid(eventItem, monitorItem, exception, exitCode))
                             {
                                 monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                             }
@@ -118,7 +141,7 @@ namespace CFMonitor.Checkers
             });
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorProcess, List<ActionItemParameter> actionItemParameters, Exception exception, int? exitCode)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorProcess, Exception exception, int? exitCode)
         {            
                 bool meetsCondition = false;
 

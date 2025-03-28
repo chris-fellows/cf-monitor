@@ -36,7 +36,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -51,8 +59,7 @@ namespace CFMonitor.Checkers
                 var folderParam = monitorItem.Parameters.First(p => p.SystemValueTypeId == svtFolder.Id);
                 var folder = GetValueWithPlaceholdersReplaced(folderParam);
 
-                Exception exception = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                Exception exception = null;              
                 long? folderSize = null;
 
                 try
@@ -65,15 +72,30 @@ namespace CFMonitor.Checkers
                 catch (System.Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
                 {
+                    if (folderSize != null)
+                    {
+                        monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                        {
+                            SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_Message).Id,
+                            Value = $"Folder size={folderSize} bytes"
+                        });
+                    }
+
                     // Check events
                     //actionParameters.Values.Add(ActionParameterTypes.Body, "Error checking folder size");
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, folderSize, systemValueTypes))
+                        if (IsEventValid(eventItem, monitorItem, exception, folderSize, systemValueTypes))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -89,7 +111,7 @@ namespace CFMonitor.Checkers
         }
 
         private bool IsEventValid(EventItem eventItem, 
-                            MonitorItem monitorFolderSize, List<ActionItemParameter> actionItemParameters, Exception exception, long? folderSize,
+                            MonitorItem monitorFolderSize, Exception exception, long? folderSize,
                                 List<SystemValueType> systemValueTypes)
         {           
             var svtfolderSizeMaxFolderSize = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes);

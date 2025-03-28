@@ -2,6 +2,13 @@
 {
     public interface IEntityWithIdAndNameService<TEntityType, TEntityIdType> : IEntityWithIdService<TEntityType, TEntityIdType>
     {
-        TEntityType? GetByName(string name);
+        /// <summary>
+        /// Gets entity by name
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        Task<TEntityType?> GetByNameAsync(string name);
+
+        //TEntityType? GetByName(string name);
     }
 }

@@ -74,6 +74,173 @@ namespace CFMonitor.Seed
                 },
 
                 // -----------------------------------------------------------------------------------------------------------------
+                // Action item parameters
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Email body",
+                    ValueType = SystemValueTypes.AIP_EmailBody,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Email CC",
+                    ValueType = SystemValueTypes.AIP_EmailCC,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Email recipient",
+                    ValueType = SystemValueTypes.AIP_EmailRecipient,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Email sender",
+                    ValueType = SystemValueTypes.AIP_EmailSender,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Email server",
+                    ValueType = SystemValueTypes.AIP_EmailServer,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Email subject",
+                    ValueType = SystemValueTypes.AIP_EmailSubject,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Email username",
+                    ValueType = SystemValueTypes.AIP_EmailUsername,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Event Log Event Id",
+                    ValueType = SystemValueTypes.AIP_EventLogEventId,
+                    ValueTypeName = typeof(Int32).FullName,
+                },
+                  new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Event Log Log Name",
+                    ValueType = SystemValueTypes.AIP_EventLogLogName,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                      new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Log File Name",
+                    ValueType = SystemValueTypes.AIP_LogLogFileName,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                            new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Process File Name",
+                    ValueType = SystemValueTypes.AIP_ProcessFileName,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                                  new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "SMS Number",
+                    ValueType = SystemValueTypes.AIP_SMSNumber,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "SQL Connection String",
+                    ValueType = SystemValueTypes.AIP_SQLConnectionString,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                      new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "SQL SQL",
+                    ValueType = SystemValueTypes.AIP_SQLSQL,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                            new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "URL Header",
+                    ValueType = SystemValueTypes.AIP_URLHeader,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                                  new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "URL Method",
+                    ValueType = SystemValueTypes.AIP_URLMethod,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                                        new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "URL Password",
+                    ValueType = SystemValueTypes.AIP_URLPassword,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                                              new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "URL Proxy Name",
+                    ValueType = SystemValueTypes.AIP_URLProxyName,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "URL Proxy Port",
+                    ValueType = SystemValueTypes.AIP_URLProxyPort,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "URL URL",
+                    ValueType = SystemValueTypes.AIP_URLURL,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "URL Username",
+                    ValueType = SystemValueTypes.AIP_URLUsername,
+                    ValueTypeName = typeof(String).FullName,
+                },
+
+                // -----------------------------------------------------------------------------------------------------------------
+                // Action item parameter custom
+                 new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Error Message",
+                    ValueType = SystemValueTypes.AIPC_ErrorMessage,
+                    ValueTypeName = typeof(String).FullName,
+                },
+                     new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    Name = "Message",
+                    ValueType = SystemValueTypes.AIPC_Message,
+                    ValueTypeName = typeof(String).FullName,
+                },
+
+                // -----------------------------------------------------------------------------------------------------------------
                 // Event condition sources
                 new SystemValueType()
                 {

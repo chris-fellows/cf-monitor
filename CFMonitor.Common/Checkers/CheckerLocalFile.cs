@@ -39,7 +39,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -58,8 +66,7 @@ namespace CFMonitor.Checkers
                 var findTextParam = monitorItem.Parameters.FirstOrDefault(p => p.SystemValueTypeId == svtFindText.Id);
                 var findText = GetValueWithPlaceholdersReplaced(findTextParam);
 
-                Exception exception = null;
-                var actionItemParameters = new List<ActionItemParameter>();
+                Exception exception = null;            
                 FileInfo fileInfo = null;
                 bool textFound = false;
 
@@ -74,13 +81,19 @@ namespace CFMonitor.Checkers
                 catch (Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
                 {
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem,  monitorItem, actionItemParameters, exception, fileInfo, textFound))
+                        if (IsEventValid(eventItem,  monitorItem, exception, fileInfo, textFound))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -100,7 +113,7 @@ namespace CFMonitor.Checkers
             return monitorItem.MonitorItemType == MonitorItemTypes.LocalFile;
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorFile, List<ActionItemParameter> actionItemParameters, Exception exception, FileInfo fileInfo, bool textFound)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorFile, Exception exception, FileInfo fileInfo, bool textFound)
         {                       
                 bool meetsCondition = false;
 

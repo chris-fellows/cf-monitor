@@ -1,11 +1,9 @@
-﻿using CFConnectionMessaging.Interfaces;
-using CFConnectionMessaging.Models;
+﻿using CFConnectionMessaging.Models;
 using CFConnectionMessaging;
 using CFMonitor.Constants;
 using CFMonitor.Exceptions;
 using CFMonitor.Models.Messages;
 using CFMonitor.MessageConverters;
-using CFMonitor.Common.MessageConverters;
 using System.Diagnostics;
 
 namespace CFMonitor.Agent
@@ -23,18 +21,66 @@ namespace CFMonitor.Agent
         //public event GetMonitorItemsResponseReceived? OnGetMonitorItemsResponseReceived;
 
         public delegate void MonitorItemUpdatedReceived(MonitorItemUpdated monitorItemUpdated);
-        public event MonitorItemUpdatedReceived? OnMonitorItemUpdated;            
+        public event MonitorItemUpdatedReceived? OnMonitorItemUpdated;
+
+        public delegate void ConnectionMessageReceived(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo);
+        public event ConnectionMessageReceived? OnConnectionMessageReceived;
 
         private List<MessageBase> _responseMessages = new List<MessageBase>();
 
         private TimeSpan _responseTimeout = TimeSpan.FromSeconds(30);
 
-        public string LocalUserName { get; set; } = String.Empty;
-
         public ManagerConnection()
         {
             _connection = new ConnectionTcp();
-            _connection.OnConnectionMessageReceived += _connection_OnConnectionMessageReceived;
+            //_connection.OnConnectionMessageReceived += _connection_OnConnectionMessageReceived;
+            _connection.OnConnectionMessageReceived += delegate (ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
+            {
+                if (IsResponseMessage(connectionMessage))   // Inside a Send... method waiting for a response
+                {
+                    _responseMessages.Add(GetResponseMessage(connectionMessage)!);
+                }
+                else      // Unsolicited message
+                {
+                    if (OnConnectionMessageReceived != null)
+                    {
+                        OnConnectionMessageReceived(connectionMessage, messageReceivedInfo);
+                    }
+                }               
+            };
+        }
+
+        private MessageBase? GetResponseMessage(ConnectionMessage connectionMessage)
+        {
+            switch (connectionMessage.TypeId)
+            {
+                case MessageTypeIds.GetEventItemsResponse:
+                    return _messageConverters.GetEventItemsResponseConverter.GetExternalMessage(connectionMessage);
+                    
+                case MessageTypeIds.GetFileObjectResponse:
+                    return _messageConverters.GetFileObjectResponseConverter.GetExternalMessage(connectionMessage);                    
+
+                case MessageTypeIds.GetMonitorAgentsResponse:
+                    return _messageConverters.GetMonitorAgentsResponseConverter.GetExternalMessage(connectionMessage);                    
+
+                case MessageTypeIds.GetMonitorItemsResponse:
+                    return _messageConverters.GetMonitorItemsResponseConverter.GetExternalMessage(connectionMessage);                    
+
+                case MessageTypeIds.GetSystemValueTypesResponse:
+                    return _messageConverters.GetSystemValueTypesResponseConverter.GetExternalMessage(connectionMessage);                    
+
+                /*
+                case MessageTypeIds.MonitorItemUpdated:
+                    return = _messageConverters.MonitorItemUpdatedConverter.GetExternalMessage(connectionMessage);
+                    if (OnMonitorItemUpdated != null)
+                    {
+                        OnMonitorItemUpdated(monitorItemUpdated);
+                    }
+                    break;
+                */
+            }
+
+            return null;
         }
 
         public void StartListening(int port)
@@ -189,6 +235,16 @@ namespace CFMonitor.Agent
         }
 
         /// <summary>
+        /// Sends Monitor Agent log
+        /// </summary>
+        /// <param name="monitorAgentLogMessage"></param>
+        /// <param name="remoteEndpointInfo"></param>
+        public void SendMonitorAgentLog(MonitorAgentLogMessage monitorAgentLogMessage, EndpointInfo remoteEndpointInfo)
+        {
+            _connection.SendMessage(_messageConverters.MonitorAgentLogMessageConverer.GetConnectionMessage(monitorAgentLogMessage), remoteEndpointInfo);
+        }
+
+        /// <summary>
         /// Send heartbeat
         /// </summary>
         /// <param name="heartbeat"></param>
@@ -208,49 +264,63 @@ namespace CFMonitor.Agent
             _connection.SendMessage(_messageConverters.MonitorItemResultMessageConverter.GetConnectionMessage(monitorItemResult), remoteEndpointInfo);
         }
 
-        /// <summary>
-        /// Handles ConnectionMessage received
-        /// </summary>
-        /// <param name="connectionMessage"></param>
-        /// <param name="messageReceivedInfo"></param>
-        private void _connection_OnConnectionMessageReceived(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
+        private bool IsResponseMessage(ConnectionMessage connectionMessage)
         {
-            switch (connectionMessage.TypeId)
+            var responseMessageTypeIds = new[]
             {
-                case MessageTypeIds.GetEventItemsResponse:                    
-                    var getEventItemsResponse = _messageConverters.GetEventItemsResponseConverter.GetExternalMessage(connectionMessage);
-                    _responseMessages.Add(getEventItemsResponse);                    
-                    break;
+                 MessageTypeIds.GetEventItemsResponse,
+                 MessageTypeIds.GetFileObjectResponse,
+                 MessageTypeIds.GetMonitorAgentsResponse,
+                 MessageTypeIds.GetMonitorItemsResponse,
+                 MessageTypeIds.GetSystemValueTypesResponse
+            };
 
-                case MessageTypeIds.GetFileObjectResponse:
-                    var getFileObjectResponse = _messageConverters.GetFileObjectResponseConverter.GetExternalMessage(connectionMessage);
-                    _responseMessages.Add(getFileObjectResponse);
-                    break;
-
-                case MessageTypeIds.GetMonitorAgentsResponse:
-                    var getMonitorAgentsResponse = _messageConverters.GetMonitorAgentsResponseConverter.GetExternalMessage(connectionMessage);
-                    _responseMessages.Add(getMonitorAgentsResponse);
-                    break;
-
-                case MessageTypeIds.GetMonitorItemsResponse:                    
-                    var getMonitorItemsResponse = _messageConverters.GetMonitorItemsResponseConverter.GetExternalMessage(connectionMessage);
-                    _responseMessages.Add(getMonitorItemsResponse);                    
-                    break;
-
-                case MessageTypeIds.GetSystemValueTypesResponse:
-                    var getSystemValueTypesResponse = _messageConverters.GetSystemValueTypesResponseConverter.GetExternalMessage(connectionMessage);
-                    _responseMessages.Add(getSystemValueTypesResponse);
-                    break;
-                
-                case MessageTypeIds.MonitorItemUpdated:                    
-                        var monitorItemUpdated = _messageConverters.MonitorItemUpdatedConverter.GetExternalMessage(connectionMessage);
-                        if (OnMonitorItemUpdated != null)
-                        {
-                            OnMonitorItemUpdated(monitorItemUpdated);
-                        }                                            
-                    break;                
-            }
+            return responseMessageTypeIds.Contains(connectionMessage.TypeId);
         }
+
+        ///// <summary>
+        ///// Handles ConnectionMessage received
+        ///// </summary>
+        ///// <param name="connectionMessage"></param>
+        ///// <param name="messageReceivedInfo"></param>
+        //private void _connection_OnConnectionMessageReceived(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
+        //{
+        //    switch (connectionMessage.TypeId)
+        //    {
+        //        case MessageTypeIds.GetEventItemsResponse:                    
+        //            var getEventItemsResponse = _messageConverters.GetEventItemsResponseConverter.GetExternalMessage(connectionMessage);
+        //            _responseMessages.Add(getEventItemsResponse);                    
+        //            break;
+
+        //        case MessageTypeIds.GetFileObjectResponse:
+        //            var getFileObjectResponse = _messageConverters.GetFileObjectResponseConverter.GetExternalMessage(connectionMessage);
+        //            _responseMessages.Add(getFileObjectResponse);
+        //            break;
+
+        //        case MessageTypeIds.GetMonitorAgentsResponse:
+        //            var getMonitorAgentsResponse = _messageConverters.GetMonitorAgentsResponseConverter.GetExternalMessage(connectionMessage);
+        //            _responseMessages.Add(getMonitorAgentsResponse);
+        //            break;
+
+        //        case MessageTypeIds.GetMonitorItemsResponse:                    
+        //            var getMonitorItemsResponse = _messageConverters.GetMonitorItemsResponseConverter.GetExternalMessage(connectionMessage);
+        //            _responseMessages.Add(getMonitorItemsResponse);                    
+        //            break;
+
+        //        case MessageTypeIds.GetSystemValueTypesResponse:
+        //            var getSystemValueTypesResponse = _messageConverters.GetSystemValueTypesResponseConverter.GetExternalMessage(connectionMessage);
+        //            _responseMessages.Add(getSystemValueTypesResponse);
+        //            break;
+                
+        //        case MessageTypeIds.MonitorItemUpdated:                    
+        //                var monitorItemUpdated = _messageConverters.MonitorItemUpdatedConverter.GetExternalMessage(connectionMessage);
+        //                if (OnMonitorItemUpdated != null)
+        //                {
+        //                    OnMonitorItemUpdated(monitorItemUpdated);
+        //                }                                            
+        //            break;                
+        //    }
+        //}
 
         /// <summary>
         /// Waits for all responses for request until completed or timeout. Where multiple responses are required then

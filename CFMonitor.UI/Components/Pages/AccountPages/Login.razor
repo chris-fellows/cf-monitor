@@ -95,13 +95,13 @@
     private async Task AddAuditEventLogInSuccessAsync(string userId)
     {
         var auditEvent = AuditEventFactory.CreateUserLogInSuccess(userId, userId);
-        AuditEventService.Add(auditEvent);
+        await AuditEventService.AddAsync(auditEvent);
     }
 
     private async Task AddAuditEventLogInErrorAsync(string username)
     {
         var systemUser = UserService.GetAll().First(u => u.GetUserType() == Enums.UserTypes.System);
         var auditEvent = AuditEventFactory.CreateUserLogInError(systemUser.Id, username);
-        AuditEventService.Add(auditEvent);
+        await AuditEventService.AddAsync(auditEvent);
     }
 }

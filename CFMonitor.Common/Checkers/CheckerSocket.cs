@@ -34,7 +34,15 @@ namespace CFMonitor.Checkers
             {
                 SetPlaceholders(monitorAgent, monitorItem, checkerConfig);
 
-                var monitorItemOutput = new MonitorItemOutput();
+                var monitorItemOutput = new MonitorItemOutput()
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    ActionItemParameters = new(),
+                    CheckedDateTime = DateTime.UtcNow,
+                    EventItemIdsForAction = new(),
+                    MonitorAgentId = monitorAgent.Id,
+                    MonitorItemId = monitorItem.Id,
+                };
 
                 // Get event items
                 var eventItems = _eventItemService.GetByMonitorItemId(monitorItem.Id).Where(ei => ei.ActionItems.Any()).ToList();
@@ -58,8 +66,7 @@ namespace CFMonitor.Checkers
                 var host = GetValueWithPlaceholdersReplaced(hostParam);
 
                 Exception exception = null;
-                bool connected = false;
-                var actionItemParameters = new List<ActionItemParameter>();
+                bool connected = false;                
 
                 try
                 {
@@ -80,13 +87,19 @@ namespace CFMonitor.Checkers
                 catch (Exception ex)
                 {
                     exception = ex;
+
+                    monitorItemOutput.ActionItemParameters.Add(new ActionItemParameter()
+                    {
+                        SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AIPC_ErrorMessage).Id,
+                        Value = ex.Message
+                    });
                 }
 
                 try
                 {
                     foreach (var eventItem in eventItems)
                     {
-                        if (IsEventValid(eventItem, monitorItem, actionItemParameters, exception, connected))
+                        if (IsEventValid(eventItem, monitorItem, exception, connected))
                         {
                             monitorItemOutput.EventItemIdsForAction.Add(eventItem.Id);
                         }
@@ -101,7 +114,7 @@ namespace CFMonitor.Checkers
             });
         }
 
-        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSocket, List<ActionItemParameter> actionItemParameters, Exception exception, bool connected)
+        private bool IsEventValid(EventItem eventItem, MonitorItem monitorSocket, Exception exception, bool connected)
         {            
                 bool meetsCondition = false;
 

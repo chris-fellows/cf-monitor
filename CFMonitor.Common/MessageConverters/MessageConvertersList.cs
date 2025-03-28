@@ -26,6 +26,8 @@ namespace CFMonitor.MessageConverters
 
         private readonly IExternalMessageConverter<Heartbeat> _heartbeatConverter = new HeartbeatConverter();
 
+        private readonly IExternalMessageConverter<MonitorAgentLogMessage> _monitorAgentLogMessageConverter = new MonitorAgentLogMessageConverter();
+
         private readonly IExternalMessageConverter<MonitorItemResultMessage> _monitorItemResultMessageConverter = new MonitorItemResultMessageConverter();
         private readonly IExternalMessageConverter<MonitorItemUpdated> _monitorItemUpdatedConverter = new MonitorItemUpdatedConverter();
 
@@ -46,6 +48,8 @@ namespace CFMonitor.MessageConverters
         public IExternalMessageConverter<GetSystemValueTypesResponse> GetSystemValueTypesResponseConverter => _getSystemValueTypesResponseConverter;
 
         public IExternalMessageConverter<Heartbeat> HeartbeatConverter => _heartbeatConverter;
+
+        public IExternalMessageConverter<MonitorAgentLogMessage> MonitorAgentLogMessageConverer => _monitorAgentLogMessageConverter;
 
         public IExternalMessageConverter<MonitorItemResultMessage> MonitorItemResultMessageConverter => _monitorItemResultMessageConverter;
         public IExternalMessageConverter<MonitorItemUpdated> MonitorItemUpdatedConverter => _monitorItemUpdatedConverter;

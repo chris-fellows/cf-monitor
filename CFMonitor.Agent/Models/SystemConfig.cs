@@ -24,5 +24,11 @@ namespace CFMonitor.Agent.Models
         /// Root folder for monitor item files. E.g. Scripts to run
         /// </summary>
         public string MonitorItemFilesRootFolder { get; set; } = String.Empty;
+
+        public int HeartbeatSecs { get; set; }
+
+        public string LogFolder { get; set; } = String.Empty;
+
+        public int MaxLogDays { get; set; }
     }
 }

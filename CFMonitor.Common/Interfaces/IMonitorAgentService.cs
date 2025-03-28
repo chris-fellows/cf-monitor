@@ -7,5 +7,8 @@ namespace CFMonitor.Interfaces
     /// </summary>
     public interface IMonitorAgentService : IEntityWithIdService<MonitorAgent, string>
     {
+        string GetStatusName(MonitorAgent monitorAgent);
+
+        string GetStatusColor(MonitorAgent monitorAgent);
     }
 }

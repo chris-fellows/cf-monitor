@@ -1,7 +1,6 @@
 ﻿using CFConnectionMessaging.Interfaces;
 using CFConnectionMessaging.Models;
 using CFConnectionMessaging;
-using CFMonitor.Common.MessageConverters;
 using CFMonitor.Constants;
 using CFMonitor.Enums;
 using CFMonitor.Interfaces;
@@ -18,18 +17,21 @@ using System.Diagnostics;
 using System.Windows.Markup;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
+using CFMonitor.Log;
+using System.Collections.Concurrent;
+using CFMonitor.AgentManager.Models;
 
 namespace CFMonitor.AgentManager
 {
     /// <summary>
-    /// Connection to Agent instances
+    /// Connection to Agent instances. Received messages are passed via OnConnectionMessageReceived and then processed.
     /// </summary>
     internal class AgentsConnection
     {
         private ConnectionTcp _connection;
 
         private readonly MessageConvertersList _messageConverters = new();
-
+        
         //public delegate void GetMonitorItemsRequestReceived(GetMonitorItemsRequest request);
         //public event GetMonitorItemsRequestReceived? OnGetMonitorItemsRequestReceived;
 
@@ -49,12 +51,18 @@ namespace CFMonitor.AgentManager
         private readonly IUserService _userService;
 
         private DateTimeOffset _monitorAgentsLastRefreshTime = DateTimeOffset.MinValue;
-        private Dictionary<string, MonitorAgent> _monitorAgentsBySecurityKey = new();
+        private ConcurrentDictionary<string, MonitorAgent> _monitorAgentsBySecurityKey = new();
+
+        public delegate void ConnectionMessageReceived(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo);
+        public event ConnectionMessageReceived? OnConnectionMessageReceived;
+
+        private readonly ISimpleLog _log;             
 
         public AgentsConnection(IAuditEventFactory auditEventFactory,
                                 IAuditEventService auditEventService,
                                 IEventItemService eventItemService,
                                 IFileObjectService fileObjectService,
+                                ISimpleLog log,
                                 IMonitorAgentService monitorAgentService,
                                IMonitorItemOutputService monitorItemOutputService,
                                IMonitorItemService monitorItemService,
@@ -62,18 +70,33 @@ namespace CFMonitor.AgentManager
                                IUserService userService)
             
         {
+            
             _auditEventFactory = auditEventFactory;
             _auditEventService = auditEventService;
             _eventItemService = eventItemService;
             _fileObjectService = fileObjectService;
+            _log = log;
             _monitorAgentService = monitorAgentService;
             _monitorItemOutputService = monitorItemOutputService;
             _monitorItemService = monitorItemService;
             _serviceProvider = serviceProvider;
             _userService = userService;
 
-            _connection = new ConnectionTcp();
-            _connection.OnConnectionMessageReceived += _connection_OnConnectionMessageReceived;
+            _connection = new ConnectionTcp();           
+            _connection.OnConnectionMessageReceived += delegate(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
+            {
+                if (IsResponseMessage(connectionMessage))     // Inside Send... method waiting for response
+                {
+                    // No current requests do this
+                }
+                else
+                {
+                    if (OnConnectionMessageReceived != null)
+                    {
+                        OnConnectionMessageReceived(connectionMessage, messageReceivedInfo);
+                    }
+                }
+            };
         }
 
         public void StartListening(int port)
@@ -81,15 +104,15 @@ namespace CFMonitor.AgentManager
             _connection.ReceivePort = port;
             _connection.StartListening();
 
-            Console.WriteLine($"Listening on port {port}");
+            _log.Log(DateTimeOffset.UtcNow, "Information", $"Listening on port {port}");
         }
 
         public void StopListening()
         {
-            Console.WriteLine("Stopping listening");
+            _log.Log(DateTimeOffset.UtcNow, "Information", "Stopping listening");
             _connection.StopListening();
-        }
-       
+        }     
+
         /// <summary>
         /// Send monitor item updated notification
         /// </summary>
@@ -99,57 +122,87 @@ namespace CFMonitor.AgentManager
             _connection.SendMessage(_messageConverters.MonitorItemUpdatedConverter.GetConnectionMessage(monitorItemUpdated), remoteEndpointInfo);
         }
 
+        private bool IsResponseMessage(ConnectionMessage connectionMessage)
+        {
+            var responseMessageTypeIds = new[]
+            {
+                 MessageTypeIds.GetEventItemsResponse,
+                 MessageTypeIds.GetFileObjectResponse,
+                 MessageTypeIds.GetMonitorAgentsResponse,
+                 MessageTypeIds.GetMonitorItemsResponse,
+                 MessageTypeIds.GetSystemValueTypesResponse
+            };
+
+            return responseMessageTypeIds.Contains(connectionMessage.TypeId);
+        }
+
+        ///// <summary>
+        ///// Handles ConnectionMessage received
+        ///// </summary>
+        ///// <param name="connectionMessage"></param>
+        ///// <param name="messageReceivedInfo"></param>
+        //private void _connection_OnConnectionMessageReceived(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
+        //{
+        //    var queueItem = new QueueItem()
+        //    {
+        //        ConnectionMessage = connectionMessage,
+        //        MessageReceivedInfo = messageReceivedInfo
+        //    };
+        //    _queue.Enqueue(queueItem);           
+        //}
+
         /// <summary>
-        /// Handles ConnectionMessage received
+        /// Handles connection message
         /// </summary>
         /// <param name="connectionMessage"></param>
         /// <param name="messageReceivedInfo"></param>
-        private void _connection_OnConnectionMessageReceived(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
+        /// <returns></returns>
+        public Task HandleConnectionMessageAsync(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
         {
             switch (connectionMessage.TypeId)
             {
                 case MessageTypeIds.GetEventItemsRequest:
                     var getEventItemsRequest = _messageConverters.GetEventItemsRequestConverter.GetExternalMessage(connectionMessage);
 
-                    HandleGetEventItemsRequestAsync(getEventItemsRequest, messageReceivedInfo);
-                    break;
+                    return HandleGetEventItemsRequestAsync(getEventItemsRequest, messageReceivedInfo);                    
 
                 case MessageTypeIds.GetFileObjectRequest:
                     var getFileObjectRequest = _messageConverters.GetFileObjectRequestConverter.GetExternalMessage(connectionMessage);
 
-                    HandleGetFileObjectRequestAsync(getFileObjectRequest, messageReceivedInfo);
-                    break;
+                    return HandleGetFileObjectRequestAsync(getFileObjectRequest, messageReceivedInfo);                    
 
                 case MessageTypeIds.GetMonitorAgentsRequest:
                     var getMonitorAgentsRequest = _messageConverters.GetMonitorAgentsRequestConverter.GetExternalMessage(connectionMessage);
 
-                    HandleGetMonitorAgentsRequestAsync(getMonitorAgentsRequest, messageReceivedInfo);
-                    break;
+                    return HandleGetMonitorAgentsRequestAsync(getMonitorAgentsRequest, messageReceivedInfo);                    
 
                 case MessageTypeIds.GetMonitorItemsRequest:
                     var getMonitorItemsRequest = _messageConverters.GetMonitorItemsRequestConverter.GetExternalMessage(connectionMessage);
 
-                    HandleGetMonitorItemsRequestAsync(getMonitorItemsRequest, messageReceivedInfo);
-                    break;
+                    return HandleGetMonitorItemsRequestAsync(getMonitorItemsRequest, messageReceivedInfo);                    
 
                 case MessageTypeIds.GetSystemValueTypesRequest:
                     var getSystemValueTypesRequest = _messageConverters.GetSystemValueTypesRequestConverter.GetExternalMessage(connectionMessage);
 
-                    HandleGetSystemValueTypesRequestAsync(getSystemValueTypesRequest, messageReceivedInfo);
-                    break;
+                    return HandleGetSystemValueTypesRequestAsync(getSystemValueTypesRequest, messageReceivedInfo);                    
 
                 case MessageTypeIds.Heartbeat:
                     var heartbeat = _messageConverters.HeartbeatConverter.GetExternalMessage(connectionMessage);
 
-                    HandleHeartbeatAsync(heartbeat, messageReceivedInfo);          
-                    break;
+                    return HandleHeartbeatAsync(heartbeat, messageReceivedInfo);                     
+
+                case MessageTypeIds.MonitorAgentLogMessage:
+                    var monitorAgentLogMessage = _messageConverters.MonitorAgentLogMessageConverer.GetExternalMessage(connectionMessage);
+
+                    return HandleMonitorAgentLogMessageAsync(monitorAgentLogMessage, messageReceivedInfo);                    
 
                 case MessageTypeIds.MonitorItemResultMessage:
                     var monitorItemResultMessage = _messageConverters.MonitorItemResultMessageConverter.GetExternalMessage(connectionMessage);
 
-                    HandleMonitorItemResultAsync(monitorItemResultMessage, messageReceivedInfo);
-                    break;
+                    return HandleMonitorItemResultAsync(monitorItemResultMessage, messageReceivedInfo);                    
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -168,16 +221,43 @@ namespace CFMonitor.AgentManager
             }
             if (!_monitorAgentsBySecurityKey.Any())   // Cache empty, load it
             {
-                _monitorAgentService.GetAll().ForEach(monitorAgent => _monitorAgentsBySecurityKey.Add(monitorAgent.SecurityKey, monitorAgent));
+                var monitorAgents = _monitorAgentService.GetAll();
+                foreach(var monitorAgent in monitorAgents)
+                {
+                    _monitorAgentsBySecurityKey.TryAdd(monitorAgent.SecurityKey, monitorAgent);
+                }
+                //_monitorAgentService.GetAll().ForEach(monitorAgent => _monitorAgentsBySecurityKey.Add(monitorAgent.SecurityKey, monitorAgent));
             }
             return _monitorAgentsBySecurityKey.ContainsKey(securityKey) ? _monitorAgentsBySecurityKey[securityKey] : null;
+        }
+        
+        private Task HandleMonitorAgentLogMessageAsync(MonitorAgentLogMessage monitorAgentLogMessage, MessageReceivedInfo messageReceivedInfo)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                _log.Log(DateTimeOffset.UtcNow, "Information", $"Processing {monitorAgentLogMessage.TypeId} from Monitor Agent {monitorAgentLogMessage.SenderAgentId}");
+
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    // Save log
+                    var fileObject = new FileObject()
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Name = $"{monitorAgentLogMessage.SenderAgentId}.{monitorAgentLogMessage.FileName}",
+                        Content = monitorAgentLogMessage.Content
+                    };
+                    _fileObjectService.AddAsync(fileObject).Wait();
+
+                    _log.Log(DateTimeOffset.UtcNow, "Information", $"Processed {monitorAgentLogMessage.TypeId} from Monitor Agent {monitorAgentLogMessage.SenderAgentId}");
+                }
+            });
         }
 
         private Task HandleGetFileObjectRequestAsync(GetFileObjectRequest getFileObjectRequest, MessageReceivedInfo messageReceivedInfo)
         {
             return Task.Factory.StartNew(() =>
             {
-                Console.WriteLine($"Processing {getFileObjectRequest.TypeId} from Monitor Agent {getFileObjectRequest.SenderAgentId}");
+                _log.Log(DateTimeOffset.UtcNow, "Information", $"Processing {getFileObjectRequest.TypeId} from Monitor Agent {getFileObjectRequest.SenderAgentId}");
 
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -201,7 +281,7 @@ namespace CFMonitor.AgentManager
                     }
                     else
                     {
-                        var fileObject = _fileObjectService.GetById(getFileObjectRequest.FileObjectId);
+                        var fileObject = _fileObjectService.GetByIdAsync(getFileObjectRequest.FileObjectId).Result;
 
                         getFileObjectResponse.FileObject = fileObject;
                     }
@@ -210,7 +290,7 @@ namespace CFMonitor.AgentManager
                     _connection.SendMessage(_messageConverters.GetFileObjectResponseConverter.GetConnectionMessage(getFileObjectResponse), messageReceivedInfo.RemoteEndpointInfo);
 
                     var error = getFileObjectResponse.Response.ErrorCode == null ? "Success" : getFileObjectResponse.Response.ErrorMessage;
-                    Console.WriteLine($"Processed {getFileObjectRequest.TypeId} from Monitor Agent {getFileObjectRequest.SenderAgentId}: {error}");
+                    _log.Log(DateTimeOffset.UtcNow, "Information", $"Processed {getFileObjectRequest.TypeId} from Monitor Agent {getFileObjectRequest.SenderAgentId}: {error}");
                 }
             });
         }
@@ -219,7 +299,7 @@ namespace CFMonitor.AgentManager
         {
             return Task.Factory.StartNew(() =>
             {
-                Console.WriteLine($"Processing {getEventItemsRequest.TypeId} from Monitor Agent {getEventItemsRequest.SenderAgentId}");
+                _log.Log(DateTimeOffset.UtcNow, "Information", $"Processing {getEventItemsRequest.TypeId} from Monitor Agent {getEventItemsRequest.SenderAgentId}");
 
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -252,7 +332,7 @@ namespace CFMonitor.AgentManager
                     _connection.SendMessage(_messageConverters.GetEventItemsResponseConverter.GetConnectionMessage(getEventItemsResponse), messageReceivedInfo.RemoteEndpointInfo);
 
                     var error = getEventItemsResponse.Response.ErrorCode == null ? "Success" : getEventItemsResponse.Response.ErrorMessage;
-                    Console.WriteLine($"Processed {getEventItemsRequest.TypeId} from Monitor Agent {getEventItemsRequest.SenderAgentId}: {error}");
+                    _log.Log(DateTimeOffset.UtcNow, "Information", $"Processed {getEventItemsRequest.TypeId} from Monitor Agent {getEventItemsRequest.SenderAgentId}: {error}");
                 }                                
             });
         }
@@ -261,7 +341,7 @@ namespace CFMonitor.AgentManager
         {
             return Task.Factory.StartNew(() =>
             {
-                Console.WriteLine($"Processing {getMonitorAgentsRequest.TypeId} from Monitor Agent {getMonitorAgentsRequest.SenderAgentId}");
+                _log.Log(DateTimeOffset.UtcNow, "Information", $"Processing {getMonitorAgentsRequest.TypeId} from Monitor Agent {getMonitorAgentsRequest.SenderAgentId}");
 
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -294,7 +374,7 @@ namespace CFMonitor.AgentManager
                     _connection.SendMessage(_messageConverters.GetMonitorAgentsResponseConverter.GetConnectionMessage(getMonitorAgentsResponse), messageReceivedInfo.RemoteEndpointInfo);
 
                     var error = getMonitorAgentsResponse.Response.ErrorCode == null ? "Success" : getMonitorAgentsResponse.Response.ErrorMessage;
-                    Console.WriteLine($"Processed {getMonitorAgentsRequest.TypeId} from Monitor Agent {getMonitorAgentsRequest.SenderAgentId}: {error}");
+                    _log.Log(DateTimeOffset.UtcNow, "Information", $"Processed {getMonitorAgentsRequest.TypeId} from Monitor Agent {getMonitorAgentsRequest.SenderAgentId}: {error}");
                 }                
             });
         }
@@ -303,7 +383,7 @@ namespace CFMonitor.AgentManager
         {
             return Task.Factory.StartNew(() =>
             {
-                Console.WriteLine($"Processing {getMonitorItemsRequest.TypeId} from Monitor Agent {getMonitorItemsRequest.SenderAgentId}");
+                _log.Log(DateTimeOffset.UtcNow, "Information", $"Processing {getMonitorItemsRequest.TypeId} from Monitor Agent {getMonitorItemsRequest.SenderAgentId}");
 
                 using (var scope = _serviceProvider.CreateScope())
                 {                    
@@ -336,7 +416,7 @@ namespace CFMonitor.AgentManager
                     _connection.SendMessage(_messageConverters.GetMonitorItemsResponseConverter.GetConnectionMessage(getMonitorItemsResponse), messageReceivedInfo.RemoteEndpointInfo);
 
                     var error = getMonitorItemsResponse.Response.ErrorCode == null ? "Success" : getMonitorItemsResponse.Response.ErrorMessage;
-                    Console.WriteLine($"Processed {getMonitorItemsRequest.TypeId} from Monitor Agent {getMonitorItemsRequest.SenderAgentId}: {error}");
+                    _log.Log(DateTimeOffset.UtcNow, "Information", $"Processed {getMonitorItemsRequest.TypeId} from Monitor Agent {getMonitorItemsRequest.SenderAgentId}: {error}");
                 }                
             });
         }
@@ -345,7 +425,7 @@ namespace CFMonitor.AgentManager
         {
             return Task.Factory.StartNew(() =>
             {
-                Console.WriteLine($"Processing {getSystemValueTypesRequest.TypeId} from Monitor Agent {getSystemValueTypesRequest.SenderAgentId}");
+                _log.Log(DateTimeOffset.UtcNow, "Information", $"Processing {getSystemValueTypesRequest.TypeId} from Monitor Agent {getSystemValueTypesRequest.SenderAgentId}");
 
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -378,7 +458,7 @@ namespace CFMonitor.AgentManager
                     _connection.SendMessage(_messageConverters.GetSystemValueTypesResponseConverter.GetConnectionMessage(getSystemValueTypesResponse), messageReceivedInfo.RemoteEndpointInfo);
 
                     var error = getSystemValueTypesResponse.Response.ErrorCode == null ? "Success" : getSystemValueTypesResponse.Response.ErrorMessage;
-                    Console.WriteLine($"Processed {getSystemValueTypesRequest.TypeId} from Monitor Agent {getSystemValueTypesRequest.SenderAgentId}: {error}");
+                    _log.Log(DateTimeOffset.UtcNow, "Information", $"Processed {getSystemValueTypesRequest.TypeId} from Monitor Agent {getSystemValueTypesRequest.SenderAgentId}: {error}");
                 }                
             });
         }
@@ -393,7 +473,7 @@ namespace CFMonitor.AgentManager
         {
             return Task.Factory.StartNew(() =>
             {
-                Console.WriteLine($"Processing {heartbeat.TypeId} from Monitor Agent {heartbeat.SenderAgentId}");
+                _log.Log(DateTimeOffset.UtcNow, "Information", $"Processing {heartbeat.TypeId} from Monitor Agent {heartbeat.SenderAgentId}");
                 
                 using (var scope = _serviceProvider.CreateScope())
                 {
@@ -410,7 +490,7 @@ namespace CFMonitor.AgentManager
                         var monitorAgentService = scope.ServiceProvider.GetRequiredService<IMonitorAgentService>();
 
                         // Get monitor agent                
-                        var monitorAgent = monitorAgentService.GetById(heartbeat.SenderAgentId);
+                        var monitorAgent = monitorAgentService.GetByIdAsync(heartbeat.SenderAgentId).Result;
                         if (monitorAgent != null)       // Known monitor agent
                         {
                             monitorAgent.HeartbeatDateTime = DateTimeOffset.UtcNow;
@@ -420,7 +500,7 @@ namespace CFMonitor.AgentManager
                             monitorAgent.Port = messageReceivedInfo.RemoteEndpointInfo.Port;
                             monitorAgent.Version = heartbeat.Version;
 
-                            monitorAgentService.Update(monitorAgent);
+                            monitorAgentService.UpdateAsync(monitorAgent).Wait();
                         }
                         else if (heartbeat.SenderAgentId.Length != Guid.Empty.ToString().Length)    // New agent (Ignore if Id is unexpected format)
                         {
@@ -439,12 +519,12 @@ namespace CFMonitor.AgentManager
                                 Version = heartbeat.Version
                             };
 
-                            monitorAgentService.Add(monitorAgent);
+                            monitorAgentService.AddAsync(monitorAgent).Wait();
                         }
                     }
                 }
 
-                Console.WriteLine($"Processed {heartbeat.TypeId} from Monitor Agent {heartbeat.SenderAgentId}");
+                _log.Log(DateTimeOffset.UtcNow, "Information", $"Processed {heartbeat.TypeId} from Monitor Agent {heartbeat.SenderAgentId}");
             });
         }
 
@@ -458,7 +538,7 @@ namespace CFMonitor.AgentManager
         {
             return Task.Factory.StartNew(() =>
             {
-                Console.WriteLine($"Processing {monitorItemResultMessage.TypeId} from Monitor Agent {monitorItemResultMessage.SenderAgentId}");
+                _log.Log(DateTimeOffset.UtcNow, "Information", $"Processing {monitorItemResultMessage.TypeId} from Monitor Agent {monitorItemResultMessage.SenderAgentId}");
 
                 var monitorAgentCheck = GetMonitorAgentBySecurityKey(monitorItemResultMessage.SecurityKey);
 
@@ -468,13 +548,13 @@ namespace CFMonitor.AgentManager
                     {
                         // Save monitor item output
                         var monitorItemOutput = monitorItemResultMessage.MonitorItemOutput;
-                        _monitorItemOutputService.Add(monitorItemOutput);
+                        _monitorItemOutputService.AddAsync(monitorItemOutput).Wait();
 
                         // Get system user
                         var systemUser = _userService.GetAll().First(u => u.GetUserType() == UserTypes.System);
 
                         // Add "Checked monitor item" audit event
-                        _auditEventService.Add(_auditEventFactory.CreateCheckedMonitorItem(systemUser.Id, monitorItemOutput.Id));
+                        _auditEventService.AddAsync(_auditEventFactory.CreateCheckedMonitorItem(systemUser.Id, monitorItemOutput.Id)).Wait();
 
                         // Execute action(s)
                         if (monitorItemOutput.EventItemIdsForAction != null &&
@@ -489,12 +569,12 @@ namespace CFMonitor.AgentManager
                                 var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
 
                                 // Get monitor item
-                                var monitorItem = monitorItemService.GetById(monitorItemOutput.MonitorItemId);
+                                var monitorItem = monitorItemService.GetByIdAsync(monitorItemOutput.MonitorItemId).Result;
 
                                 foreach (var eventItemId in monitorItemOutput.EventItemIdsForAction)
                                 {
                                     // Get event item
-                                    var eventItem = _eventItemService.GetById(eventItemId);
+                                    var eventItem = _eventItemService.GetByIdAsync(eventItemId).Result;
 
                                     // Execute actions
                                     // TODO: Limit concurrent actions
@@ -524,12 +604,12 @@ namespace CFMonitor.AgentManager
                                         {
                                             if (actionTasksNByActionItemId[actionItemId].Exception == null)    // Action executed
                                             {
-                                                auditEventService.Add(auditEventFactory.CreateActionExecuted(systemUser.Id, monitorItemOutput.Id, actionItemId));
+                                                auditEventService.AddAsync(auditEventFactory.CreateActionExecuted(systemUser.Id, monitorItemOutput.Id, actionItemId)).Wait();
                                             }
                                             else    // Add error audit event
                                             {
                                                 // Note: MonitorItemOutput indicates MonitorItemId & MonitorAgentId
-                                                auditEventService.Add(auditEventFactory.CreateError(systemUser.Id, $"Error executing action item: {actionTasksNByActionItemId[actionItemId].Exception.Message}",
+                                                auditEventService.AddAsync(auditEventFactory.CreateError(systemUser.Id, $"Error executing action item: {actionTasksNByActionItemId[actionItemId].Exception.Message}",
                                                                 new List<AuditEventParameter>()
                                                                 {
                                                                 //new AuditEventParameter()
@@ -552,7 +632,7 @@ namespace CFMonitor.AgentManager
                                                                     //    SystemValueTypeId = systemValueTypes.First(svt => svt.ValueType == SystemValueTypes.AEP_MonitorAgentId).Id,
                                                                     //    Value = monitorItemOutput.MonitorAgentId,
                                                                     //}
-                                                                }));
+                                                                })).Wait();
                                             }
                                         }
                                     }
@@ -562,49 +642,49 @@ namespace CFMonitor.AgentManager
                     }
                 }
 
-                Console.WriteLine($"Processed {monitorItemResultMessage.TypeId} from Monitor Agent {monitorItemResultMessage.SenderAgentId}");
+                _log.Log(DateTimeOffset.UtcNow, "Information", $"Processed {monitorItemResultMessage.TypeId} from Monitor Agent {monitorItemResultMessage.SenderAgentId}");
             });
         }
 
-        /// <summary>
-        /// Waits for all responses for request until completed or timeout. Where multiple responses are required then
-        /// MessageBase.Response.IsMore=true for all except the last one.
-        /// </summary>
-        /// <param name="request">Request to check</param>
-        /// <param name="timeout">Timeout receiving responses</param>
-        /// <param name="responseMessagesToCheck">List where responses are added</param>
-        /// <param name="responseMessageAction">Action to forward next response</param>
-        /// <returns>Whether all responses received</returns>
-        private bool WaitForResponses(MessageBase request, TimeSpan timeout,
-                                      List<MessageBase> responseMessagesToCheck,
-                                      Action<MessageBase> responseMessageAction)
-        {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
+        ///// <summary>
+        ///// Waits for all responses for request until completed or timeout. Where multiple responses are required then
+        ///// MessageBase.Response.IsMore=true for all except the last one.
+        ///// </summary>
+        ///// <param name="request">Request to check</param>
+        ///// <param name="timeout">Timeout receiving responses</param>
+        ///// <param name="responseMessagesToCheck">List where responses are added</param>
+        ///// <param name="responseMessageAction">Action to forward next response</param>
+        ///// <returns>Whether all responses received</returns>
+        //private bool WaitForResponses(MessageBase request, TimeSpan timeout,
+        //                              List<MessageBase> responseMessagesToCheck,
+        //                              Action<MessageBase> responseMessageAction)
+        //{
+        //    var stopwatch = new Stopwatch();
+        //    stopwatch.Start();
 
-            var isGotAllResponses = false;
-            while (!isGotAllResponses &&
-                    stopwatch.Elapsed < timeout)
-            {
-                // Check for next response message
-                var responseMessage = responseMessagesToCheck.FirstOrDefault(m => m.Response != null && m.Response.MessageId == request.Id);
+        //    var isGotAllResponses = false;
+        //    while (!isGotAllResponses &&
+        //            stopwatch.Elapsed < timeout)
+        //    {
+        //        // Check for next response message
+        //        var responseMessage = responseMessagesToCheck.FirstOrDefault(m => m.Response != null && m.Response.MessageId == request.Id);
 
-                if (responseMessage != null)
-                {
-                    // Discard
-                    responseMessagesToCheck.Remove(responseMessage);
+        //        if (responseMessage != null)
+        //        {
+        //            // Discard
+        //            responseMessagesToCheck.Remove(responseMessage);
 
-                    // Check if last response
-                    isGotAllResponses = !responseMessage.Response.IsMore;
+        //            // Check if last response
+        //            isGotAllResponses = !responseMessage.Response.IsMore;
 
-                    // Pass response to caller
-                    responseMessageAction(responseMessage);
-                }
+        //            // Pass response to caller
+        //            responseMessageAction(responseMessage);
+        //        }
 
-                Thread.Sleep(20);
-            }
+        //        Thread.Sleep(20);
+        //    }
 
-            return isGotAllResponses;
-        }
+        //    return isGotAllResponses;
+        //}
     }
 }

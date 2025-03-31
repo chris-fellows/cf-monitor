@@ -5,6 +5,7 @@ using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using CFMonitor.Utilities;
 using System.Net.NetworkInformation;
+using System.Xml.Linq;
 
 namespace CFMonitor.Seed
 {
@@ -19,9 +20,18 @@ namespace CFMonitor.Seed
                 new SystemValueType()
                 {
                     Id= Guid.NewGuid().ToString(),                    
-                    Name = "Action Item Id",
+                    EntityIdType= EntityIdTypes.ActionItemId,
+                    Name = "Action Item Id",                    
                     ValueType = SystemValueTypes.AEP_ActionItemId,
                     ValueTypeName = typeof(String).FullName                    
+                },
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    EntityIdType= EntityIdTypes.ContentTemplateId,
+                    Name = "Content Template Id",
+                    ValueType = SystemValueTypes.AEP_ContentTemplateId,
+                    ValueTypeName = typeof(String).FullName
                 },
                    new SystemValueType()
                 {
@@ -38,6 +48,25 @@ namespace CFMonitor.Seed
                     ValueType = SystemValueTypes.AEP_MonitorAgentId,
                     ValueTypeName = typeof(String).FullName,                    
                 },
+
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    EntityIdType = EntityIdTypes.MonitorAgentGroupId,
+                    Name = "Monitor Agent Group Id",
+                    ValueType = SystemValueTypes.AEP_MonitorAgentGroupId,
+                    ValueTypeName = typeof(String).FullName,
+                },
+
+                new SystemValueType()
+                {
+                    Id= Guid.NewGuid().ToString(),
+                    EntityIdType = EntityIdTypes.MonitorAgentManagerId,
+                    Name = "Monitor Agent Manager Id",
+                    ValueType = SystemValueTypes.AEP_MonitorAgentManagerId,
+                    ValueTypeName = typeof(String).FullName,
+                },
+
                 new SystemValueType()
                 {
                     Id= Guid.NewGuid().ToString(),

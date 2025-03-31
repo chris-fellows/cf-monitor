@@ -182,8 +182,8 @@ namespace CFMonitor.AgentManager
             var queueItemTask = queueItem.ItemType switch
             {
                 QueueItemTypes.ArchiveLogs => new QueueItemTask(ArchiveLogsAsync(), queueItem),
-                QueueItemTypes.ConnectionMessage => new QueueItemTask(_agentConnection.HandleConnectionMessageAsync(queueItem.ConnectionMessage, queueItem.MessageReceivedInfo), queueItem)
-                            _ => null
+                QueueItemTypes.ConnectionMessage => new QueueItemTask(_agentConnection.HandleConnectionMessageAsync(queueItem.ConnectionMessage, queueItem.MessageReceivedInfo), queueItem),
+                _ => null
             };
 
             if (queueItemTask != null) _queueItemTasks.Add(queueItemTask);

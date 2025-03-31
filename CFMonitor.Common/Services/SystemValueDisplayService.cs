@@ -13,25 +13,43 @@ namespace CFMonitor.Services
     {
         private readonly IAuditEventService _auditEventService;
         private readonly IAuditEventTypeService _auditEventTypeService;
+        private readonly IContentTemplateService _contentTemplateService;
+        private readonly IFileObjectService _fileObjectService;
         private readonly IMonitorAgentService _monitorAgentService;
+        private readonly IMonitorAgentGroupService _monitorAgentGroupService;
+        private readonly IMonitorAgentManagerService _monitorAgentManagerService;
         private readonly IMonitorItemOutputService _monitorItemOutputService;
         private readonly IMonitorItemService _monitorItemService;
+        private readonly IMonitorItemTypeService _monitorItemTypeService;
+        private readonly IPasswordResetService _passwordResetService;
         private readonly ISystemValueTypeService _systemValueTypeService;        
         private readonly IUserService _userService;
 
         public SystemValueDisplayService(IAuditEventService auditEventService,
                         IAuditEventTypeService auditEventTypeService,                        
+                        IContentTemplateService contentTemplateService,
+                        IFileObjectService fileObjectService,
                         IMonitorAgentService monitorAgentService,
+                        IMonitorAgentGroupService monitorAgentGroupService,
+                        IMonitorAgentManagerService monitorAgentManagerService,
                         IMonitorItemOutputService monitorItemOutputService,
                         IMonitorItemService monitorItemService,
+                        IMonitorItemTypeService monitorItemTypeService,
+                        IPasswordResetService passwordResetService,
                         ISystemValueTypeService systemValueTypeService,                        
                         IUserService userService)
         {
             _auditEventService = auditEventService;
             _auditEventTypeService = auditEventTypeService;
+            _contentTemplateService = contentTemplateService;
+            _fileObjectService = fileObjectService;
             _monitorAgentService = monitorAgentService;
+            _monitorAgentGroupService = monitorAgentGroupService;
+            _monitorAgentManagerService = monitorAgentManagerService;
             _monitorItemOutputService = monitorItemOutputService;
             _monitorItemService = monitorItemService;
+            _monitorItemTypeService = monitorItemTypeService;
+            _passwordResetService = passwordResetService;
             _systemValueTypeService = systemValueTypeService;            
             _userService = userService;
         }
@@ -40,60 +58,95 @@ namespace CFMonitor.Services
         {
             // Get system value type
             var systemValueType = await _systemValueTypeService.GetByIdAsync(systemValue.TypeId);            
+            
+            // Check EntityIdType, may refer to one of our entities
+            if (systemValueType.EntityIdType != null)
+            {
+                switch(systemValueType.EntityIdType)
+                {
+                    case EntityIdTypes.AuditEventTypeId:
+                        var auditEventType = await _auditEventTypeService.GetByIdAsync(systemValue.Value);
+                        return new List<string[]>
+                        {
+                            new[] { "Audit Event Type", auditEventType.Name }
+                        };
 
-            // Set function to get display value from value
-            // TODO: Can we store the label in SystemValueType?
-            var displayFunction = new Dictionary<SystemValueTypes, Func<string, Task<List<string[]>>>>
-            {                            
-                { SystemValueTypes.AEP_MonitorAgentId, async (value) =>
-                    {
-                        var monitorAgent = await _monitorAgentService.GetByIdAsync(value);
+                    case EntityIdTypes.ContentTemplateId:
+                        var contentTemplate = await _contentTemplateService.GetByIdAsync(systemValue.Value);
+                        return new List<string[]>
+                        {
+                            new[] { "Content Template", contentTemplate.Name }
+                        };
+
+                    case EntityIdTypes.FileObjectId:
+                        var fileObject = await _fileObjectService.GetByIdAsync(systemValue.Value);
+                        return new List<string[]>
+                        {
+                            new[] { "File", fileObject.Name }
+                        };
+
+                    case EntityIdTypes.MonitorAgentId:
+                        var monitorAgent = await _monitorAgentService.GetByIdAsync(systemValue.Value);
                         return new List<string[]>()
                         {
                             new[] { "Monitor Agent Machine", monitorAgent.MachineName }
                         };
-                    }
-                },
-                { SystemValueTypes.AEP_MonitorItemId, async (value) =>
-                    {
-                        var monitorItem = await _monitorItemService.GetByIdAsync(value);
+
+                    case EntityIdTypes.MonitorAgentGroupId:
+                        var monitorAgentGroup = await _monitorAgentGroupService.GetByIdAsync(systemValue.Value);
+                        return new List<string[]>()
+                        {
+                            new[] { "Monitor Agent Group", monitorAgentGroup.Name }
+                        };
+
+                    case EntityIdTypes.MonitorAgentManagerId:
+                        var monitorAgentManager = await _monitorAgentManagerService.GetByIdAsync(systemValue.Value);
+                        return new List<string[]>()
+                        {
+                            new[] { "Monitor Agent Manager Machine", monitorAgentManager.MachineName }
+                        };
+
+                    case EntityIdTypes.MonitorItemId:
+                        var monitorItem = await _monitorItemService.GetByIdAsync(systemValue.Value);
                         return new List<string[]>
                         {
                             new [] { "Monitor Item", monitorItem.Name }
                         };
-                    }
-                },
-                { SystemValueTypes.AEP_MonitorItemOutputId, async (value) =>
-                    {
-                        var monitorItemOutput = await _monitorItemOutputService.GetByIdAsync(value);
-                        var monitorItem = await _monitorItemService.GetByIdAsync(monitorItemOutput.MonitorItemId);
-                        var monitorAgent = await _monitorAgentService.GetByIdAsync(monitorItemOutput.MonitorAgentId);
+
+                    case EntityIdTypes.MonitorItemTypeId:
+                        var monitorItemType = _monitorItemTypeService.GetAll().First(t => t.Id == systemValue.Value);
                         return new List<string[]>
                         {
-                            new [] { "Monitor Item", monitorItem.Name },
-                            new [] { "Monitor Agent Machine", monitorAgent.MachineName },
-                            new [] { "Monitor Checked", monitorItemOutput.CheckedDateTime.ToString() },  // TODO: Format this
-                            new [] { "Actions", monitorItemOutput.EventItemIdsForAction.Count.ToString() }
+                            new [] { "Monitor Item Type", monitorItemType.Name }
                         };
-                    }
-                },
 
-                { SystemValueTypes.AEP_UserId, async (value) =>
-                    {
-                        var user = await _userService.GetByIdAsync(value);
+                    case EntityIdTypes.MonitorItemOutputId:
+                        {
+                            var monitorItemOutput = await _monitorItemOutputService.GetByIdAsync(systemValue.Value);
+                            var monitorItem2 = await _monitorItemService.GetByIdAsync(monitorItemOutput.MonitorItemId);
+                            var monitorAgent2 = await _monitorAgentService.GetByIdAsync(monitorItemOutput.MonitorAgentId);
+                            return new List<string[]>
+                            {
+                                new [] { "Monitor Item", monitorItem2.Name },
+                                new [] { "Monitor Agent Machine", monitorAgent2.MachineName },
+                                new [] { "Monitor Checked", monitorItemOutput.CheckedDateTime.ToString() },  // TODO: Format this
+                                new [] { "Actions", monitorItemOutput.EventItemIdsForAction.Count.ToString() }
+                            };
+                        }                        
+
+                    case EntityIdTypes.UserId:
+                        var user = await _userService.GetByIdAsync(systemValue.Value);
                         return new List<string[]>()
                         {
                             new[] { "User", user.Name }
                         };
-                    }
                 }
-            };
+            }
 
-            return displayFunction.ContainsKey(systemValueType.ValueType) ?
-                        await displayFunction[systemValueType.ValueType](systemValue.Value) :
-                        new List<string[]> {
+            // Return default
+            return new List<string[]> {
                             new[] { systemValueType.Name, systemValue.Value }
-                        };
+                        };           
         }
 
     }

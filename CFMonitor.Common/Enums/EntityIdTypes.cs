@@ -1,19 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CFMonitor.Enums
+﻿namespace CFMonitor.Enums
 {
     public enum EntityIdTypes
     {
+        ActionItemId,
         AuditEventId,
         AuditEventTypeId,
         ContentTemplateId,
         FileObjectId,
         MonitorAgentGroupId,
         MonitorAgentId,
+        MonitorAgentManagerId,
         MonitorItemId,
         MonitorItemOutputId,
         MonitorItemTypeId,

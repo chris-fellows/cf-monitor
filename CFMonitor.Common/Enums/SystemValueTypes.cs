@@ -14,8 +14,12 @@
         // -----------------------------------------------------------------------------------------------------
         // Audit event parameter types        
         AEP_ActionItemId,
+        AEP_ContentTemplateId,
         AEP_ErrorMessage,
+        AEP_FileObjectId,
         AEP_MonitorAgentId,
+        AEP_MonitorAgentGroupId,
+        AEP_MonitorAgentManagerId,
         AEP_MonitorItemId,
         AEP_MonitorItemOutputId,
         AEP_Notes,

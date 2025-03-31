@@ -21,6 +21,7 @@ namespace CFMonitor.Services
             var list = new List<MonitorItemType>();
             list.Add(new MonitorItemType()
             {                 
+                Id = "1",
                 Name = "Active Process",               
                 Description = "Checks an active process",
                 ItemType = MonitorItemTypes.ActiveProcess,
@@ -47,6 +48,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "2",
                 Name = "CPU",
                 Description = "Checks CPU",
                 ItemType = MonitorItemTypes.CPU,
@@ -66,6 +68,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "3",
                 Name = "DCHP",
                 Description = "Checks that DHCP is working",
                 ItemType = MonitorItemTypes.DHCP,
@@ -83,6 +86,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "4",
                 Name = "Disk space",
                 Description = "Checks disk space on particular device",
                 ItemType = MonitorItemTypes.DiskSpace,
@@ -105,6 +109,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "5",
                 Name = "DNS",
                 Description = "Checks that DNS is working",
                 ItemType = MonitorItemTypes.DNS,
@@ -126,6 +131,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "6",
                 Name = "File size",
                 Description = "Checks size of file",
                 ItemType = MonitorItemTypes.FileSize,
@@ -162,6 +168,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "7",
                 Name = "Folder size",
                 Description = "Checks size of folder",
                 ItemType = MonitorItemTypes.FolderSize,
@@ -197,6 +204,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "8",
                 Name = "IMAP",
                 Description = "Checks connection to IMAP server",
                 ItemType = MonitorItemTypes.IMAP,
@@ -223,6 +231,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "9",
                 Name = "Local file",
                 Description = "Checks local file exists and optionally contains specific text",
                 ItemType = MonitorItemTypes.LocalFile,
@@ -253,6 +262,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "10",
                 Name = "JSON",
                 Description = "Checks JSON file",
                 ItemType = MonitorItemTypes.JSON,
@@ -272,6 +282,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "11",
                 Name = "LDAP",
                 Description = "Checks that LDAP is working",
                 ItemType = MonitorItemTypes.LDAP,
@@ -291,6 +302,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "12",
                 Name = "Memory",
                 Description = "Checks local memory use",
                 ItemType = MonitorItemTypes.Memory,
@@ -311,6 +323,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "13",
                 Name = "Time",
                 Description = "Checks time with remote server",
                 ItemType = MonitorItemTypes.Time,
@@ -351,6 +364,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "14",
                 Name = "Ping",
                 Description = "Pings endpoint",
                 ItemType = MonitorItemTypes.Ping,
@@ -375,6 +389,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "15",
                 Name = "POP",
                 Description = "Checks connection to POP server",
                 ItemType = MonitorItemTypes.POP,
@@ -423,6 +438,7 @@ namespace CFMonitor.Services
             //});
             list.Add(new MonitorItemType()
             {
+                Id = "16",
                 Name = "REST API",
                 Description = "Checks REST API returns expected response",
                 ItemType = MonitorItemTypes.REST,
@@ -447,6 +463,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "17",
                 Name = "Run Process",
                 Description = "Runs process and checks the exit code",
                 ItemType = MonitorItemTypes.RunProcess,
@@ -498,6 +515,7 @@ namespace CFMonitor.Services
             //});
             list.Add(new MonitorItemType()
             {
+                Id = "18",
                 Name = "SMTP",
                 Description = "Checks SMTP connection",
                 ItemType = MonitorItemTypes.SMTP,
@@ -526,6 +544,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "19",
                 Name = "SOAP",
                 Description = "Checks SOAP API returns expected response",
                 ItemType = MonitorItemTypes.SOAP,
@@ -555,6 +574,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "20",
                 Name = "TCP or UDP socket",
                 Description = "Checks TCP or UDP socket",
                 ItemType = MonitorItemTypes.Socket,
@@ -589,6 +609,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "21",
                 Name = "SQL query",
                 Description = "Checks results of SQL query",
                 ItemType = MonitorItemTypes.SQL,
@@ -623,6 +644,7 @@ namespace CFMonitor.Services
             });
             list.Add(new MonitorItemType()
             {
+                Id = "22",
                 Name = "HTTP/HTTPS endpoint",
                 Description = "Checks HTTP/HTTPS endpoint returns expected response",
                 ItemType = MonitorItemTypes.URL,

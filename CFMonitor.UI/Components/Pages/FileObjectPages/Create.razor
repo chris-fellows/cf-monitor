@@ -1,0 +1,89 @@
+﻿@page "/fileobjects/create"
+@using Microsoft.EntityFrameworkCore
+@using CFMonitor.Constants
+@using CFMonitor.Interfaces
+@using CFMonitor.Models
+@using CFMonitor.UI.Utilities
+@inject NavigationManager NavigationManager
+@inject IFileObjectService FileObjectService
+@inject IFileSecurityCheckerService FileSecurityCheckerService
+@inject ISystemValueTypeService SystemValueTypeService
+@inject IUserService UserService
+
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@attribute [Authorize(Roles = "Administrator,User")]
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>User</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="FileObject" OnValidSubmit="AddFileObject" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label>
+                <InputText id="name" @bind-Value="FileObject.Name" class="form-control" />
+                <ValidationMessage For="() => FileObject.Name" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="content" class="form-label">Content:</label>                
+                <InputFile id="contentfile" OnChange="OnContentFileChangeAsync" />                
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/users">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private FileObject FileObject { get; set; } = new();
+    
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddFileObject()
+    {
+        FileObject.Id = Guid.NewGuid().ToString();
+
+        if (FileObject.Content == null || FileObject.Content.Length == 0)
+        {
+            throw new ArgumentException("File content must be set");
+        }
+
+        await FileObjectService.AddAsync(FileObject);
+
+        NavigationManager.NavigateTo("/fileobjects");
+    }
+
+    private async Task OnContentFileChangeAsync(InputFileChangeEventArgs eventArgs)
+    {
+        // Check file size
+        if (eventArgs.File.Size > ConfigUtilities.MaxUploadFileObjectSize)
+        {
+            throw new ArgumentException("File is too big");
+        }
+
+        // Set FileObject.Content
+        using (var stream = eventArgs.File.OpenReadStream())
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                await stream.CopyToAsync(memoryStream);
+
+                var content = new byte[memoryStream.Length];
+                await memoryStream.ReadAsync(content);
+
+                FileObject.Name = eventArgs.File.Name;
+                FileObject.Content = content;               
+            }
+        }
+    }
+}

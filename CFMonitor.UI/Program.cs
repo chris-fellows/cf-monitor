@@ -153,6 +153,9 @@ builder.Services.AddScoped<IPasswordService, PBKDF2PasswordService>();
 // Add audit event processor service. E.g. Create notifications
 builder.Services.AddScoped<IAuditEventProcessorService, AuditEventProcessorService>();
 
+// Add entity depdency checker service. E.g. Check before delete entity
+builder.Services.AddScoped<IEntityDependencyCheckerService, EntityDependencyCheckerService>();
+
 // Seed
 builder.Services.AddKeyedScoped<IEntityReader<ActionItemType>, ActionItemTypeSeed1>("ActionItemTypeSeed");
 builder.Services.AddKeyedScoped<IEntityReader<AuditEventType>, AuditEventTypeSeed1>("AuditEventTypeSeed");

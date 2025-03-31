@@ -24,11 +24,11 @@ namespace CFMonitor.Models
         /// Display name
         /// </summary>
         public string Name { get; set; } = String.Empty;
-
-        ///// <summary>
-        ///// Data type
-        ///// </summary>
-        //public SystemValueDataTypes DataType { get; set; }
+        
+        /// <summary>
+        /// Entity Id type
+        /// </summary>
+        public EntityIdTypes? EntityIdType { get; set; }
 
         /// <summary>
         /// Type name

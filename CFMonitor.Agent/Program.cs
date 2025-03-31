@@ -167,6 +167,7 @@ namespace CFMonitor.Agent
                 .AddScoped<IAuditEventFactory, AuditEventFactory>()
                 .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()
                 .AddScoped<IAuditEventProcessorService, NoActionAuditEventProcessorService>()   // No need to create notifications for audit events
+                //.AddScoped<IEntityDependencyCheckerService, EntityDependencyCheckerService>()   // Only needed for deletes
 
                 .RegisterAllTypes<IChecker>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
                 .RegisterAllTypes<IActioner>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)

@@ -21,6 +21,6 @@
         public const string MonitorAgentLogMessage = "MonitorAgentLogMessage";
 
         public const string MonitorItemResultMessage = "MonitorItemResultMessage";
-        public const string MonitorItemUpdated = "MonitorItemUpdated";        
+        public const string EntityUpdated = "EntityUpdated";        
     }
 }

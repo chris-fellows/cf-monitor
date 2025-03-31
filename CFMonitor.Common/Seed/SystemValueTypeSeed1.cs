@@ -18,7 +18,7 @@ namespace CFMonitor.Seed
                 // Audit event parameters
                 new SystemValueType()
                 {
-                    Id= Guid.NewGuid().ToString(),
+                    Id= Guid.NewGuid().ToString(),                    
                     Name = "Action Item Id",
                     ValueType = SystemValueTypes.AEP_ActionItemId,
                     ValueTypeName = typeof(String).FullName                    
@@ -33,6 +33,7 @@ namespace CFMonitor.Seed
                 new SystemValueType()
                 {
                     Id= Guid.NewGuid().ToString(),
+                    EntityIdType = EntityIdTypes.MonitorAgentId,
                     Name = "Monitor Agent Id",
                     ValueType = SystemValueTypes.AEP_MonitorAgentId,
                     ValueTypeName = typeof(String).FullName,                    
@@ -40,6 +41,7 @@ namespace CFMonitor.Seed
                 new SystemValueType()
                 {
                     Id= Guid.NewGuid().ToString(),
+                    EntityIdType = EntityIdTypes.MonitorItemId,
                     Name = "Monitor Item Id",
                     ValueType = SystemValueTypes.AEP_MonitorItemId,
                     ValueTypeName = typeof(String).FullName,                    
@@ -47,6 +49,7 @@ namespace CFMonitor.Seed
                  new SystemValueType()
                 {
                     Id= Guid.NewGuid().ToString(),
+                    EntityIdType = EntityIdTypes.MonitorItemOutputId,
                     Name = "Monitor Item Output Id",
                     ValueType = SystemValueTypes.AEP_MonitorItemOutputId,
                     ValueTypeName = typeof(String).FullName,                    
@@ -61,6 +64,7 @@ namespace CFMonitor.Seed
                      new SystemValueType()
                 {
                     Id= Guid.NewGuid().ToString(),
+                    EntityIdType = EntityIdTypes.PasswordResetId,
                     Name = "Password Reset Id",
                     ValueType = SystemValueTypes.AEP_PasswordResetId,
                     ValueTypeName = typeof(String).FullName,                    
@@ -68,6 +72,7 @@ namespace CFMonitor.Seed
                 new SystemValueType()
                 {
                     Id= Guid.NewGuid().ToString(),
+                    EntityIdType = EntityIdTypes.UserId,
                     Name = "User Id",
                     ValueType = SystemValueTypes.AEP_UserId,
                     ValueTypeName = typeof(String).FullName,                    
@@ -565,7 +570,7 @@ namespace CFMonitor.Seed
                     Id = Guid.NewGuid().ToString(),
                     Name = "Max file size (bytes)",
                     ValueType = SystemValueTypes.MIP_FileSizeMaxFileSizeBytes,
-                    ValueTypeName = typeof(Int32).FullName,                    
+                    ValueTypeName = typeof(Int64).FullName,                    
                     MinValue = "0",
                     MaxValue = Int64.MaxValue.ToString()
                 },
@@ -581,7 +586,7 @@ namespace CFMonitor.Seed
                     Id = Guid.NewGuid().ToString(),
                     Name = "Max folder size (bytes)",
                     ValueType = SystemValueTypes.MIP_FolderSizeMaxFolderSizeBytes,
-                    ValueTypeName = typeof(Int32).FullName,                    
+                    ValueTypeName = typeof(Int64).FullName,                    
                     MinValue = "0",
                     MaxValue = Int64.MaxValue.ToString()
                 },
@@ -623,6 +628,7 @@ namespace CFMonitor.Seed
                 new SystemValueType()
                 {
                     Id = Guid.NewGuid().ToString(),
+                    EntityIdType = EntityIdTypes.FileObjectId,
                     Name = "Process file object Id",
                     ValueType = SystemValueTypes.MIP_RunProcessFileObjectId,
                     ValueTypeName = typeof(String).FullName,                    
@@ -697,6 +703,7 @@ namespace CFMonitor.Seed
                 new SystemValueType()
                 {
                     Id = Guid.NewGuid().ToString(),
+                    EntityIdType = EntityIdTypes.FileObjectId,
                     Name = "SQL file object Id",
                     ValueType = SystemValueTypes.MIP_SQLSQLFileObjectId,
                     ValueTypeName = typeof(String).FullName,                    

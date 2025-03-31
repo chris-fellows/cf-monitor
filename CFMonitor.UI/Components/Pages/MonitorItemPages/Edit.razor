@@ -5,8 +5,10 @@
 @using CFMonitor.Interfaces
 @using CFMonitor.Models
 @using CFMonitor.Utilities
+@using CFMonitor.UI.Models
 @inject NavigationManager NavigationManager
 @inject IEventItemService EventItemService
+@inject IFileObjectService FileObjectService
 @inject IFileSecurityCheckerService FileSecurityCheckerService
 @inject IMonitorAgentService MonitorAgentService
 @inject IMonitorItemService MonitorItemService
@@ -43,12 +45,12 @@ else
 
                 <p>Monitor Agents</p>
                 @foreach (MySelectableItem monitorAgentItem in MonitorAgentItems)
-            {
-                <div class="mb-3">
-                    <label for="@monitorAgentItem.Id" class="form-label">@monitorAgentItem.Name</label>
-                    <InputCheckbox id="@monitorAgentItem.Id" @bind-Value="@monitorAgentItem.Selected" class="form-check-input" />
-                </div>
-            }
+                {
+                    <div class="mb-3">
+                        <label for="@monitorAgentItem.Id" class="form-label">@monitorAgentItem.Name</label>
+                        <InputCheckbox id="@monitorAgentItem.Id" @bind-Value="@monitorAgentItem.Selected" class="form-check-input" />
+                    </div>
+                }
 
             <p>Parameters</p>
             <table>
@@ -67,7 +69,7 @@ else
                                     // Get allowed values if finite list. E.g. HTTP methods, HTTP status codes etc
                                     var parameterValueType = Type.GetType(parameterItem.SystemValueType.ValueTypeName);
 
-                                    var allowedValues = SystemValueDataTypeUtilities.GetAllowedValues(parameterItem.SystemValueType.ValueType, parameterValueType);
+                                    var allowedValues = SystemValueDataTypeUtilities.GetAllowedValues(parameterItem.SystemValueType.ValueType, parameterValueType, FileObjectService);
 
                                     if (!String.IsNullOrEmpty(parameterItem.SystemValueType.MinValue))    // Fixed range
                                     {
@@ -95,8 +97,8 @@ else
                                                     break;
                                             }
                                             */
-                                                                                        }
-                                                                                        else if (allowedValues == null || !allowedValues.Any())
+                                                                                                                                                                                        }
+                                                                                                                                                                                        else if (allowedValues == null || !allowedValues.Any())
                                         {
                                             switch (parameterValueType)
                                             {
@@ -137,8 +139,8 @@ else
                                                     break;
                                             }
                                             */
-                                                                                        }
-                                                                                        else     // Finite values
+                                                                                                                                                                                        }
+                                                                                                                                                                                        else     // Finite values
                                         {
                                             <InputSelect id="@parameterItem.Id" @bind-Value="@parameterItem.Value" class="form-control">
                                                 @foreach (NameAndValue allowedValue in allowedValues)
@@ -157,7 +159,7 @@ else
                                     }
                                 </td>
                             </tr>
-                                    }
+                                                            }
                     </tbody>
                 </table>
 
@@ -197,37 +199,7 @@ else
 
     private List<SystemValueType> SystemValueTypes = new();
 
-    private List<ParameterItem> ParameterItems = new();    
-
-    private class ParameterItem
-    {
-        public string Id { get; set; } = String.Empty;
-
-        public SystemValueType SystemValueType { get; set; } = new();
-
-        public string Name { get; set; } = String.Empty;
-
-        public string Value { get; set; } = String.Empty;        
-
-        public bool ValueBoolean { get; set; }
-
-        public Decimal ValueDecimal { get; set; }
-
-        public Int64 ValueInteger { get; set; }
-
-        public Int64 MinValueInteger { get; set; }
-
-        public Int64 MaxValueInteger { get; set; }
-    }
-
-    private class MySelectableItem
-    {
-        public string Id { get; set; } = String.Empty;
-
-        public string Name {get; set;} = String.Empty;
-
-        public bool Selected { get; set; }
-    }
+    private List<ParameterItem> ParameterItems = new();       
 
     private class EventItemSummary
     {
@@ -238,85 +210,93 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-    //using var context = DbFactory.CreateDbContext();
-    //User ??= await context.User.FirstOrDefaultAsync(m => m.Id == Id);
+        //using var context = DbFactory.CreateDbContext();
+        //User ??= await context.User.FirstOrDefaultAsync(m => m.Id == Id);
 
-    MonitorItem = await MonitorItemService.GetByIdAsync(Id);
+        MonitorItem = await MonitorItemService.GetByIdAsync(Id);
 
-    MonitorItemTypes = MonitorItemTypeService.GetAll();
+        MonitorItemTypes = MonitorItemTypeService.GetAll();
 
-    SystemValueTypes = await SystemValueTypeService.GetAllAsync();
+        SystemValueTypes = await SystemValueTypeService.GetAllAsync();
 
-    if (MonitorItem is null)
-    {
-        NavigationManager.NavigateTo("notfound");
-    }
-
-    // Get event items
-    var eventItems = EventItemService.GetAll().Where(ei => ei.MonitorItemId == MonitorItem.Id);
-    EventItemsQueryable = eventItems.Select(ei =>
-            new EventItemSummary()
-                    {
-                        Id = ei.Id,
-                        DisplaySummary = EventConditionUtilities.GetDisplaySummary(ei, SystemValueTypes)
-                    }).AsQueryable();
-
-    // Set monitor agents
-    MonitorAgentItems = MonitorAgentService.GetAll().Select(ma => new MySelectableItem() 
-            { 
-                Id = ma.Id, 
-                Name = ma.MachineName, 
-                Selected = MonitorItem.MonitorAgentIds.Contains(ma.Id) 
-            }).ToList();
-
-    // Get parameter items        
-    var systemValueTypes = SystemValueTypeService.GetAll();
-    ParameterItems.Clear();
-    foreach(var parameter in MonitorItem.Parameters)
-    {
-        var systemValueType = systemValueTypes.First(svt => svt.Id == parameter.SystemValueTypeId);
-
-        // Get parameter value type
-        Type parameterValueType = Type.GetType(systemValueType.ValueTypeName);
-
-        var parameterItem = new ParameterItem()
-            {
-                Id = $"parameter-{Guid.NewGuid().ToString()}",
-                SystemValueType = systemValueType,
-                Name = systemValueType.Name,
-                Value = parameter.Value                
-            };
-
-            switch(parameterValueType)
-            {
-                case Type _ when parameterValueType == typeof(Boolean):
-                    parameterItem.ValueBoolean = Convert.ToBoolean(parameter.Value);
-                    break;
-                case Type _ when parameterValueType == typeof(Decimal):
-                    parameterItem.ValueDecimal = Convert.ToDecimal(parameter.Value);
-                    break;
-                case Type _ when parameterValueType == typeof(Int16):
-                    parameterItem.ValueInteger = Convert.ToInt16(parameter.Value);
-
-                    if (!String.IsNullOrEmpty(systemValueType.MinValue)) parameterItem.MinValueInteger = Convert.ToInt16(systemValueType.MinValue);
-                    if (!String.IsNullOrEmpty(systemValueType.MaxValue)) parameterItem.MaxValueInteger = Convert.ToInt16(systemValueType.MaxValue);
-                    break;
-                case Type _ when parameterValueType == typeof(Int32):
-                    parameterItem.ValueInteger = Convert.ToInt32(parameter.Value);
-
-                    if (!String.IsNullOrEmpty(systemValueType.MinValue)) parameterItem.MinValueInteger = Convert.ToInt32(systemValueType.MinValue);
-                    if (!String.IsNullOrEmpty(systemValueType.MaxValue)) parameterItem.MaxValueInteger = Convert.ToInt32(systemValueType.MaxValue);
-                    break;
-                case Type _ when parameterValueType == typeof(Int64):
-                    parameterItem.ValueInteger = Convert.ToInt64(parameter.Value);
-
-                    if (!String.IsNullOrEmpty(systemValueType.MinValue)) parameterItem.MinValueInteger = Convert.ToInt64(systemValueType.MinValue);
-                    if (!String.IsNullOrEmpty(systemValueType.MaxValue)) parameterItem.MaxValueInteger = Convert.ToInt64(systemValueType.MaxValue);
-                    break;
-            }      
-
-            ParameterItems.Add(parameterItem);
+        if (MonitorItem is null)
+        {
+            NavigationManager.NavigateTo("notfound");
         }
+
+        // Get event items
+        var eventItems = EventItemService.GetAll().Where(ei => ei.MonitorItemId == MonitorItem.Id);
+        EventItemsQueryable = eventItems.Select(ei =>
+                new EventItemSummary()
+                                {
+                                    Id = ei.Id,
+                                    DisplaySummary = EventConditionUtilities.GetDisplaySummary(ei, SystemValueTypes)
+                                }).AsQueryable();
+
+        // Set monitor agents
+        MonitorAgentItems = MonitorAgentService.GetAll().Select(ma => new MySelectableItem() 
+                        { 
+                            Id = ma.Id, 
+                            Name = ma.MachineName, 
+                            Selected = MonitorItem.MonitorAgentIds.Contains(ma.Id) 
+                        }).ToList();
+
+        // Get parameter items                
+        ParameterItems.Clear();
+        ParameterItems.AddRange(GetParameterItems(MonitorItem));    
+    }    
+
+    private List<ParameterItem> GetParameterItems(MonitorItem monitorItem)
+    {
+        var parameterItems = new List<ParameterItem>();
+
+        foreach (var parameter in MonitorItem.Parameters)
+        {
+                var systemValueType = SystemValueTypes.First(svt => svt.Id == parameter.SystemValueTypeId);
+
+                // Get parameter value type
+                Type parameterValueType = Type.GetType(systemValueType.ValueTypeName);
+
+                var parameterItem = new ParameterItem()
+                            {
+                                Id = $"parameter-{Guid.NewGuid().ToString()}",
+                                SystemValueType = systemValueType,
+                                Name = systemValueType.Name,
+                                Value = parameter.Value
+                            };
+
+                switch (parameterValueType)
+                {
+                    case Type _ when parameterValueType == typeof(Boolean):
+                        parameterItem.ValueBoolean = Convert.ToBoolean(parameter.Value);
+                        break;
+                    case Type _ when parameterValueType == typeof(Decimal):
+                        parameterItem.ValueDecimal = Convert.ToDecimal(parameter.Value);
+                        break;
+                    case Type _ when parameterValueType == typeof(Int16):
+                        parameterItem.ValueInteger = Convert.ToInt16(parameter.Value);
+
+                        if (!String.IsNullOrEmpty(systemValueType.MinValue)) parameterItem.MinValueInteger = Convert.ToInt16(systemValueType.MinValue);
+                        if (!String.IsNullOrEmpty(systemValueType.MaxValue)) parameterItem.MaxValueInteger = Convert.ToInt16(systemValueType.MaxValue);
+                        break;
+                    case Type _ when parameterValueType == typeof(Int32):
+                        parameterItem.ValueInteger = Convert.ToInt32(parameter.Value);
+
+                        if (!String.IsNullOrEmpty(systemValueType.MinValue)) parameterItem.MinValueInteger = Convert.ToInt32(systemValueType.MinValue);
+                        if (!String.IsNullOrEmpty(systemValueType.MaxValue)) parameterItem.MaxValueInteger = Convert.ToInt32(systemValueType.MaxValue);
+                        break;
+                    case Type _ when parameterValueType == typeof(Int64):
+                        parameterItem.ValueInteger = Convert.ToInt64(parameter.Value);
+
+                        if (!String.IsNullOrEmpty(systemValueType.MinValue)) parameterItem.MinValueInteger = Convert.ToInt64(systemValueType.MinValue);
+                        if (!String.IsNullOrEmpty(systemValueType.MaxValue)) parameterItem.MaxValueInteger = Convert.ToInt64(systemValueType.MaxValue);
+                        break;
+                }
+
+            parameterItems.Add(parameterItem);
+        }
+
+            return parameterItems;
     }
 
     // To protect from overposting attacks, enable the specific properties you want to bind to.

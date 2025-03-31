@@ -1,0 +1,99 @@
+﻿@page "/monitoragentgroups/create"
+@using Microsoft.EntityFrameworkCore
+@using CFMonitor.Constants
+@using CFMonitor.Interfaces
+@using CFMonitor.Models
+@using CFMonitor.UI.Utilities
+@inject NavigationManager NavigationManager
+@inject IFileSecurityCheckerService FileSecurityCheckerService
+@inject IMonitorAgentGroupService MonitorAgentGroupService
+@inject ISystemValueTypeService SystemValueTypeService
+@inject IUserService UserService
+
+@attribute [Authorize(Roles = "Administrator,User")]
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>User</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="MonitorAgentGroup" OnValidSubmit="AddMonitorAgentGroup" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label>
+                <InputText id="name" @bind-Value="MonitorAgentGroup.Name" class="form-control" />
+                <ValidationMessage For="() => MonitorAgentGroup.Name" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="usercolor" class="form-label">Color:</label>
+                <input id="usercolor " type="color" @bind-value="MonitorAgentGroup.Color" />
+                <ValidationMessage For="() => MonitorAgentGroup.Color" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="userimage" class="form-label">Image:</label>
+                <img id="userimage" src="@GetMonitorAgentGroupImageSource(MonitorAgentGroup)" />
+                <InputFile id="imagefile" OnChange="OnImageFileChangeAsync" />
+                <ValidationMessage For="() => MonitorAgentGroup.ImageSource" class="text-danger" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/users">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private MonitorAgentGroup MonitorAgentGroup { get; set; } = new();
+
+    private string _newImageFile = "";
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddMonitorAgentGroup()
+    {
+        MonitorAgentGroup.Id = Guid.NewGuid().ToString();
+
+        await MonitorAgentGroupService.AddAsync(MonitorAgentGroup);
+        
+        NavigationManager.NavigateTo("/monitoragentgroups");
+    }
+
+    private string GetMonitorAgentGroupImageSource(MonitorAgentGroup monitorAgentGroup)
+    {
+        return $"../images/monitor_agent_groups/{monitorAgentGroup.ImageSource}";
+    }
+
+    private async Task OnImageFileChangeAsync(InputFileChangeEventArgs eventArgs)
+    {
+        // Check file size
+        if (eventArgs.File.Size > ConfigUtilities.MaxUploadImageSize)
+        {
+            throw new ArgumentException("File is too big");
+        }
+
+        // Save to local file
+        using (var stream = eventArgs.File.OpenReadStream())
+        {
+            _newImageFile = Path.Combine(ConfigUtilities.ImageTempFilesRootFolder, "monitoritemgroups", $"{MonitorAgentGroup.Id}{Path.GetExtension(eventArgs.File.Name)}");
+            using (var streamWriter = new FileStream(_newImageFile, FileMode.Create))
+            {
+                await stream.CopyToAsync(streamWriter);
+            }
+
+            // Check that file can be uploaded
+            var content = File.ReadAllBytes(_newImageFile);
+            if (!(await FileSecurityCheckerService.ValidateCanUploadImageAsync(content)))
+            {
+                File.Delete(_newImageFile);
+                _newImageFile = "";
+            }
+        }
+    }
+}

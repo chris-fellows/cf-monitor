@@ -51,6 +51,12 @@ else
         <TemplateColumn Title="Image" Context="monitorAgentGroup">
             <img class="entityimage" src="@GetMonitorAgentGroupImageSource(@monitorAgentGroup)" />
         </TemplateColumn>
+
+        <TemplateColumn Context="monitorAgentGroup">
+            <a href="@($"monitoragentgroups/edit?id={monitorAgentGroup.Id}")">Edit</a> |
+            <a href="@($"monitoragentgroups/details?id={monitorAgentGroup.Id}")">Details</a> |
+            <a href="@($"monitoragentgroups/delete?id={monitorAgentGroup.Id}")">Delete</a>
+        </TemplateColumn>
     </QuickGrid>
 
     <Paginator State="@Pagination" />

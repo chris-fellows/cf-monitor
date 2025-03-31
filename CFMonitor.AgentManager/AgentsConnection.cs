@@ -114,12 +114,12 @@ namespace CFMonitor.AgentManager
         }     
 
         /// <summary>
-        /// Send monitor item updated notification
+        /// Send entity updated notification. E.g. MonitorItem updated
         /// </summary>
         /// <param name="heartbeat"></param>
-        public void SendMonitorItemUpdated(MonitorItemUpdated monitorItemUpdated, EndpointInfo remoteEndpointInfo)
+        public void SendEntityUpdated(EntityUpdated monitorItemUpdated, EndpointInfo remoteEndpointInfo)
         {
-            _connection.SendMessage(_messageConverters.MonitorItemUpdatedConverter.GetConnectionMessage(monitorItemUpdated), remoteEndpointInfo);
+            _connection.SendMessage(_messageConverters.EntityUpdatedConverter.GetConnectionMessage(monitorItemUpdated), remoteEndpointInfo);
         }
 
         private bool IsResponseMessage(ConnectionMessage connectionMessage)

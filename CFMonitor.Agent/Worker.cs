@@ -1,4 +1,5 @@
 ﻿using CFConnectionMessaging.Models;
+using CFMonitor.Agent.Enums;
 using CFMonitor.Agent.Models;
 using CFMonitor.Common.Interfaces;
 using CFMonitor.Constants;
@@ -13,6 +14,8 @@ using CFUtilities.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace CFMonitor.Agent
 {
@@ -27,24 +30,22 @@ namespace CFMonitor.Agent
     {
         private readonly System.Timers.Timer _timer;
 
-        private ManagerConnection _managerConnection = new ManagerConnection();
+        private readonly ManagerConnection _managerConnection;
 
         private DateTimeOffset _lastHeartbeatTime = DateTimeOffset.MinValue;
         private DateTimeOffset _lastArchiveLogsTime = DateTimeOffset.MinValue;
         //private DateTimeOffset _lastSendLogsTime = DateTimeOffset.MinValue;
-
+        
         private readonly IServiceProvider _serviceProvider;
 
         private List<ActiveMonitorItemTask> _activeMonitorItemTasks = new();
 
         private readonly SystemConfig _systemConfig;
+                
+        private bool _isNeedToRefreshAllServerData = true;
+        private bool _checkMonitorItemsEnabled = false;
 
-        //private readonly ISystemTaskList _systemTaskList;
-
-        // Whether we need to refresh local data
-        private bool _isNeedToRefreshServerData = true;
-
-        private List<MonitorItem> _monitorItems = new();
+        private List<MonitorItem> _monitorItems = new();        
 
         // Local data services, populated from Agent Manager connection
         // We only need to store data used by IChecker
@@ -53,12 +54,12 @@ namespace CFMonitor.Agent
         private readonly IMonitorAgentService _monitorAgentService;
         private readonly IMonitorItemCheckService _monitorItemCheckService;
         private readonly IMonitorItemService _monitorItemService;
-        private readonly INameValueItemService _nameValueItemService;
+        //private readonly INameValueItemService _nameValueItemService;
         private readonly ISystemValueTypeService _systemValueTypeService;
 
         private readonly ISimpleLog _log;
 
-        private ConcurrentQueue<QueueItem> _queueItems = new();
+        private ConcurrentQueue<QueueItem> _queueItems = new();        
 
         private class ActiveMonitorItemTask
         {
@@ -86,15 +87,14 @@ namespace CFMonitor.Agent
         public Worker(IServiceProvider serviceProvider, SystemConfig systemConfig)
         {
             _serviceProvider = serviceProvider;
-            _systemConfig = systemConfig;
-            //_systemTaskList = serviceProvider.GetRequiredService<ISystemTaskList>();
+            _systemConfig = systemConfig;            
 
             _eventItemService = _serviceProvider.GetRequiredService<IEventItemService>();
             _fileObjectService = _serviceProvider.GetRequiredService<IFileObjectService>();
             _monitorAgentService = _serviceProvider.GetRequiredService<IMonitorAgentService>();
             _monitorItemCheckService = _serviceProvider.GetRequiredService<IMonitorItemCheckService>();
             _monitorItemService = _serviceProvider.GetRequiredService<IMonitorItemService>();
-            _nameValueItemService = _serviceProvider.GetRequiredService<INameValueItemService>();
+            //_nameValueItemService = _serviceProvider.GetRequiredService<INameValueItemService>();
             _systemValueTypeService = _serviceProvider.GetRequiredService<ISystemValueTypeService>();
 
             _log = _serviceProvider.GetRequiredService<ISimpleLog>();
@@ -102,12 +102,14 @@ namespace CFMonitor.Agent
             _timer = new System.Timers.Timer();
             _timer.Elapsed += _timer_Elapsed;
             _timer.Interval = 5000;
-            _timer.Enabled = false;           
+            _timer.Enabled = false;
 
+            _managerConnection = new ManagerConnection(serviceProvider);
             _managerConnection.OnConnectionMessageReceived += delegate (ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
             {
                 var queueItem = new QueueItem()
                 {
+                    ItemType = QueueItemTypes.ConnectionMessage,
                     ConnectionMessage = connectionMessage,
                     MessageReceivedInfo = messageReceivedInfo
                 };
@@ -142,71 +144,100 @@ namespace CFMonitor.Agent
                 _timer.Enabled = false;
 
                 // Refresh data from Agent Manager
-                if (_isNeedToRefreshServerData)
+                if (_isNeedToRefreshAllServerData)
                 {
-                    RefreshServerData();
+                    RefreshAllServerData();
+
+                    _isNeedToRefreshAllServerData = false;                    
+                    _checkMonitorItemsEnabled = true;       // Allow monitor items to be checked
+                }
+
+                // Archive logs if time
+                if (_lastArchiveLogsTime.AddHours(12) <= DateTimeOffset.UtcNow)
+                {
+                    _queueItems.Enqueue(new QueueItem() { ItemType = QueueItemTypes.ArchiveLogs });
                 }
 
                 // Process queue items
-                while (_queueItems.Any())
-                {                    
-                    if (_queueItems.TryDequeue(out QueueItem queueItem))
+                if (_queueItems.Any())
+                {
+                    ProcessQueueItems(() =>
                     {
-                        if (queueItem.ConnectionMessage != null)
-                        {
-                            //var queueItemTask = new QueueItemTask(_agentConnection.HandleConnectionMessageAsync(queueItem.ConnectionMessage, queueItem.MessageReceivedInfo), queueItem);
-                            //_queueItemTasks.Add(queueItemTask);
-                        }
-                    }
-
-                    CheckCompleteQueueItemTasks(_queueItemTasks);
+                        UpdateHeartbeatIfOverdue(false);
+                        CheckCompleteQueueItemTasks(_queueItemTasks);
+                    });
                 }
 
+                UpdateHeartbeatIfOverdue(false);
                 CheckCompleteQueueItemTasks(_queueItemTasks);
-
-                // Only do processing if we have all data
-                if (!_isNeedToRefreshServerData)
-                {
-                    UpdateHeartbeat(false);
-
-                    CheckMonitorItems();
-
-                    CheckMonitorItemsCompleted();
+                
+                // Check monitor items. Might be disabled if data is being updated
+                if (_checkMonitorItemsEnabled)
+                {                    
+                    CheckMonitorItems();                    
                 }
 
-                // Archive logs
-                if (_lastArchiveLogsTime.AddHours(12) <= DateTimeOffset.UtcNow)
-                {
-                    ArchiveLogs();
-                }
+                CheckMonitorItemsCompleted();                
             }
             catch (Exception exception)
             {
                 _log.Log(DateTimeOffset.UtcNow, "Error", $"Error performed regular functions: {exception.Message}");
             }
             finally
-            {
+            {                
                 _timer.Interval = _queueItems.Any() ||
-                                    _queueItemTasks.Any() ? 100 : 5000;
+                                  _queueItemTasks.Any() ||
+                                  _activeMonitorItemTasks.Any() ? 100 : 5000;
                 _timer.Enabled = true;
             }
         }
 
         /// <summary>
+        /// Processes queue items
+        /// </summary>
+        private void ProcessQueueItems(Action periodicAction)
+        {            
+            while (_queueItems.Any())
+            {
+                if (_queueItems.TryDequeue(out QueueItem queueItem))
+                {
+                    ProcessQueueItem(queueItem);
+                }
+
+                periodicAction();                
+            }
+        }
+
+        /// <summary>
+        /// Process queue item
+        /// </summary>
+        /// <param name="queueItem"></param>
+        private void ProcessQueueItem(QueueItem queueItem)
+        {
+            // Start task
+            var queueItemTask = queueItem.ItemType switch
+            {
+                QueueItemTypes.ArchiveLogs => new QueueItemTask(ArchiveLogsAsync(), queueItem),
+                QueueItemTypes.ConnectionMessage => new QueueItemTask(HandleConnectionMessageAsync(queueItem.ConnectionMessage, queueItem.MessageReceivedInfo), queueItem),
+                _ => null
+            };
+
+            if (queueItemTask != null) _queueItemTasks.Add(queueItemTask);
+        }
+
+        /// <summary>
         /// Refreshes server data from Agent Manager
         /// </summary>
-        private void RefreshServerData()
+        private void RefreshAllServerData()
         {
             _log.Log(DateTimeOffset.UtcNow, "Information", "Refreshing data from Agent Manager");
 
-            GetMonitorAgents();
-            GetSystemValueTypes();
-            GetEventItems();
-            GetMonitorItems();
-            GetFileObjects();   // Must be done after get system value types & monitor items
-
-            _isNeedToRefreshServerData = false;
-
+            GetMonitorAgentsAsync(_monitorAgentService).Wait();
+            GetSystemValueTypes(_systemValueTypeService).Wait();
+            GetEventItemsAsync(_eventItemService).Wait();
+            GetMonitorItemsAsync(_monitorItemService).Wait();
+            GetFileObjectsAsync(_fileObjectService).Wait();   // Must be done after get system value types & monitor items
+            
             _log.Log(DateTimeOffset.UtcNow, "Information", "Refreshed data from Agent Manager");
         }
 
@@ -222,15 +253,15 @@ namespace CFMonitor.Agent
         /// <summary>
         /// Gets file objects from Agent Manager, saves to local storage. We get file objects for monitor event parameters        
         /// </summary>
-        private int GetFileObjects()
+        private async Task<int> GetFileObjectsAsync(IFileObjectService fileObjectService)
         {
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Getting file objects");
-
+            
             // Delete old monitor items
-            var fileObjects = _fileObjectService.GetAll();
+            var fileObjects = fileObjectService.GetAll();
             while (fileObjects.Any())
             {
-                _fileObjectService.DeleteByIdAsync(fileObjects.First().Id).Wait();
+                await fileObjectService.DeleteByIdAsync(fileObjects.First().Id);
                 fileObjects.RemoveAt(0);
             }
 
@@ -259,21 +290,21 @@ namespace CFMonitor.Agent
                 // Save file object
                 if (response.FileObject != null)
                 {
-                    _fileObjectService.AddAsync(response.FileObject).Wait();
+                    await fileObjectService.AddAsync(response.FileObject);
                 }
 
                 _log.Log(DateTimeOffset.UtcNow, "Information", $"Got file object {fileObjectId}");
             }
 
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Got file objects");
-
+            
             return fileObjectIds.Count;
         }
 
         /// <summary>
         /// Gets monitor agents from Agent Manager, saves to local storage
         /// </summary>
-        private int GetMonitorAgents()
+        private async Task<int> GetMonitorAgentsAsync(IMonitorAgentService monitorAgentService)
         {
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Getting Monitor Agents");
 
@@ -286,28 +317,28 @@ namespace CFMonitor.Agent
             var response = _managerConnection.SendGetMonitorAgents(request, ManagerEndpointInfo);
 
             // Delete old monitor items
-            var monitorAgents = _monitorAgentService.GetAll();
+            var monitorAgents = monitorAgentService.GetAll();
             while (monitorAgents.Any())
             {
-                _monitorAgentService.DeleteByIdAsync(monitorAgents.First().Id).Wait();
+                await monitorAgentService.DeleteByIdAsync(monitorAgents.First().Id);
                 monitorAgents.RemoveAt(0);
             }
 
             // Save monitor agents
             foreach (var monitorAgent in response.MonitorAgents)
             {
-                _monitorAgentService.AddAsync(monitorAgent).Wait();
+                await _monitorAgentService.AddAsync(monitorAgent);
             }
 
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Got Monitor Agents");
-
+            
             return response.MonitorAgents.Count;
         }
 
         /// <summary>
         /// Gets monitor item list from Agent Manager, saves to local storage
         /// </summary>
-        private int GetMonitorItems()
+        private async Task<int> GetMonitorItemsAsync(IMonitorItemService monitorItemService)
         {
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Getting monitor items");
 
@@ -320,34 +351,34 @@ namespace CFMonitor.Agent
             var response = _managerConnection.SendGetMonitorItems(request, ManagerEndpointInfo);
 
             // Delete old monitor items
-            var monitorItems = _monitorItemService.GetAll();
+            var monitorItems = monitorItemService.GetAll();
             while (monitorItems.Any())
             {
-                _monitorItemService.DeleteByIdAsync(monitorItems.First().Id).Wait();
+                await monitorItemService.DeleteByIdAsync(monitorItems.First().Id);
                 monitorItems.RemoveAt(0);
             }
 
             // Save monitor items
             foreach (var monitorItem in response.MonitorItems)
             {
-                _monitorItemService.AddAsync(monitorItem).Wait();
+                await monitorItemService.AddAsync(monitorItem);
             }
 
             // Store monitor items
             _monitorItems = response.MonitorItems;
 
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Got monitor items");
-
+            
             return response.MonitorItems.Count;
         }
 
         /// <summary>
         /// Gets event items from Agent Manager, saves to local storage
         /// </summary>
-        private int GetEventItems()
-        {
+        private async Task<int> GetEventItemsAsync(IEventItemService eventItemService)
+        {           
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Getting event items");
-
+            
             // Send request, wait for response
             var request = new GetEventItemsRequest()
             {
@@ -358,28 +389,28 @@ namespace CFMonitor.Agent
             var response = _managerConnection.SendGetEventItems(request, ManagerEndpointInfo);
 
             // Delete old monitor items
-            var eventItems = _eventItemService.GetAll();
+            var eventItems = eventItemService.GetAll();
             while (eventItems.Any())
             {
-                _eventItemService.DeleteByIdAsync(eventItems.First().Id).Wait();
+                await eventItemService.DeleteByIdAsync(eventItems.First().Id);
                 eventItems.RemoveAt(0);
             }
 
             // Save event items
             foreach (var eventItem in response.EventItems)
             {
-                _eventItemService.AddAsync(eventItem).Wait();
+                await eventItemService.AddAsync(eventItem);
             }
 
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Got event items");
-
+            
             return response.EventItems.Count;
         }
 
         /// <summary>
         /// Gets system value types from Agent Manager, saves to local storage
         /// </summary>
-        private int GetSystemValueTypes()
+        private async Task<int> GetSystemValueTypes(ISystemValueTypeService systemValueTypeService)
         {
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Getting system value types");
 
@@ -392,17 +423,17 @@ namespace CFMonitor.Agent
             var response = _managerConnection.SendGetSystemValueTypes(request, ManagerEndpointInfo);
 
             // Delete old monitor items
-            var systemValueTypes = _systemValueTypeService.GetAll();
+            var systemValueTypes = systemValueTypeService.GetAll();
             while (systemValueTypes.Any())
             {
-                _systemValueTypeService.DeleteByIdAsync(systemValueTypes.First().Id).Wait();
+                await systemValueTypeService.DeleteByIdAsync(systemValueTypes.First().Id);
                 systemValueTypes.RemoveAt(0);
             }
 
             // Save system value types
             foreach (var systemValueType in response.SystemValueTypes)
             {
-                _systemValueTypeService.AddAsync(systemValueType).Wait();
+                await systemValueTypeService.AddAsync(systemValueType);
             }
 
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Got system value types");
@@ -414,7 +445,7 @@ namespace CFMonitor.Agent
         /// Checks overdue monitor items
         /// </summary>
         private void CheckMonitorItems()
-        {
+        {            
             // Set checker config
             var checkerConfig = new CheckerConfig()
             {
@@ -462,7 +493,7 @@ namespace CFMonitor.Agent
                         _activeMonitorItemTasks.Add(activeTask);
                     }
                 }
-            }
+            }            
         }
 
         /// <summary>
@@ -547,7 +578,7 @@ namespace CFMonitor.Agent
         /// 
         /// Note: We should only send the heartbeat if we're healthy so that Agent Manager knows that there's an issue
         /// </summary>        
-        private void UpdateHeartbeat(bool force)
+        private void UpdateHeartbeatIfOverdue(bool force)
         {
             if (force || _lastHeartbeatTime.AddSeconds(_systemConfig.HeartbeatSecs) <= DateTimeOffset.UtcNow)
             {
@@ -568,20 +599,23 @@ namespace CFMonitor.Agent
         /// <summary>
         /// Archives logs
         /// </summary>
-        private void ArchiveLogs()
+        private Task ArchiveLogsAsync()
         {
-            DateTimeOffset date = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(_systemConfig.MaxLogDays));
-
-            _lastArchiveLogsTime = DateTimeOffset.UtcNow;
-
-            for (int index = 0; index < 30; index++)
+            return Task.Factory.StartNew(() =>
             {
-                var logFile = Path.Combine(_systemConfig.LogFolder, $"MonitorAgent-{date.Subtract(TimeSpan.FromDays(index)).ToString("yyyy-MM-dd")}.txt");
-                if (File.Exists(logFile))
+                DateTimeOffset date = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(_systemConfig.MaxLogDays));
+
+                _lastArchiveLogsTime = DateTimeOffset.UtcNow;
+
+                for (int index = 0; index < 30; index++)
                 {
-                    File.Delete(logFile);
+                    var logFile = Path.Combine(_systemConfig.LogFolder, $"MonitorAgent-{date.Subtract(TimeSpan.FromDays(index)).ToString("yyyy-MM-dd")}.txt");
+                    if (File.Exists(logFile))
+                    {
+                        File.Delete(logFile);
+                    }
                 }
-            }
+            });
         }
 
         ///// <summary>
@@ -618,6 +652,58 @@ namespace CFMonitor.Agent
         private void ProcessCompletedQueueItemTask(QueueItemTask queueItemTask)
         {
 
+        }
+
+        private Task HandleConnectionMessageAsync(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
+        {
+            var message = _managerConnection.GetExternalMessage(connectionMessage);
+
+            if (message is EntityUpdated)
+            {
+                return HandleEntityUpdated((EntityUpdated)message);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Handles "Entity Updated" message
+        /// </summary>
+        /// <param name="entityUpdated"></param>
+        /// <returns></returns>
+        private Task HandleEntityUpdated(EntityUpdated entityUpdated)
+        {
+            return Task.Factory.StartNew(async () =>
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    // Prevent monitor item checking
+                    _checkMonitorItemsEnabled = false;
+
+                    var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
+
+                    var systemValueType = systemValueTypeService.GetByIdAsync(entityUpdated.SystemValueTypeId).Result;
+
+                    // Wait for monitor item tasks to complete
+                    while (_activeMonitorItemTasks.Any())
+                    {
+                        Thread.Sleep(100);
+                    }                    
+
+                    switch (systemValueType.ValueType)
+                    {
+                        case SystemValueTypes.AEP_MonitorAgentId:
+                            await GetMonitorAgentsAsync(scope.ServiceProvider.GetRequiredService<IMonitorAgentService>());
+                            break;
+                        case SystemValueTypes.AEP_MonitorItemId:
+                            await GetMonitorItemsAsync(scope.ServiceProvider.GetRequiredService<IMonitorItemService>());
+                            break;
+                    }
+
+                    // Enable monitor item checking
+                    _checkMonitorItemsEnabled = true;
+                }
+            });
         }
     }
 }

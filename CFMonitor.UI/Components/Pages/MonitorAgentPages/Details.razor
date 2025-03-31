@@ -1,0 +1,59 @@
+﻿@page "/monitoragents/details"
+@using Microsoft.EntityFrameworkCore
+@using CFMonitor.Interfaces
+@using CFMonitor.Models
+@inject NavigationManager NavigationManager
+@inject IMonitorAgentService MonitorAgentService
+
+@attribute [Authorize(Roles = "Administrator,User")]
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h2>Monitor Agent</h2>
+    <hr />
+    @if (MonitorAgent is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <dl class="row">
+            <dt class="col-sm-2">Machine</dt>
+            <dd class="col-sm-10">@MonitorAgent.MachineName</dd>
+            <dt class="col-sm-2">User</dt>
+            <dd class="col-sm-10">@MonitorAgent.UserName</dd>
+            <dt class="col-sm-2">IP</dt>
+            <dd class="col-sm-10">@MonitorAgent.IP</dd>
+            <dt class="col-sm-2">Port</dt>
+            <dd class="col-sm-10">@MonitorAgent.Port</dd>
+            <dt class="col-sm-2">Version</dt>
+            <dd class="col-sm-10">@MonitorAgent.Version</dd>
+            <dt class="col-sm-2">Heartbeat</dt>
+            <dd class="col-sm-10">@MonitorAgent.HeartbeatDateTime.ToString()</dd>
+        </dl>
+        <div>
+            <a href="@($"/monitoragents/edit?id={MonitorAgent.Id}")">Edit</a> |
+            <a href="@($"/monitoragents")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    private MonitorAgent? MonitorAgent;
+
+    [SupplyParameterFromQuery]
+    private string Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        MonitorAgent = await MonitorAgentService.GetByIdAsync(Id);
+
+        if (MonitorAgent is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}

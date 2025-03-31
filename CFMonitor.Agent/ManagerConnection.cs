@@ -1,10 +1,13 @@
 ﻿using CFConnectionMessaging.Models;
 using CFConnectionMessaging;
 using CFMonitor.Constants;
+using CFMonitor.Enums;
 using CFMonitor.Exceptions;
 using CFMonitor.Models.Messages;
 using CFMonitor.MessageConverters;
 using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+using CFMonitor.Interfaces;
 
 namespace CFMonitor.Agent
 {
@@ -15,32 +18,29 @@ namespace CFMonitor.Agent
     {        
         private ConnectionTcp _connection;
             
-        private readonly MessageConvertersList _messageConverters = new();
-
-        //public delegate void GetMonitorItemsResponseReceived(GetMonitorItemsResponse response);
-        //public event GetMonitorItemsResponseReceived? OnGetMonitorItemsResponseReceived;
-
-        public delegate void MonitorItemUpdatedReceived(MonitorItemUpdated monitorItemUpdated);
-        public event MonitorItemUpdatedReceived? OnMonitorItemUpdated;
+        private readonly MessageConvertersList _messageConverters = new();     
 
         public delegate void ConnectionMessageReceived(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo);
-        public event ConnectionMessageReceived? OnConnectionMessageReceived;
+        public event ConnectionMessageReceived? OnConnectionMessageReceived;        
 
         private List<MessageBase> _responseMessages = new List<MessageBase>();
 
         private TimeSpan _responseTimeout = TimeSpan.FromSeconds(30);
 
-        public ManagerConnection()
+        private readonly IServiceProvider _serviceProvider;
+
+        public ManagerConnection(IServiceProvider serviceProvider)
         {
-            _connection = new ConnectionTcp();
-            //_connection.OnConnectionMessageReceived += _connection_OnConnectionMessageReceived;
+            _serviceProvider = serviceProvider;
+
+            _connection = new ConnectionTcp();            
             _connection.OnConnectionMessageReceived += delegate (ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
             {
                 if (IsResponseMessage(connectionMessage))   // Inside a Send... method waiting for a response
                 {
-                    _responseMessages.Add(GetResponseMessage(connectionMessage)!);
+                    _responseMessages.Add(GetExternalMessage(connectionMessage)!);
                 }
-                else      // Unsolicited message
+                else      // Unsolicited message (E.g. Entity updated)
                 {
                     if (OnConnectionMessageReceived != null)
                     {
@@ -49,40 +49,7 @@ namespace CFMonitor.Agent
                 }               
             };
         }
-
-        private MessageBase? GetResponseMessage(ConnectionMessage connectionMessage)
-        {
-            switch (connectionMessage.TypeId)
-            {
-                case MessageTypeIds.GetEventItemsResponse:
-                    return _messageConverters.GetEventItemsResponseConverter.GetExternalMessage(connectionMessage);
-                    
-                case MessageTypeIds.GetFileObjectResponse:
-                    return _messageConverters.GetFileObjectResponseConverter.GetExternalMessage(connectionMessage);                    
-
-                case MessageTypeIds.GetMonitorAgentsResponse:
-                    return _messageConverters.GetMonitorAgentsResponseConverter.GetExternalMessage(connectionMessage);                    
-
-                case MessageTypeIds.GetMonitorItemsResponse:
-                    return _messageConverters.GetMonitorItemsResponseConverter.GetExternalMessage(connectionMessage);                    
-
-                case MessageTypeIds.GetSystemValueTypesResponse:
-                    return _messageConverters.GetSystemValueTypesResponseConverter.GetExternalMessage(connectionMessage);                    
-
-                /*
-                case MessageTypeIds.MonitorItemUpdated:
-                    return = _messageConverters.MonitorItemUpdatedConverter.GetExternalMessage(connectionMessage);
-                    if (OnMonitorItemUpdated != null)
-                    {
-                        OnMonitorItemUpdated(monitorItemUpdated);
-                    }
-                    break;
-                */
-            }
-
-            return null;
-        }
-
+       
         public void StartListening(int port)
         {
             _connection.ReceivePort = port;
@@ -331,7 +298,7 @@ namespace CFMonitor.Agent
         /// <param name="responseMessagesToCheck">List where responses are added</param>
         /// <param name="responseMessageAction">Action to forward next response</param>
         /// <returns>Whether all responses received</returns>
-        private bool WaitForResponses(MessageBase request, TimeSpan timeout,
+        private static bool WaitForResponses(MessageBase request, TimeSpan timeout,
                                       List<MessageBase> responseMessagesToCheck,
                                       Action<MessageBase> responseMessageAction)
         {
@@ -357,10 +324,59 @@ namespace CFMonitor.Agent
                     responseMessageAction(responseMessage);
                 }
 
-                Thread.Sleep(20);
+                if (!isGotAllResponses) Thread.Sleep(20);
             }
 
             return isGotAllResponses;
         }
+       
+        public MessageBase? GetExternalMessage(ConnectionMessage connectionMessage)
+        {
+            switch (connectionMessage.TypeId)
+            {
+                case MessageTypeIds.GetEventItemsResponse:
+                    return _messageConverters.GetEventItemsResponseConverter.GetExternalMessage(connectionMessage);
+
+                case MessageTypeIds.GetFileObjectResponse:
+                    return _messageConverters.GetFileObjectResponseConverter.GetExternalMessage(connectionMessage);
+
+                case MessageTypeIds.GetMonitorAgentsResponse:
+                    return _messageConverters.GetMonitorAgentsResponseConverter.GetExternalMessage(connectionMessage);
+
+                case MessageTypeIds.GetMonitorItemsResponse:
+                    return _messageConverters.GetMonitorItemsResponseConverter.GetExternalMessage(connectionMessage);
+
+                case MessageTypeIds.GetSystemValueTypesResponse:
+                    return _messageConverters.GetSystemValueTypesResponseConverter.GetExternalMessage(connectionMessage);
+
+                case MessageTypeIds.EntityUpdated:
+                    return _messageConverters.EntityUpdatedConverter.GetExternalMessage(connectionMessage);
+            }
+
+            return null;
+        }
+
+        //private Task HandleEntityUpdated(EntityUpdated  entityUpdated, MessageReceivedInfo messageReceivedInfo)
+        //{
+        //    return Task.Factory.StartNew(() =>
+        //    {
+        //        using (var scope = _serviceProvider.CreateScope())
+        //        {
+        //            var systemValueTypeService = scope.ServiceProvider.GetRequiredService<ISystemValueTypeService>();
+
+        //            // Get system value type to indicate what EntityId refers to 
+        //            var systemValueType = systemValueTypeService.GetByIdAsync(entityUpdated.SystemValueTypeId).Result;
+
+        //            switch(systemValueType.ValueType)
+        //            {
+        //                case SystemValueTypes.AEP_MonitorAgentId:                            
+        //                    break;
+
+        //                case SystemValueTypes.AEP_MonitorItemId:
+        //                    break;                        
+        //            }
+        //        }                               
+        //    });
+        //}
     }
 }

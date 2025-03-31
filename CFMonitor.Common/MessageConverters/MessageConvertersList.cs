@@ -1,5 +1,4 @@
 ﻿using CFConnectionMessaging.Interfaces;
-using CFMonitor.Common.MessageConverters;
 using CFMonitor.Models.Messages;
 
 namespace CFMonitor.MessageConverters
@@ -29,7 +28,7 @@ namespace CFMonitor.MessageConverters
         private readonly IExternalMessageConverter<MonitorAgentLogMessage> _monitorAgentLogMessageConverter = new MonitorAgentLogMessageConverter();
 
         private readonly IExternalMessageConverter<MonitorItemResultMessage> _monitorItemResultMessageConverter = new MonitorItemResultMessageConverter();
-        private readonly IExternalMessageConverter<MonitorItemUpdated> _monitorItemUpdatedConverter = new MonitorItemUpdatedConverter();
+        private readonly IExternalMessageConverter<EntityUpdated> _entityUpdatedConverter = new EntityUpdatedConverter();
 
 
         public IExternalMessageConverter<GetEventItemsRequest> GetEventItemsRequestConverter => _getEventItemsRequestConverter;
@@ -52,6 +51,6 @@ namespace CFMonitor.MessageConverters
         public IExternalMessageConverter<MonitorAgentLogMessage> MonitorAgentLogMessageConverer => _monitorAgentLogMessageConverter;
 
         public IExternalMessageConverter<MonitorItemResultMessage> MonitorItemResultMessageConverter => _monitorItemResultMessageConverter;
-        public IExternalMessageConverter<MonitorItemUpdated> MonitorItemUpdatedConverter => _monitorItemUpdatedConverter;
+        public IExternalMessageConverter<EntityUpdated> EntityUpdatedConverter => _entityUpdatedConverter;
     }
 }

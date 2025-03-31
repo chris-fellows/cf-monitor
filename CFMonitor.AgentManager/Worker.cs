@@ -1,5 +1,6 @@
 ﻿using CFConnectionMessaging.Models;
 using CFMonitor.AgentManager.Models;
+using CFMonitor.AgentManager.Enums;
 using CFMonitor.Interfaces;
 using CFMonitor.Log;
 using CFMonitor.Models;
@@ -78,6 +79,7 @@ namespace CFMonitor.AgentManager
             {
                 var queueItem = new QueueItem()
                 {
+                    ItemType = QueueItemTypes.ConnectionMessage,
                     ConnectionMessage = connectionMessage,
                     MessageReceivedInfo = messageReceivedInfo
                 };
@@ -116,39 +118,23 @@ namespace CFMonitor.AgentManager
             {
                 _timer.Enabled = false;
 
-                UpdateHeartbeat(false);
+                UpdateHeartbeatIfOverdue(false);
 
-                CheckCompleteQueueItemTasks(_queueItemTasks);
-
-                // Process queue
-                while (_queueItems.Any())
-                {
-                    if (_queueItemTasks.Count < _systemConfig.MaxConcurrentMessages)
-                    {
-                        if (_queueItems.TryDequeue(out QueueItem queueItem))
-                        {
-                            if (queueItem.ConnectionMessage != null)
-                            {
-                                var queueItemTask = new QueueItemTask(_agentConnection.HandleConnectionMessageAsync(queueItem.ConnectionMessage, queueItem.MessageReceivedInfo), queueItem);
-                                _queueItemTasks.Add(queueItemTask);
-                            }
-                        }
-                    }
-                    else    // Max messages processed
-                    {
-                        Thread.Sleep(100);
-                    }
-
-                    UpdateHeartbeat(false);
-
-                    CheckCompleteQueueItemTasks(_queueItemTasks);
-                }
-
-                // Archive logs
+                // Queue archive logs if overdue
                 if (_lastArchiveLogsTime.AddHours(12) <= DateTimeOffset.UtcNow)
-                {
-                    ArchiveLogs();
+                {                    
+                    _queueItems.Enqueue(new QueueItem() { ItemType = QueueItemTypes.ArchiveLogs });
                 }
+
+                // Process queue items
+                if (_queueItems.Any())
+                {
+                    ProcessQueueItems(() =>
+                    {
+                        UpdateHeartbeatIfOverdue(false);
+                        CheckCompleteQueueItemTasks(_queueItemTasks);
+                    });
+                }                
 
                 CheckCompleteQueueItemTasks(_queueItemTasks);
             }
@@ -162,6 +148,45 @@ namespace CFMonitor.AgentManager
                                    _queueItemTasks.Any() ? 100 : 5000;
                 _timer.Enabled = true;
             }
+        }
+
+        /// <summary>
+        /// Processes queue items
+        /// </summary>
+        private void ProcessQueueItems(Action periodicAction)
+        {            
+            while (_queueItems.Any())
+            {
+                if (_queueItemTasks.Count < _systemConfig.MaxConcurrentMessages)
+                {
+                    if (_queueItems.TryDequeue(out QueueItem queueItem))
+                    {
+                        ProcessQueueItem(queueItem);
+                    }
+                }
+                else    // Max messages processed
+                {
+                    Thread.Sleep(100);
+                }
+
+                periodicAction();
+            }
+        }
+
+        /// <summary>
+        /// Process queue item
+        /// </summary>
+        /// <param name="queueItem"></param>
+        private void ProcessQueueItem(QueueItem queueItem)
+        {
+            var queueItemTask = queueItem.ItemType switch
+            {
+                QueueItemTypes.ArchiveLogs => new QueueItemTask(ArchiveLogsAsync(), queueItem),
+                QueueItemTypes.ConnectionMessage => new QueueItemTask(_agentConnection.HandleConnectionMessageAsync(queueItem.ConnectionMessage, queueItem.MessageReceivedInfo), queueItem)
+                            _ => null
+            };
+
+            if (queueItemTask != null) _queueItemTasks.Add(queueItemTask);
         }
 
         private void CheckCompleteQueueItemTasks(List<QueueItemTask> queueItemTasks)
@@ -188,7 +213,7 @@ namespace CFMonitor.AgentManager
         /// <summary>
         /// Updates monitor agent manager heartbeat
         /// </summary>        
-        private void UpdateHeartbeat(bool force)
+        private void UpdateHeartbeatIfOverdue(bool force)
         {
             if (force || _lastHeartbeatTime.AddSeconds(_systemConfig.HeartbeatSecs) <= DateTimeOffset.UtcNow)
             {                
@@ -223,20 +248,23 @@ namespace CFMonitor.AgentManager
         /// <summary>
         /// Archives logs
         /// </summary>
-        private void ArchiveLogs()
+        private Task ArchiveLogsAsync()
         {
-            DateTimeOffset date = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(_systemConfig.MaxLogDays));
-
-            _lastArchiveLogsTime = DateTimeOffset.UtcNow;
-
-            for (int index = 0; index < 30; index++)
+            return Task.Factory.StartNew(() =>
             {
-                var logFile = Path.Combine(_systemConfig.LogFolder, $"MonitorAgentManager-{date.Subtract(TimeSpan.FromDays(index)).ToString("yyyy-MM-dd")}.txt");
-                if (File.Exists(logFile))
+                DateTimeOffset date = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(_systemConfig.MaxLogDays));
+
+                _lastArchiveLogsTime = DateTimeOffset.UtcNow;
+
+                for (int index = 0; index < 30; index++)
                 {
-                    File.Delete(logFile);
+                    var logFile = Path.Combine(_systemConfig.LogFolder, $"MonitorAgentManager-{date.Subtract(TimeSpan.FromDays(index)).ToString("yyyy-MM-dd")}.txt");
+                    if (File.Exists(logFile))
+                    {
+                        File.Delete(logFile);
+                    }
                 }
-            }
+            });
         }
     }
 }

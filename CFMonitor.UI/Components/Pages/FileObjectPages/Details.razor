@@ -1,9 +1,9 @@
-﻿@page "/users/details"
+﻿@page "/fileobjects/details"
 @using Microsoft.EntityFrameworkCore
 @using CFMonitor.Interfaces
 @using CFMonitor.Models
 @inject NavigationManager NavigationManager
-@inject IUserService UserService
+@inject IFileObjectService FileObjectService
 
 @attribute [Authorize(Roles = "Administrator,User")]
 
@@ -12,9 +12,9 @@
 <h1>Details</h1>
 
 <div>
-    <h2>User</h2>
+    <h2>File</h2>
     <hr />
-    @if (user is null)
+    @if (FileObject is null)
     {
         <p><em>Loading...</em></p>
     }
@@ -22,30 +22,26 @@
     {
         <dl class="row">
             <dt class="col-sm-2">Name</dt>
-            <dd class="col-sm-10">@user.Name</dd>
-            <dt class="col-sm-2">Email</dt>
-            <dd class="col-sm-10">@user.Email</dd>
-            <dt class="col-sm-2">Active</dt>
-            <dd class="col-sm-10">@user.Active</dd>
+            <dd class="col-sm-10">@FileObject.Name</dd>            
         </dl>
         <div>
-            <a href="@($"/users/edit?id={user.Id}")">Edit</a> |
-            <a href="@($"/users")">Back to List</a>
+            <a href="@($"/fileobjects/edit?id={FileObject.Id}")">Edit</a> |
+            <a href="@($"/fileobjects")">Back to List</a>
         </div>
     }
 </div>
 
 @code {
-    private User? user;
+    private FileObject? FileObject;
 
     [SupplyParameterFromQuery]
     private string Id { get; set; }
 
     protected override async Task OnInitializedAsync()
-    {        
-        user = await UserService.GetByIdAsync(Id);
+    {
+        FileObject = await FileObjectService.GetByIdAsync(Id);
 
-        if (user is null)
+        if (FileObject is null)
         {
             NavigationManager.NavigateTo("notfound");
         }

@@ -8,6 +8,11 @@ namespace CFMonitor.Models
     public class MonitorItemType
     {
         /// <summary>
+        /// Unique Id
+        /// </summary>
+        public string Id { get; set; } = String.Empty;
+
+        /// <summary>
         /// Name for display
         /// </summary>
         public string Name { get; set; } = String.Empty;
@@ -26,11 +31,10 @@ namespace CFMonitor.Models
         /// Event conditions that are relevant
         /// </summary>        
         public List<SystemValueTypes> EventConditionValueTypes { get; set; } = new List<SystemValueTypes>();
-
+        
         /// <summary>
-        /// Checker type
+        /// Default parameters
         /// </summary>
-        //public CheckerTypes CheckerType { get; set; }
 
         public List<MonitorItemParameter> DefaultParameters = new List<MonitorItemParameter>();
 

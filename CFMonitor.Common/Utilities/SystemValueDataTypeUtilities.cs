@@ -1,4 +1,5 @@
 ﻿using CFMonitor.Enums;
+using CFMonitor.Interfaces;
 using CFMonitor.Models;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -15,7 +16,8 @@ namespace CFMonitor.Utilities
         /// <param name="systemValueType"></param>
         /// <param name="valueType"></param>
         /// <returns></returns>
-        public static List<NameAndValue> GetAllowedValues(SystemValueTypes systemValueType, Type valueType)
+        public static List<NameAndValue> GetAllowedValues(SystemValueTypes systemValueType, Type valueType,
+                                    IFileObjectService fileObjectService)
         {
             // Check more complex types
             switch(valueType)
@@ -37,6 +39,12 @@ namespace CFMonitor.Utilities
             // Check system value type enum
             switch(systemValueType)
             {
+                case SystemValueTypes.MIP_RunProcessFileObjectId:
+                    var fileObjects1 = fileObjectService.GetAll();
+                    return fileObjects1.Select(fileObject => new NameAndValue() { Name = fileObject.Name, Value = fileObject.Id }).ToList();
+                case SystemValueTypes.MIP_SQLSQLFileObjectId:
+                    var fileObjects2 = fileObjectService.GetAll().Where(fo => fo.Name.ToLower().EndsWith(".sql"));
+                    return fileObjects2.Select(fileObject => new NameAndValue() { Name = fileObject.Name, Value = fileObject.Id }).ToList();                    
                 case SystemValueTypes.MIP_URLMethod:
                     return new List<NameAndValue>()
                     {

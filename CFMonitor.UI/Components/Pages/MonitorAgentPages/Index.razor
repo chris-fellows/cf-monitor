@@ -30,8 +30,7 @@
 
 <h1>Monitor Agent List</h1>
 
-<p>
-    <a href="users/create">Create New</a>
+<p>    
     <button @onclick="DownloadCSVAsync" class="btn btn-primary">Download</button>
 </p>
 
@@ -60,6 +59,10 @@ else
         </TemplateColumn>
 
         <PropertyColumn Title="Version" Property="monitorAgent => monitorAgent.Version" />
+
+        <TemplateColumn Context="monitorAgent">
+            <a href="@($"monitoragents/details?id={monitorAgent.Id}")">Details</a> |
+        </TemplateColumn>
     </QuickGrid>
 
     <Paginator State="@Pagination" />

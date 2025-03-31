@@ -31,8 +31,7 @@
 <h1>File List</h1>
 
 <p>
-    <a href="users/create">Create New</a>
-    <InputFile id="newfile" OnChange="OnNewFileChangeAsync" />
+    <a href="fileobjects/create">Create New</a>    
     <button @onclick="DownloadCSVAsync" class="btn btn-primary">Download</button>
 </p>
 
@@ -65,9 +64,7 @@ else
 
     private PaginationState Pagination = new PaginationState() { ItemsPerPage = 25 };
 
-    private bool IsBusy { get; set; }
-
-    private string _newFile = "";
+    private bool IsBusy { get; set; }    
 
     protected override async Task OnInitializedAsync()
     {
@@ -122,36 +119,6 @@ else
             using var streamRef = new DotNetStreamReference(stream: memoryStream);
 
             await JS.InvokeVoidAsync("downloadFileFromStream", fileObject.Name, streamRef);
-        }
-    }
-
-    private async Task OnNewFileChangeAsync(InputFileChangeEventArgs eventArgs)
-    {
-        // Check file size
-        if (eventArgs.File.Size > ConfigUtilities.MaxUploadFileObjectSize)
-        {
-            throw new ArgumentException("File is too big");
-        }
-
-        // Save
-        using (var stream = eventArgs.File.OpenReadStream())
-        {
-            using (var memoryStream = new MemoryStream())
-            {
-                await stream.CopyToAsync(memoryStream);
-
-                var content = new byte[memoryStream.Length];
-                await memoryStream.ReadAsync(content);
-
-                var fileObject = new FileObject()
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        Name = eventArgs.File.Name,
-                        Content = content
-                    };
-
-                await FileObjectService.AddAsync(fileObject);
-            }
         }
     }
 

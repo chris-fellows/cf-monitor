@@ -1,0 +1,313 @@
+﻿@page "/monitoritems/create"
+@using Microsoft.EntityFrameworkCore
+@using CFMonitor.Constants
+@using CFMonitor.Interfaces
+@using CFMonitor.Models
+@using CFMonitor.UI.Models
+@using CFMonitor.Utilities
+@inject NavigationManager NavigationManager
+@inject IAuditEventFactory AuditEventFactory
+@inject IAuditEventService AuditEventService
+@inject IEventItemService EventItemService
+@inject IFileObjectService FileObjectService
+@inject IFileSecurityCheckerService FileSecurityCheckerService
+@inject IMonitorAgentService MonitorAgentService
+@inject IMonitorItemService MonitorItemService
+@inject IMonitorItemTypeService MonitorItemTypeService
+@inject IRequestContextService RequestContextService
+@inject ISystemValueTypeService SystemValueTypeService
+
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@attribute [Authorize(Roles = "Administrator,User")]
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>Monitor Item</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="MonitorItem" OnValidSubmit="AddMonitorItem" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+            <input type="hidden" name="MonitorItem.Id" value="@MonitorItem.Id" />
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label>
+                <InputText id="name" @bind-Value="MonitorItem.Name" class="form-control" />
+                <ValidationMessage For="() => MonitorItem.Name" class="text-danger" />
+            </div> 
+
+            <div class="mb-3">
+                <label for="monitoritemtype" class="form-label">Type:</label>
+                <ValidationMessage For="() => MonitorItem.MonitorItemType" class="text-danger" />
+                <InputSelect @bind-Value="SelectedMonitorItemTypeId" class="form-control">
+                    @foreach (MonitorItemType monitorItemType in MonitorItemTypes)
+                    {
+                    @if (monitorItemType.Id == SelectedMonitorItemTypeId)
+                    {
+                        <option selected value="@monitorItemType.Id">@monitorItemType.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@monitorItemType.Id">@monitorItemType.Name</option>
+                    }
+                    }
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <label for="monitoritemenabled" class="form-label">Enabled:</label>
+                <InputCheckbox id="monitoritemenabled" @bind-Value="MonitorItem.Enabled" class="form-check-input" />
+                <ValidationMessage For="() => MonitorItem.Enabled" class="text-danger" />
+            </div>
+
+            <p>Monitor Agents</p>
+            @foreach (MySelectableItem monitorAgentItem in MonitorAgentItems)
+            {
+            <div class="mb-3">
+                <label for="@monitorAgentItem.Id" class="form-label">@monitorAgentItem.Name</label>
+                <InputCheckbox id="@monitorAgentItem.Id" @bind-Value="@monitorAgentItem.Selected" class="form-check-input" />
+            </div>
+            }
+
+            @if(ParameterItems.Any())
+            {
+            <p>Parameters</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (ParameterItem parameterItem in ParameterItems)
+                    {
+                        <tr>
+                            <td>@parameterItem.SystemValueType.Name</td>
+                            <td>
+                                @{
+                                    // Get allowed values if finite list. E.g. HTTP methods, HTTP status codes etc
+                                    var parameterValueType = Type.GetType(parameterItem.SystemValueType.ValueTypeName);
+
+                                    var allowedValues = SystemValueDataTypeUtilities.GetAllowedValues(parameterItem.SystemValueType.ValueType, parameterValueType, FileObjectService);
+
+                                    if (!String.IsNullOrEmpty(parameterItem.SystemValueType.MinValue))    // Fixed range
+                                    {
+                                        switch (parameterValueType)
+                                        {
+                                            case Type _ when parameterValueType == typeof(Int16):
+                                                <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueInteger" min="@parameterItem.MinValueInteger" max="@parameterItem.MaxValueInteger" class="form-control" />
+                                                break;
+                                            case Type _ when parameterValueType == typeof(Int32):
+                                                <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueInteger" min="@parameterItem.MinValueInteger" max="@parameterItem.MaxValueInteger" class="form-control" />
+                                                break;
+                                            case Type _ when parameterValueType == typeof(Int64):
+                                                <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueInteger" min="@parameterItem.MinValueInteger" max="@parameterItem.MaxValueInteger" class="form-control" />
+                                                break;
+                                            default:
+                                                <InputText id="@parameterItem.Id" @bind-Value="@parameterItem.Value" class="form-control" />
+                                                break;
+                                        }
+
+                                        /*
+                                        switch (parameterItem.SystemValueType.DataType)
+                                        {
+                                            case SystemValueDataTypes.Integer:
+                            <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueInteger" min="@parameterItem.MinValueInteger" max="@parameterItem.MaxValueInteger" class="form-control" />
+                            break;
+                            }
+                            */
+                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                                                                        else if (allowedValues == null || !allowedValues.Any())
+                        {
+                            switch (parameterValueType)
+                            {
+                                case Type _ when parameterValueType == typeof(Boolean):
+                                    <InputCheckbox id="@parameterItem.Id" @bind-Value="@parameterItem.ValueBoolean" class="form-control" />
+                                    break;
+                                case Type _ when parameterValueType == typeof(Decimal):
+                                    <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueDecimal" class="form-control" />
+                                    break;
+                                case Type _ when parameterValueType == typeof(Int16):
+                                    <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueInteger" class="form-control" />
+                                    break;
+                                case Type _ when parameterValueType == typeof(Int32):
+                                    <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueInteger" class="form-control" />
+                                    break;
+                                case Type _ when parameterValueType == typeof(Int64):
+                                    <InputNumber id="@parameterItem.Id" @bind-Value="@parameterItem.ValueInteger" class="form-control" />
+                                    break;
+                                default:
+                                    <InputText id="@parameterItem.Id" @bind-Value="@parameterItem.Value" class="form-control" />
+                                    break;
+                            }
+
+                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                        else     // Finite values
+                        {
+                                    <InputSelect id="@parameterItem.Id" @bind-Value="@parameterItem.Value" class="form-control">
+                                        @foreach (NameAndValue allowedValue in allowedValues)
+                        {
+                                        @if (allowedValue.Value == parameterItem.Value)
+                            {
+                                        <option selected value="@allowedValue.Value">@allowedValue.Name</option>
+                            }
+                            else
+                            {
+                                        <option value="@allowedValue.Value">@allowedValue.Name</option>
+                            }
+                        }
+                                    </InputSelect>
+                        }
+                                }
+                            </td>
+                        </tr>
+                                                                                                        }
+                    </tbody>
+                </table>
+            }
+
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/monitoritems">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private MonitorItem MonitorItem { get; set; } = new() { Name = "New", Enabled = true };
+
+    private List<MonitorItemType> MonitorItemTypes = new();
+
+    private List<MySelectableItem> MonitorAgentItems = new();
+
+    private List<SystemValueType> SystemValueTypes = new();
+
+    private List<ParameterItem> ParameterItems = new();
+
+    private string _monitorItemTypeId = "";
+    public string SelectedMonitorItemTypeId
+    {
+        get { return _monitorItemTypeId; }
+        set
+        {
+    _monitorItemTypeId = value;
+    var monitorItemType = MonitorItemTypes.First(mit => mit.Id == value);
+
+    MonitorItem.MonitorItemType = monitorItemType.ItemType;
+
+    // Set default parameters
+    MonitorItem.Parameters = new List<MonitorItemParameter>();
+    MonitorItem.Parameters.AddRange(monitorItemType.DefaultParameters);
+
+    // Display parameters
+    ParameterItems.Clear();
+    ParameterItems.AddRange(GetParameterItems(MonitorItem));
+
+    StateHasChanged();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var monitorAgents = await MonitorAgentService.GetAllAsync();
+            MonitorAgentItems = monitorAgents.Select(ma => new MySelectableItem()
+            {
+                Id = ma.Id,
+                Name = ma.MachineName,
+                Selected = false
+            }).ToList();
+
+        MonitorItemTypes = MonitorItemTypeService.GetAll();        
+
+        SystemValueTypes = await SystemValueTypeService.GetAllAsync();
+
+        SelectedMonitorItemTypeId = MonitorItemTypes.First().Id;
+    }
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddMonitorItem()
+    {
+        MonitorItem.Id = Guid.NewGuid().ToString();
+        ApplyViewChanges(MonitorItem);
+
+        await MonitorItemService.AddAsync(MonitorItem);
+
+        // Add "Monitor Item Added" audit event
+        var auditEvent = AuditEventFactory.CreateMonitorItemAdded(RequestContextService.UserId, MonitorItem.Id, RequestContextService.UserId);
+        await AuditEventService.AddAsync(auditEvent);
+
+        NavigationManager.NavigateTo("/monitoritems");
+    }
+
+    private void ApplyViewChanges(MonitorItem monitorItem)
+    {
+        monitorItem.Parameters.Clear();
+
+        monitorItem.Parameters.AddRange(ParameterItems.Select(pi => new MonitorItemParameter()
+        {
+            SystemValueTypeId  = SystemValueTypes.First(svt => svt.ValueType == pi.SystemValueType.ValueType).Id,
+            Value = pi.Value
+        }).ToList());
+
+        int xxx = 1000;
+    }
+
+    private List<ParameterItem> GetParameterItems(MonitorItem monitorItem)
+    {        
+        var parameterItems = new List<ParameterItem>();        
+
+        foreach (var parameter in monitorItem.Parameters)
+        {
+            var systemValueType = SystemValueTypes.First(svt => svt.Id == parameter.SystemValueTypeId);
+
+            // Get parameter value type
+            Type parameterValueType = Type.GetType(systemValueType.ValueTypeName);
+
+            var parameterItem = new ParameterItem()
+                {
+                    Id = $"parameter-{Guid.NewGuid().ToString()}",
+                    SystemValueType = systemValueType,
+                    Name = systemValueType.Name,
+                    Value = parameter.Value
+                };
+
+            switch (parameterValueType)
+            {
+                case Type _ when parameterValueType == typeof(Boolean):
+                    parameterItem.ValueBoolean = Convert.ToBoolean(parameter.Value);                    
+                    break;
+                case Type _ when parameterValueType == typeof(Decimal):
+                    parameterItem.ValueDecimal = Convert.ToDecimal(parameter.Value);
+                    break;
+                case Type _ when parameterValueType == typeof(Int16):
+                    parameterItem.ValueInteger = Convert.ToInt16(parameter.Value);
+
+                    if (!String.IsNullOrEmpty(systemValueType.MinValue)) parameterItem.MinValueInteger = Convert.ToInt16(systemValueType.MinValue);
+                    if (!String.IsNullOrEmpty(systemValueType.MaxValue)) parameterItem.MaxValueInteger = Convert.ToInt16(systemValueType.MaxValue);
+                    break;
+                case Type _ when parameterValueType == typeof(Int32):
+                    parameterItem.ValueInteger = Convert.ToInt32(parameter.Value);
+
+                    if (!String.IsNullOrEmpty(systemValueType.MinValue)) parameterItem.MinValueInteger = Convert.ToInt32(systemValueType.MinValue);
+                    if (!String.IsNullOrEmpty(systemValueType.MaxValue)) parameterItem.MaxValueInteger = Convert.ToInt32(systemValueType.MaxValue);
+                    break;
+                case Type _ when parameterValueType == typeof(Int64):
+                    parameterItem.ValueInteger = Convert.ToInt64(parameter.Value);
+
+                    if (!String.IsNullOrEmpty(systemValueType.MinValue)) parameterItem.MinValueInteger = Convert.ToInt64(systemValueType.MinValue);
+                    if (!String.IsNullOrEmpty(systemValueType.MaxValue)) parameterItem.MaxValueInteger = Convert.ToInt64(systemValueType.MaxValue);
+                    break;
+            }
+
+            parameterItems.Add(parameterItem);
+        }
+
+        return parameterItems;
+    }
+}

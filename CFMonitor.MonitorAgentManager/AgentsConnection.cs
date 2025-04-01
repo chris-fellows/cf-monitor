@@ -84,7 +84,7 @@ namespace CFMonitor.AgentManager
 
             _connection = new ConnectionTcp();           
             _connection.OnConnectionMessageReceived += delegate(ConnectionMessage connectionMessage, MessageReceivedInfo messageReceivedInfo)
-            {
+            {                
                 if (IsResponseMessage(connectionMessage))     // Inside Send... method waiting for response
                 {
                     // No current requests do this
@@ -101,10 +101,10 @@ namespace CFMonitor.AgentManager
 
         public void StartListening(int port)
         {
-            _connection.ReceivePort = port;
-            _connection.StartListening();
-
             _log.Log(DateTimeOffset.UtcNow, "Information", $"Listening on port {port}");
+
+            _connection.ReceivePort = port;
+            _connection.StartListening();            
         }
 
         public void StopListening()

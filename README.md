@@ -1,15 +1,16 @@
 # cf-monitor
 
 A system for monitoring various items and then taking an action. E.g. Check that your CRM web application is
-running and the Login page is available.
+running and the Login page is available. E.g. Run a SQL query that checks if a particular table contains any
+anomaly records.
 
-A Monitor Agent is installed on particular machines. Monitor Agent Manager runs centrally and Monitor Agents
-communicate with it.
+A Monitor Agent is installed on particular machines and performs the checking. Monitor Agent Manager runs 
+centrally and Monitor Agents communicate with it. Monitor Agent Manager sends Monitor Agent the list of items
+to check.
 
 For each monitor item then there are various events that can occur when the item is checked. A list of conditions
-can be assigned to the event and action(s) can be taken if all conditions are valid. In the above example then 
-there would be events 'HTTP status returned' & 'HTTP status not returned'. If event 'HTTP status returned' occurs
-then the condition 'Status not 200' would be evaluated and if the condition was true then an email could be sent.
+can be assigned to the event and action(s) can be taken if all conditions are valid. For example, If the HTTP
+check for the CRM Login page returns a non 200 status then an email can be sent.
 
 Monitor UI
 ----------
@@ -25,7 +26,7 @@ Each Monitor Agent regularly sends a heartbeat to indicate that it is healthy.
 Monitor Agent Manager
 ---------------------
 Runs silently on single machine and controls agents via TCP connection. It will execute any actions as a result
-of items being checks. E.g. Send an email.
+of the item being checked. E.g. Send an email.
 
 Each Monitor Agent Manager regularly sends a heartbeat to indicate that it is healthy.
 
@@ -43,13 +44,13 @@ The following items can be monitored:
 - Local file & content. E.g. Check that overnight process has created a log file for current day and it contains "COMPLETED SUCCESSFULLY".
 - Local time within tolerance (HTTP time/NIST time/NTP time)
 - Memory.
-- Ping.
-- REST endpoint.
+- Ping. E.g. Ping an external server to check that there is external connectivity.
+- REST endpoint. E.g. Check that a particular REST endpoint is available.
 - Run process. E.g. Run a particular PowerShell script and check that the exit code is 0.
 - SMTP connection.
 - SOAP endpoint. E.g. Check that SOAP endpoint returns specific content.
-- TCP/UDP socket.
-- SQL. E.g. Query that returns all anomaly records from a particular table.
+- TCP/UDP socket. E.g. Try to connect to specific IP & port.
+- SQL. E.g. Check if SQL query returns any anomaly records from table X.
 - HTTP endpoint. E.g. Check that the Login page is available for a web application.
 
 Actions
@@ -60,7 +61,7 @@ The following actions can be taken if the conditions for the monitor item event 
 - Event Log entry.
 - Log entry.
 - Machine restart.
-- Process launched.
+- Process launched. E.g. Run an .EXE or PowerShell script.
 - Service restart.
 - SMS message.
 - SQL statement executed.
@@ -73,5 +74,3 @@ TODO List
 - (Monitor Agent) Support download of update. E.g. Add Monitor Agent Launcher which gets updated files and
   then launches Monitor Agent.
 - (Monitor Agent) Make installation as simple as possible.
-- Audit event when Monitor Agent is unhealthy. Need to consider storing previous state so that the event is
-  only generated when the state changes.

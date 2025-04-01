@@ -13,39 +13,72 @@ using CFUtilities.Services;
 using CFMonitor.Common.Log;
 using CFMonitor.Log;
 using CFMonitor.Common.Interfaces;
+using System.Net;
+using System.Runtime.Loader;
 
 internal static class Program
 {
     private static void Main(string[] args)
-    {
-        Console.WriteLine("Starting CF Monitor Agent Manager");
+    {        
+        var hostEntry = Dns.GetHostEntry(Dns.GetHostName());        
+        Console.WriteLine($"Starting CF Monitor Agent Manager ({hostEntry.AddressList[0].ToString()})");
 
         var serviceProvider = CreateServiceProvider();
 
         // Get system config
         var placeholderService = serviceProvider.GetRequiredService<IPlaceholderService>();
         var systemConfig = GetSystemConfig(placeholderService);
-       
+
         // Start worker
         var worker = new Worker(serviceProvider, systemConfig);
         worker.Start();
 
         // Wait for requrest to stop            
-        do
+        if (IsInDockerContainer)
         {
-            Console.WriteLine("Press ESCAPE to stop");  // Also displayed if user presses other key
-            while (!Console.KeyAvailable)
+            bool active = true;
+            //AssemblyLoadContext.Default.Unloading += delegate (AssemblyLoadContext context)
+            //{
+            //    Console.WriteLine("Stopping worker due to terminating");
+            //    worker.Stop();
+            //    Console.WriteLine("Stopped worker");
+            //    active = false;
+            //};
+
+            while (active)
             {
                 Thread.Sleep(100);
                 Thread.Yield();
             }
-        } while (Console.ReadKey(true).Key != ConsoleKey.Escape);
+        }
+        else
+        {
+            do
+            {
+                Console.WriteLine("Press ESCAPE to stop");  // Also displayed if user presses other key
+                while (!Console.KeyAvailable)
+                {
+                    Thread.Sleep(100);
+                    Thread.Yield();
+                }
+            } while (Console.ReadKey(true).Key != ConsoleKey.Escape);
 
-        // Stop worker
-        worker.Stop();
+            // Stop worker
+            worker.Stop();
+        }
 
         Console.WriteLine("Terminated CF Monitor Agent Manager");
     }
+
+    private static void Default_Unloading(AssemblyLoadContext obj)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static bool IsInDockerContainer
+    {
+        get { return Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true"; }
+    }     
 
     /// <summary>
     /// Gets system config. Replaces placeholders in config file. E.g. Environment variable.
@@ -70,7 +103,7 @@ internal static class Program
         var configFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Config");
         var logFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Log");
 
-        configFolder = "D:\\Data\\Dev\\C#\\cf-monitor\\CFMonitor.UI\\bin\\Debug\\net8.0\\Config";   // TODO: Remove this
+       // configFolder = "D:\\Data\\Dev\\C#\\cf-monitor\\CFMonitor.UI\\bin\\Debug\\net8.0\\Config";   // TODO: Remove this
 
         var configuration = new ConfigurationBuilder()
             .Build();
@@ -104,7 +137,7 @@ internal static class Program
                 .AddScoped<IMonitorAgentService>((scope) =>
                 {
                     return new XmlMonitorAgentService(Path.Combine(configFolder, "MonitorAgent"));
-                })               
+                })
                 .AddScoped<IMonitorAgentGroupService>((scope) =>
                 {
                     return new XmlMonitorAgentGroupService(Path.Combine(configFolder, "MonitorAgentGroup"));
@@ -159,7 +192,7 @@ internal static class Program
             .AddScoped<IAuditEventFactory, AuditEventFactory>()
             .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()
             .AddScoped<IAuditEventProcessorService, NoActionAuditEventProcessorService>()   // No need to create notifications for audit events
-            //.AddScoped<IEntityDependencyCheckerService, EntityDependencyCheckerService>()   // Only needed for deletes
+                                                                                            //.AddScoped<IEntityDependencyCheckerService, EntityDependencyCheckerService>()   // Only needed for deletes
 
             .RegisterAllTypes<IChecker>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
             .RegisterAllTypes<IActioner>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
@@ -183,7 +216,7 @@ internal static class Program
                 };
                 return new SystemTaskList(4, systemTaskConfigs);
             })
-      
+
             .BuildServiceProvider();
 
         return serviceProvider;

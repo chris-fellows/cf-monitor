@@ -16,6 +16,8 @@ using CFUtilities.Services;
 using CFMonitor.Log;
 using CFMonitor.Common.Log;
 using CFMonitor.Common.Interfaces;
+using System.Net;
+using System.Runtime.Loader;
 
 namespace CFMonitor.Agent
 {
@@ -23,10 +25,11 @@ namespace CFMonitor.Agent
     {
         private static void Main(string[] args)
         {
-            Console.WriteLine("Starting CF Monitor Agent");
+            var hostEntry = Dns.GetHostEntry(Dns.GetHostName());
+            Console.WriteLine($"Starting CF Monitor Agent ({hostEntry.AddressList[0].ToString()})");
 
             var serviceProvider = CreateServiceProvider();
-            
+
             // Get system config
             var placeholderService = serviceProvider.GetRequiredService<IPlaceholderService>();
             var systemConfig = GetSystemConfig(placeholderService);
@@ -36,20 +39,45 @@ namespace CFMonitor.Agent
             worker.Start();
 
             // Wait for requrest to stop            
-            do
+            if (IsInDockerContainer)
             {
-                Console.WriteLine("Press ESCAPE to stop");  // Also displayed if user presses other key
-                while (!Console.KeyAvailable)
+                bool active = true;
+                AssemblyLoadContext.Default.Unloading += delegate (AssemblyLoadContext context)
+                {
+                    Console.WriteLine("Stopping worker due to terminating");
+                    worker.Stop();
+                    Console.WriteLine("Stopped worker");
+                    active = false;
+                };
+
+                while (active)
                 {
                     Thread.Sleep(100);
                     Thread.Yield();
                 }
-            } while (Console.ReadKey(true).Key != ConsoleKey.Escape);
+            }
+            else
+            {
+                do
+                {
+                    Console.WriteLine("Press ESCAPE to stop");  // Also displayed if user presses other key
+                    while (!Console.KeyAvailable)
+                    {
+                        Thread.Sleep(100);
+                        Thread.Yield();
+                    }
+                } while (Console.ReadKey(true).Key != ConsoleKey.Escape);
 
-            // Stop worker
-            worker.Stop();
+                // Stop worker
+                worker.Stop();
+            }
 
             Console.WriteLine("Terminated CF Monitor Agent");
+        }
+
+        private static bool IsInDockerContainer
+        {
+            get { return Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true"; }
         }
 
         /// <summary>
@@ -58,20 +86,20 @@ namespace CFMonitor.Agent
         /// <param name="placeholderService"></param>
         /// <returns></returns>
         private static SystemConfig GetSystemConfig(IPlaceholderService placeholderService)
-        {            
+        {
             return new SystemConfig()
             {
                 AgentManagerIp = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["AgentManagerIp"].ToString(), new()),
                 AgentManagerPort = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["AgentManagerPort"].ToString(), new())),
                 LocalPort = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["LocalPort"].ToString(), new())),
-                MaxConcurrentChecks = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced( System.Configuration.ConfigurationManager.AppSettings["MaxConcurrentChecks"].ToString(), new())),
+                MaxConcurrentChecks = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["MaxConcurrentChecks"].ToString(), new())),
                 MonitorAgentId = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["MonitorAgentId"].ToString(), new()),
                 MonitorItemFilesRootFolder = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["MonitorItemFilesRootFolder"].ToString(), new()),
                 SecurityKey = placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["SecurityKey"].ToString(), new()),
                 HeartbeatSecs = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["HeartbeatSecs"].ToString(), new())),
                 LogFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Log"),
                 MaxLogDays = Convert.ToInt32(placeholderService.GetWithPlaceholdersReplaced(System.Configuration.ConfigurationManager.AppSettings["MaxLogDays"].ToString(), new())),
-            };            
+            };
         }
 
         private static IServiceProvider CreateServiceProvider()
@@ -79,7 +107,7 @@ namespace CFMonitor.Agent
             var configFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Config");
             var logFolder = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Log");
 
-            var configuration = new ConfigurationBuilder()                
+            var configuration = new ConfigurationBuilder()
                 .Build();
 
             var serviceProvider = new ServiceCollection()
@@ -167,7 +195,7 @@ namespace CFMonitor.Agent
                 .AddScoped<IAuditEventFactory, AuditEventFactory>()
                 .AddScoped<IMonitorItemTypeService, MonitorItemTypeService>()
                 .AddScoped<IAuditEventProcessorService, NoActionAuditEventProcessorService>()   // No need to create notifications for audit events
-                //.AddScoped<IEntityDependencyCheckerService, EntityDependencyCheckerService>()   // Only needed for deletes
+                                                                                                //.AddScoped<IEntityDependencyCheckerService, EntityDependencyCheckerService>()   // Only needed for deletes
 
                 .RegisterAllTypes<IChecker>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
                 .RegisterAllTypes<IActioner>(new[] { typeof(Program).Assembly, typeof(MonitorItem).Assembly }, ServiceLifetime.Scoped)
@@ -189,13 +217,13 @@ namespace CFMonitor.Agent
                     {
                         new SystemTaskConfig()
                         {
-                            
+
                         }
                     };
                     return new SystemTaskList(4, systemTaskConfigs);
-                })      
+                })
 
-                .BuildServiceProvider();            
+                .BuildServiceProvider();
 
             return serviceProvider;
         }
@@ -219,4 +247,3 @@ namespace CFMonitor.Agent
         }
     }
 }
-

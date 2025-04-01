@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "CFMonitor.MonitorAgent": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

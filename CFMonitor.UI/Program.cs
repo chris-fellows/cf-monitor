@@ -5,6 +5,7 @@ using CFMonitor.Models;
 using CFMonitor.Seed;
 using CFMonitor.Services;
 using CFMonitor.UI.Components;
+using CFMonitor.UI.Extensions;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Reflection;
 using CFUtilities.Interfaces;
@@ -15,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using CFMonitor.Common.Services;
 using CFMonitor.SystemTask;
 using CFMonitor.Constants;
+using CFMonitor.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -172,11 +174,24 @@ builder.Services.AddKeyedScoped<IEntityReader<SystemTaskType>, SystemTaskTypeSee
 builder.Services.AddKeyedScoped<IEntityReader<SystemValueType>, SystemValueTypeSeed1>("SystemValueTypeSeed");
 builder.Services.AddKeyedScoped<IEntityReader<User>, UserSeed1>("UserSeed");
 
+// Add email creators
+builder.Services.RegisterAllTypes<IEmailCreator>(new[] { typeof(Program).Assembly, typeof(ISystemTask).Assembly });
+
 // Set system task list
 builder.Services.AddSingleton<ISystemTaskList>((scope) =>
 {
     var systemTaskConfigs = new List<SystemTaskConfig>()
     {
+        new SystemTaskConfig()
+        {
+            SystemTaskName = SystemTaskTypeNames.ManagePasswordResets,
+            ExecuteFrequency = TimeSpan.FromMinutes(30)
+        },
+        new SystemTaskConfig()
+        {
+            SystemTaskName = SystemTaskTypeNames.ManageSystemTaskJobs,
+            ExecuteFrequency = TimeSpan.FromHours(12),
+        },
         new SystemTaskConfig()
         {        
             SystemTaskName = SystemTaskTypeNames.SendEmail,
@@ -187,6 +202,9 @@ builder.Services.AddSingleton<ISystemTaskList>((scope) =>
 
     return new SystemTaskList(5, systemTaskConfigs);
 });
+
+// Add background service for system tasks
+builder.Services.AddHostedService<SystemTaskBackgroundService>();
 
 var app = builder.Build();
 
